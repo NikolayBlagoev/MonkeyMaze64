@@ -7,15 +7,16 @@ DISABLE_WARNINGS_PUSH()
 #include <glm/gtc/quaternion.hpp>
 DISABLE_WARNINGS_POP()
 
-Camera::Camera(Window* pWindow)
-    : Camera(pWindow, glm::vec3(0), glm::vec3(0, 0, -1))
+Camera::Camera(Window* pWindow, const RenderConfig& renderConfig)
+    : Camera(pWindow, renderConfig, glm::vec3(0), glm::vec3(0, 0, -1))
 {
 }
 
-Camera::Camera(Window* pWindow, const glm::vec3& pos, const glm::vec3& forward)
+Camera::Camera(Window* pWindow, const RenderConfig& renderConfig, const glm::vec3& pos, const glm::vec3& forward)
     : m_position(pos)
     , m_forward(glm::normalize(forward))
     , m_pWindow(pWindow)
+    , m_renderConfig(renderConfig)
 {
 }
 

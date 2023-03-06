@@ -1,9 +1,10 @@
-//#include "Image.h"
+#include "render/config.h"
 #include "render/mesh.h"
 #include "render/scene.h"
 #include "render/texture.h"
 #include "ui/camera.h"
 #include "ui/menu.h"
+
 // Always include window first (because it includes glfw, which includes GL which needs to be included AFTER glew).
 // Can't wait for modules to fix this stuff...
 #include <framework/disable_all_warnings.h>
@@ -20,31 +21,46 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 #include <framework/shader.h>
 #include <framework/window.h>
+
 #include <functional>
 #include <iostream>
 #include <vector>
 
+// Constants
 constexpr int32_t WIDTH         = 1920;
 constexpr int32_t HEIGHT        = 1080;
-constexpr float FOV             = glm::radians(90.0f);
 constexpr float ASPECT_RATIO    = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
 const std::filesystem::path RESOURCES_DIR_PATH  = RESOURCES_DIR;
 const std::filesystem::path SHADERS_DIR_PATH    = SHADERS_DIR;
 
+// Game state
+// TODO: Have a separate struct for this if it becomes too much
+bool cameraZoomed = false;
+
 // In here you can handle key presses
 // key - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__keys.html
 // mods - Any modifier keys pressed, like shift or control
-void onKeyPressed(int key, int mods)
-{
+void onKeyPressed(int key, int mods) {
     std::cout << "Key pressed: " << key << std::endl;
+
+    switch (key) {
+        case GLFW_KEY_LEFT_CONTROL:
+            cameraZoomed = true;
+            break;
+    }
 }
 
 // In here you can handle key releases
 // key - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__keys.html
 // mods - Any modifier keys pressed, like shift or control
-void onKeyReleased(int key, int mods)
-{
+void onKeyReleased(int key, int mods) {
     std::cout << "Key released: " << key << std::endl;
+
+    switch (key) {
+        case GLFW_KEY_LEFT_CONTROL:
+            cameraZoomed = false;
+            break;
+    }
 }
 
 // If the mouse is moved this function will be called with the x, y screen-coordinates of the mouse
@@ -81,10 +97,11 @@ void mouseButtonCallback(int button, int action, int mods) {
 
 int main(int argc, char* argv[]) {
     // Init core objects
+    RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(WIDTH, HEIGHT), OpenGLVersion::GL46);
-    Camera mainCamera(&m_window, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
+    Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     Scene scene;
-    Menu menu(scene);
+    Menu menu(scene, renderConfig);
 
     // Register UI callbacks
     m_window.registerKeyCallback(keyCallback);
@@ -112,8 +129,6 @@ int main(int argc, char* argv[]) {
 
     // Main loop
     while (!m_window.shouldClose()) {
-        // This is your game loop
-        // Put your real-time logic and rendering in here
         m_window.updateInput();
 
         // Clear the screen
@@ -126,16 +141,18 @@ int main(int argc, char* argv[]) {
         // Controls and UI
         ImGuiIO io = ImGui::GetIO();
         menu.draw();
-        if (!io.WantCaptureMouse) { mainCamera.updateInput(); }
+        if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
 
         // Projection matrix setup
-        const glm::mat4 m_projectionMatrix = glm::perspective(FOV, ASPECT_RATIO, 0.1f, 30.0f);
+        const float fovDegrees = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 m_projectionMatrix = glm::perspective(fovDegrees, ASPECT_RATIO, 0.1f, 30.0f);
 
+        // Render each model
         for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
-            const GPUMesh& mesh             = scene.meshAt(modelNum);
-            const glm::mat4 modelMatrix    = scene.modelMatrix(modelNum);
+            const GPUMesh& mesh         = scene.meshAt(modelNum);
+            const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
 
-            // Normals should be transformed differently than positions (ignoring translations + dealing with scaling):
+            // Normals should be transformed differently than positions (ignoring translations + dealing with scaling)
             // https://paroj.github.io/gltut/Illumination/Tut09%20Normal%20Transformation.html
             const glm::mat4 mvpMatrix           = m_projectionMatrix * mainCamera.viewMatrix() * modelMatrix;
             const glm::mat3 normalModelMatrix   = glm::inverseTranspose(glm::mat3(modelMatrix));
