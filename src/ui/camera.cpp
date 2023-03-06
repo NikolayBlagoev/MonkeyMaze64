@@ -51,34 +51,30 @@ void Camera::rotateY(float angle)
     m_up = glm::normalize(glm::cross(m_forward, horAxis));
 }
 
-void Camera::updateInput()
-{
-    constexpr float moveSpeed = 0.03f;
-    constexpr float lookSpeed = 0.0015f;
-
+void Camera::updateInput() {
     if (m_userInteraction) {
         glm::vec3 localMoveDelta { 0 };
         const glm::vec3 right = glm::normalize(glm::cross(m_forward, m_up));
 
         // Forward, backward and strafe
         if (m_pWindow->isKeyPressed(GLFW_KEY_A))
-            m_position -= moveSpeed * right;
+            m_position -= m_renderConfig.moveSpeed * right;
         if (m_pWindow->isKeyPressed(GLFW_KEY_D))
-            m_position += moveSpeed * right;
+            m_position += m_renderConfig.moveSpeed * right;
         if (m_pWindow->isKeyPressed(GLFW_KEY_W))
-            m_position += moveSpeed * m_forward;
+            m_position += m_renderConfig.moveSpeed * m_forward;
         if (m_pWindow->isKeyPressed(GLFW_KEY_S))
-            m_position -= moveSpeed * m_forward;
+            m_position -= m_renderConfig.moveSpeed * m_forward;
 
         // Up and down
         if (!m_renderConfig.constrainVertical) {
-            if (m_pWindow->isKeyPressed(GLFW_KEY_SPACE)) { m_position += moveSpeed * m_up; }
-            if (m_pWindow->isKeyPressed(GLFW_KEY_C)) { m_position -= moveSpeed * m_up; }
+            if (m_pWindow->isKeyPressed(GLFW_KEY_SPACE)) { m_position += m_renderConfig.moveSpeed * m_up; }
+            if (m_pWindow->isKeyPressed(GLFW_KEY_C)) { m_position -= m_renderConfig.moveSpeed * m_up; }
         }
 
         // Mouse movement
         const glm::dvec2 cursorPos  = m_pWindow->getCursorPos();
-        const glm::vec2 delta       = lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
+        const glm::vec2 delta       = m_renderConfig.lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
         m_prevCursorPos             = cursorPos;
         if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
             if (delta.x != 0.0f) { rotateY(delta.x); }

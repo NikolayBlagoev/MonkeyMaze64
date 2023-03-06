@@ -1,10 +1,12 @@
 #include "menu.h"
+
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui/imgui.h>
 #include <nativefiledialog/nfd.h>
 DISABLE_WARNINGS_POP()
+
 #include <filesystem>
 #include <iostream>
 
@@ -23,6 +25,8 @@ void Menu::draw() {
 
 void Menu::drawCameraTab() {
     if (ImGui::BeginTabItem("Camera")) {
+        ImGui::DragFloat("Movement Speed", &m_renderConfig.moveSpeed, 0.001f, 0.01f, 0.09f);
+        ImGui::DragFloat("Look Speed", &m_renderConfig.lookSpeed, 0.0001f, 0.0005f, 0.0050f);
         ImGui::DragFloat("FOV (Vertical)", &m_renderConfig.verticalFOV, 1.0f, 30.0f, 180.0f);
         ImGui::DragFloat("Zoomed FOV (Vertical)", &m_renderConfig.zoomedVerticalFOV, 1.0f, 20.0f, 120.0f);
         ImGui::Checkbox("Constrain Vertical Movement", &m_renderConfig.constrainVertical);
