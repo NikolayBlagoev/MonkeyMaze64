@@ -5,31 +5,23 @@
 #include <string.h>
 
 using namespace std;
+
 char out[1024] = {0};
+
 void sendReceive(int sock){
-    char buffer[1024] = {0};
-    while(true){
+    char buffer[1024] = { 0 };
+    while (true) {
         int valread = recv(sock, buffer, 1024, MSG_DONTWAIT);
-        // cout << valread << endl;
-        // if(valread==0){
-        //     break;
-        // }
-        if(strlen(buffer) != 0){
-            cout << buffer << endl;
-        }
-        
-        if(strlen(out) > 0){
+        if (strlen(buffer) != 0) { cout << buffer << endl; }
+        if (strlen(out) > 0) {
             send(sock, out, strlen(out), 0);
             out[0] = 0;
         }
-        buffer[0] = 0;
-        
-        
+        buffer[0] = 0;   
     }
-    
-
 }
-int main() {
+
+int main(int argc, char* argv[]) {
   int sock = 0;
   int valread;
   struct sockaddr_in serv_addr;
@@ -50,15 +42,14 @@ int main() {
     return 1;
   }
 
-  while(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+  while (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
     cout << "Waiting for connection" << endl;
     sleep(5);
   }
 
-  cout<< "Established connection" << endl;
-  
+  cout << "Established connection" << endl;
+
   sendReceive(sock);
-  
 
   return 0;
 }

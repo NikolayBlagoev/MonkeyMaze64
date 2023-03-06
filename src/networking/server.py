@@ -14,6 +14,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     conn, addr = s.accept()
     print(f'Connected by {addr}')
     conn.setblocking(False)
+
     # Receive and send messages
     with conn:
         while True:
@@ -25,9 +26,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 if not data:
                     break 
             except Exception:
-                continue 
-            
-            # print(f'Received: {data.decode()}')
-            
+                continue             
 
     print(f'Connection closed by {addr}')
+    
