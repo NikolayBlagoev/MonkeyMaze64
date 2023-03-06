@@ -31,7 +31,7 @@ void Menu::drawCameraTab() {
 
 void Menu::addMesh() {
     nfdchar_t *outPath = NULL;
-    nfdresult_t result = NFD_OpenDialog(NULL, RESOURCES_DIR, &outPath );
+    nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath );
         
     if (result == NFD_OKAY) {
         std::filesystem::path objPath(outPath);
