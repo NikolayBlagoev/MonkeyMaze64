@@ -59,6 +59,8 @@ void Camera::updateInput()
     if (m_userInteraction) {
         glm::vec3 localMoveDelta { 0 };
         const glm::vec3 right = glm::normalize(glm::cross(m_forward, m_up));
+
+        // Forward, backward and strafe
         if (m_pWindow->isKeyPressed(GLFW_KEY_A))
             m_position -= moveSpeed * right;
         if (m_pWindow->isKeyPressed(GLFW_KEY_D))
@@ -67,22 +69,20 @@ void Camera::updateInput()
             m_position += moveSpeed * m_forward;
         if (m_pWindow->isKeyPressed(GLFW_KEY_S))
             m_position -= moveSpeed * m_forward;
-        if (m_pWindow->isKeyPressed(GLFW_KEY_SPACE))
-            m_position += moveSpeed * m_up;
-        if (m_pWindow->isKeyPressed(GLFW_KEY_C))
-            m_position -= moveSpeed * m_up;
 
-        const glm::dvec2 cursorPos = m_pWindow->getCursorPos();
-        const glm::vec2 delta = lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
-        m_prevCursorPos = cursorPos;
-
-        if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
-            if (delta.x != 0.0f)
-                rotateY(delta.x);
-            if (delta.y != 0.0f)
-                rotateX(delta.y);
+        // Up and down
+        if (!m_renderConfig.constrainVertical) {
+            if (m_pWindow->isKeyPressed(GLFW_KEY_SPACE)) { m_position += moveSpeed * m_up; }
+            if (m_pWindow->isKeyPressed(GLFW_KEY_C)) { m_position -= moveSpeed * m_up; }
         }
-    } else {
-        m_prevCursorPos = m_pWindow->getCursorPos();
-    }
+
+        // Mouse movement
+        const glm::dvec2 cursorPos  = m_pWindow->getCursorPos();
+        const glm::vec2 delta       = lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
+        m_prevCursorPos             = cursorPos;
+        if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
+            if (delta.x != 0.0f) { rotateY(delta.x); }
+            if (!m_renderConfig.constrainVertical && delta.y != 0.0f) { rotateX(delta.y); }
+        }
+    } else { m_prevCursorPos = m_pWindow->getCursorPos(); }
 }

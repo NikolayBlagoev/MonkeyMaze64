@@ -25,6 +25,7 @@ void Menu::drawCameraTab() {
     if (ImGui::BeginTabItem("Camera")) {
         ImGui::DragFloat("FOV (Vertical)", &m_renderConfig.verticalFOV, 1.0f, 30.0f, 180.0f);
         ImGui::DragFloat("Zoomed FOV (Vertical)", &m_renderConfig.zoomedVerticalFOV, 1.0f, 20.0f, 120.0f);
+        ImGui::Checkbox("Constrain Vertical Movement", &m_renderConfig.constrainVertical);
         ImGui::EndTabItem();
     }
 }
