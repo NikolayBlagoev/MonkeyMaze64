@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     Scene scene;
     LightManager lightManager;
-    Menu menu(scene, renderConfig);
+    Menu menu(scene, renderConfig, lightManager);
 
     // Register UI callbacks
     m_window.registerKeyCallback(keyCallback);
@@ -130,9 +130,9 @@ int main(int argc, char* argv[]) {
     Texture m_texture(RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
     // Add test lights
-    lightManager.addPointLight({ glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) });
-    lightManager.addPointLight({ glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f) });
-    lightManager.addPointLight({ glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f) });
+    lightManager.addPointLight({ glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) });
+    lightManager.addPointLight({ glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) });
+    lightManager.addPointLight({ glm::vec4(0.0f, 0.0f, 1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) });
 
     // Main loop
     while (!m_window.shouldClose()) {
@@ -175,6 +175,8 @@ int main(int argc, char* argv[]) {
                 glUniform1i(3, 0);
                 glUniform1i(4, GL_TRUE);
             } else { glUniform1i(4, GL_FALSE); }
+            const glm::vec3 cameraPos = mainCamera.cameraPos();
+            glUniform3fv(5, 1, glm::value_ptr(cameraPos));
 
             mesh.draw();
         }

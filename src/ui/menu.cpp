@@ -10,7 +10,10 @@ DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <iostream>
 
-Menu::Menu(Scene& scene, RenderConfig& renderConfig) : m_scene(scene), m_renderConfig(renderConfig) {}
+Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager) : 
+    m_scene(scene),
+    m_renderConfig(renderConfig),
+    m_lightManager(lightManager) {}
 
 void Menu::draw() {
     ImGui::Begin("Debug Controls");
@@ -18,6 +21,7 @@ void Menu::draw() {
     
     drawCameraTab();
     drawMeshTab();
+    drawLightTab();
 
     ImGui::EndTabBar();
     ImGui::End();
@@ -67,11 +71,53 @@ void Menu::drawMeshTab() {
         ImGui::Combo("Selected mesh", (int*) (&selectedMesh), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
 
         // Selected mesh controls
-        if (m_scene.numMeshes() > 0) {
+        if (m_scene.numMeshes() > 0U) {
             ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.transformParams[selectedMesh].scale), 0.05f);
             ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.transformParams[selectedMesh].rotate), 1.0f, 0.0f, 360.0f);
             ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.transformParams[selectedMesh].translate), 0.05f);
         }
+
+        ImGui::EndTabItem();
+    }
+}
+
+void Menu::drawPointLightControls() {
+    // Add / remove controls
+    if (ImGui::Button("Add")) { m_lightManager.addPointLight({ glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 0.0f) }); }
+    if (ImGui::Button("Remove selected")) {
+        if (selectedPointLight < m_lightManager.numPointLights()) {
+            m_lightManager.removePointLight(selectedPointLight);
+            selectedPointLight = 0U;
+        }
+    }
+    ImGui::NewLine();
+
+    // Selection controls
+    std::vector<std::string> options;
+    for (size_t pointLightIdx = 0U; pointLightIdx < m_lightManager.numPointLights(); pointLightIdx++) { options.push_back("Point light " + std::to_string(pointLightIdx + 1)); }
+    std::vector<const char*> optionsPointers;
+    std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
+        [](const auto& str) { return str.c_str(); });
+    ImGui::Combo("Selected point light", (int*) (&selectedPointLight), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+
+    // Selected point light controls
+    if (m_lightManager.numPointLights() > 0U) {
+        PointLight& selectedLight = m_lightManager.pointLightAt(selectedPointLight);
+        ImGui::ColorEdit3("Colour", glm::value_ptr(selectedLight.color));
+        ImGui::DragFloat3("Position", glm::value_ptr(selectedLight.position), 0.05f);
+    }
+}
+
+void Menu::drawLightTab() {
+    if (ImGui::BeginTabItem("Lights")) {
+        ImGui::Text("Point lights");
+        drawPointLightControls();
+
+        ImGui::NewLine();
+        ImGui::Separator();
+
+        ImGui::Text("Planar lights");
+        // TODO: Add planar light controls
 
         ImGui::EndTabItem();
     }
