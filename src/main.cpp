@@ -1,4 +1,5 @@
 #include "render/config.h"
+#include "render/lighting.h"
 #include "render/mesh.h"
 #include "render/scene.h"
 #include "render/texture.h"
@@ -101,6 +102,7 @@ int main(int argc, char* argv[]) {
     Window m_window("Final Project", glm::ivec2(WIDTH, HEIGHT), OpenGLVersion::GL46);
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     Scene scene;
+    LightManager lightManager;
     Menu menu(scene, renderConfig);
 
     // Register UI callbacks
@@ -113,12 +115,12 @@ int main(int argc, char* argv[]) {
     Shader m_shadowShader;
     try {
         ShaderBuilder defaultBuilder;
-        defaultBuilder.addStage(GL_VERTEX_SHADER, SHADERS_DIR_PATH / "shader_vert.glsl");
-        defaultBuilder.addStage(GL_FRAGMENT_SHADER, SHADERS_DIR_PATH / "shader_frag.glsl");
+        defaultBuilder.addStage(GL_VERTEX_SHADER, SHADERS_DIR_PATH / "debug.vert");
+        defaultBuilder.addStage(GL_FRAGMENT_SHADER, SHADERS_DIR_PATH / "phong.frag");
         m_defaultShader = defaultBuilder.build();
 
         ShaderBuilder shadowBuilder;
-        shadowBuilder.addStage(GL_VERTEX_SHADER, SHADERS_DIR_PATH / "shadow_vert.glsl");
+        shadowBuilder.addStage(GL_VERTEX_SHADER, SHADERS_DIR_PATH / "shadow_debug.vert");
         m_shadowShader = shadowBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
@@ -126,6 +128,11 @@ int main(int argc, char* argv[]) {
     scene.addMesh(RESOURCES_DIR_PATH / "models" / "dragon.obj");
     scene.addMesh(RESOURCES_DIR_PATH / "models" / "dragon.obj");
     Texture m_texture(RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
+
+    // Add test lights
+    lightManager.addPointLight({ glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f) });
+    lightManager.addPointLight({ glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f) });
+    lightManager.addPointLight({ glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f) });
 
     // Main loop
     while (!m_window.shouldClose()) {
@@ -157,8 +164,9 @@ int main(int argc, char* argv[]) {
             const glm::mat4 mvpMatrix           = m_projectionMatrix * mainCamera.viewMatrix() * modelMatrix;
             const glm::mat3 normalModelMatrix   = glm::inverseTranspose(glm::mat3(modelMatrix));
 
-            // Bind shader(s) and uniform(s)
+            // Bind shader(s), light(s), and uniform(s)
             m_defaultShader.bind();
+            lightManager.bind();
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvpMatrix));
             glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
             glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(normalModelMatrix));

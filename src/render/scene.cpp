@@ -14,7 +14,7 @@ void Scene::removeMesh(size_t idx) {
 }
 
 glm::mat4 Scene::modelMatrix(size_t idx) {
-    const MeshTransform meshTransform = transformParams[idx];
+    const MeshTransform& meshTransform = transformParams[idx];
 
     // Translate
     glm::mat4 finalTransform = glm::translate(meshTransform.translate);
