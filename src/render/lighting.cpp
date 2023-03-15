@@ -28,12 +28,13 @@ LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(re
 
     // 2D array texture for area light shadow maps
     glGenTextures(1, &shadowTexArr);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
     glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // Clamp coordinates outside of texture to [0, 1] range
     glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTextureParameteri(shadowTexArr, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // Linear interpolation of texels to allow for PCF
     glTextureParameteri(shadowTexArr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTextureParameteri(shadowTexArr, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE); // Set texture comparison to return fraction of neighbouring samples passing the below test (https://www.khronos.org/opengl/wiki/Sampler_Object#Comparison_mode)
-    glTextureParameteri(shadowTexArr, GL_TEXTURE_COMPARE_FUNC, GL_GEQUAL);
+    glTextureParameteri(shadowTexArr, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 }
 
 LightManager::~LightManager() {
@@ -48,8 +49,9 @@ void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& colo
     AreaLight light { position, xAngle, yAngle, INVALID, color };
 
     // Resize texture array to accomodate new shadow map
+    glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, areaLights.size() + 1U);
-    
+
     // Create framebuffer to draw to
     glCreateFramebuffers(1, &light.framebuffer);
     glNamedFramebufferTextureLayer(light.framebuffer, GL_DEPTH_ATTACHMENT, shadowTexArr, 0, areaLights.size());
@@ -59,6 +61,7 @@ void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& colo
 
 void LightManager::removeAreaLight(size_t idx) {
     // Resize texture array to conserve memory
+    glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, areaLights.size() - 1U);
 
     // Destroy framebuffer corresponding to the shadow map

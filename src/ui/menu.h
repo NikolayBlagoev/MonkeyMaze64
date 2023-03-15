@@ -25,6 +25,7 @@ private:
     void drawPointLightControls();
     void drawAreaLightControls();
     void drawLightTab();
+    void drawShadowTab();
 
     // 3D debug view
     void drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& color);

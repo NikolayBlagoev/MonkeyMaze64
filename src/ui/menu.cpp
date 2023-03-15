@@ -33,6 +33,7 @@ void Menu::draw2D() {
     drawCameraTab();
     drawMeshTab();
     drawLightTab();
+    drawShadowTab();
 
     ImGui::EndTabBar();
     ImGui::End();
@@ -177,6 +178,15 @@ void Menu::drawLightTab() {
         ImGui::Text("Area lights");
         drawAreaLightControls();
 
+        ImGui::EndTabItem();
+    }
+}
+
+void Menu::drawShadowTab() {
+    if (ImGui::BeginTabItem("Shadows")) {
+        ImGui::SliderFloat("Shadow Map FoV (Vertical)", &m_renderConfig.shadowFovY, 40.0f, 150.0f);
+        ImGui::SliderFloat("Shadow Map Near Plane", &m_renderConfig.shadowNearPlane, 0.0001f, 1.0f);
+        ImGui::SliderFloat("Shadow Map Far Plane", &m_renderConfig.shadowFarPlane, 5.0f, 60.0f);
         ImGui::EndTabItem();
     }
 }
