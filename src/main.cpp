@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     Scene scene;
-    LightManager lightManager;
+    LightManager lightManager(renderConfig);
     Menu menu(scene, renderConfig, lightManager);
 
     // Register UI callbacks
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
     // Add test lights
     lightManager.addPointLight({ glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) });
     lightManager.addPointLight({ glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) });
-    lightManager.addPointLight({ glm::vec4(0.0f, 0.0f, 1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) });
+    lightManager.addAreaLight(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
     // Main loop
     while (!m_window.shouldClose()) {
@@ -140,8 +140,8 @@ int main(int argc, char* argv[]) {
         glEnable(GL_DEPTH_TEST);
 
         // View-projection matrix setup
-        const float fovDegrees = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovDegrees, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
+        const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
 
         // Controls and UI
         ImGuiIO io = ImGui::GetIO();
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
 
             // Bind shader(s), light(s), and uniform(s)
             m_defaultShader.bind();
-            lightManager.bind();
+            lightManager.bind(modelMatrix);
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvpMatrix));
             glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
             glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(normalModelMatrix));
