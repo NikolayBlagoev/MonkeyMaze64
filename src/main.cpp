@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
     // Add models and test texture
-    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
     Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
@@ -148,6 +148,40 @@ int main(int argc, char* argv[]) {
         menu.draw(m_viewProjectionMatrix);
         if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
 
+        // Render shadow maps
+        const glm::mat4 shadowMapsProjection = renderConfig.shadowMapsProjectionMatrix();
+        glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
+        for (size_t areaLightNum = 0U; areaLightNum < lightManager.numAreaLights(); areaLightNum++) {
+            const AreaLight& light      = lightManager.areaLightAt(areaLightNum);
+            const glm::mat4 lightView   = light.viewMatrix();
+
+            // Bind shadow shader and shadowmap framebuffer
+            m_shadowShader.bind();
+            glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffer);
+
+            // Clear the shadow map and set needed options
+            glClearDepth(1.0f);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+
+            // Render each model in the scene
+            for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
+                const GPUMesh& mesh         = scene.meshAt(modelNum);
+                const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
+
+                // Bind light camera mvp matrix
+                const glm::mat4 lightMvp = shadowMapsProjection * lightView *  modelMatrix;
+                glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvp));
+
+                // Bind model's VAO and draw its elements
+                mesh.draw();
+            }
+        }
+
+        // Unbind the last off-screen framebuffer and reset the viewport size
+        glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
         // Render each model
         for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
             const GPUMesh& mesh         = scene.meshAt(modelNum);
@@ -171,7 +205,6 @@ int main(int argc, char* argv[]) {
             } else { glUniform1i(4, GL_FALSE); }
             const glm::vec3 cameraPos = mainCamera.cameraPos();
             glUniform3fv(5, 1, glm::value_ptr(cameraPos));
-
             mesh.draw();
         }
 

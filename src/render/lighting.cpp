@@ -87,4 +87,9 @@ void LightManager::bind(const glm::mat4& modelMatrix) {
     std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData(modelMatrix);
     glNamedBufferData(ssboAreaLights, sizeof(AreaLightShader) * areaLightsShaderData.size(), areaLightsShaderData.data(), GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboAreaLights); // Bind to binding=1
+
+    // Area lights shadow maps sampler
+    glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
+    glUniform1i(7, utils::SHADOW_START_IDX);
 }

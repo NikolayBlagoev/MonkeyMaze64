@@ -100,10 +100,11 @@ void Menu::drawGeneralLightControls() {
     ImGui::Checkbox("Draw all lights", &m_renderConfig.drawLights);
 }
 
+// (hashes prevent ID conflicts https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-windows-with-the-same-label)
 void Menu::drawPointLightControls() {
     // Add / remove / draw controls
-    if (ImGui::Button("Add")) { m_lightManager.addPointLight({ glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 0.0f) }); }
-    if (ImGui::Button("Remove selected")) {
+    if (ImGui::Button("Add##point")) { m_lightManager.addPointLight({ glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 0.0f) }); }
+    if (ImGui::Button("Remove selected##point")) {
         if (selectedPointLight < m_lightManager.numPointLights()) {
             m_lightManager.removePointLight(selectedPointLight);
             selectedPointLight = 0U;
@@ -120,7 +121,7 @@ void Menu::drawPointLightControls() {
         [](const auto& str) { return str.c_str(); });
     ImGui::Combo("Selected point light", (int*) (&selectedPointLight), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
 
-    // Selected point light controls (hashes prevent ID conflicts https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-windows-with-the-same-label)
+    // Selected point light controls
     if (m_lightManager.numPointLights() > 0U) {
         PointLight& selectedLight = m_lightManager.pointLightAt(selectedPointLight);
         ImGui::ColorEdit3("Colour##point", glm::value_ptr(selectedLight.color));
@@ -128,10 +129,11 @@ void Menu::drawPointLightControls() {
     }
 }
 
+// (hashes prevent ID conflicts https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-windows-with-the-same-label)
 void Menu::drawAreaLightControls() {
     // Add / remove / draw controls
-    if (ImGui::Button("Add")) { m_lightManager.addAreaLight(glm::vec3(0.0f), glm::vec3(1.0f)); }
-    if (ImGui::Button("Remove selected")) {
+    if (ImGui::Button("Add##area")) { m_lightManager.addAreaLight(glm::vec3(0.0f), glm::vec3(1.0f)); }
+    if (ImGui::Button("Remove selected##area")) {
         if (selectedAreaLight < m_lightManager.numAreaLights()) {
             m_lightManager.removeAreaLight(selectedAreaLight);
             selectedAreaLight = 0U;
@@ -186,7 +188,6 @@ void Menu::drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& 
     glDrawArrays(GL_POINTS, 0, 1);
 }
 
-// TODO: Expand to further light types when added
 void Menu::drawLights(const glm::mat4& cameraMVP) {
     pointDebugShader.bind();
 
