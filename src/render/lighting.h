@@ -5,6 +5,7 @@
 DISABLE_WARNINGS_PUSH()
 #include <glad/glad.h>
 #include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 DISABLE_WARNINGS_POP()
 
@@ -35,6 +36,7 @@ struct AreaLight {
     // Lighting properties
     glm::vec3 color;
 
+    glm::vec3 forwardDirection() const;
     glm::mat4 viewMatrix() const;
 };
 

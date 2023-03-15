@@ -23,19 +23,24 @@ private:
     void drawMeshTab();
     void drawGeneralLightControls();
     void drawPointLightControls();
+    void drawAreaLightControls();
     void drawLightTab();
 
     // 3D debug view
+    void drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& color);
+    void drawPoint(float radius, const glm::vec4& screenPos, const glm::vec3& color) { drawPoint(radius, screenPos, glm::vec4(color, 1.0f)); }
     void drawLights(const glm::mat4& cameraMVP);
 
     Scene& m_scene;
     RenderConfig& m_renderConfig;
     LightManager& m_lightManager;
 
-    Shader debugShader;
+    Shader pointDebugShader;
+    Shader lineDebugShader;
 
     size_t selectedMesh { 0U };
     size_t selectedPointLight { 0U };
+    size_t selectedAreaLight { 0U };
 };
 
 #endif

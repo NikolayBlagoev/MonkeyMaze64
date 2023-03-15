@@ -20,6 +20,7 @@ struct RenderConfig {
     // Lighting debug
     bool drawLights { false };
     bool drawSelectedPointLight { false };
+    bool drawSelectedAreaLight { false };
 
     // Area light shadow maps
     float shadowFovY        = 60.0f; // Degrees

@@ -7,14 +7,15 @@ DISABLE_WARNINGS_POP()
 
 #include <utils/constants.h>
 
-
-glm::mat4 AreaLight::viewMatrix() const {
-    // Construct forward direction
+glm::vec3 AreaLight::forwardDirection() const {
     const glm::mat4 xRotation   = glm::rotate(glm::radians(rotX), s_xAxis);
     const glm::mat4 yRotation   = glm::rotate(glm::radians(rotY), s_yAxis);
-    const glm::vec3 forward     = glm::vec3(xRotation * yRotation * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    return glm::vec3(xRotation * yRotation * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+}
 
+glm::mat4 AreaLight::viewMatrix() const {
     // Construct upward direction
+    const glm::vec3 forward = forwardDirection();
     const glm::vec3 horAxis = glm::cross(s_yAxis, forward);
     const glm::vec3 up      = glm::normalize(glm::cross(forward, horAxis));
 

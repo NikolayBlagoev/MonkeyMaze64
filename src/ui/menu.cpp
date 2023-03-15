@@ -18,7 +18,7 @@ Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager)
     ShaderBuilder debugShaderBuilder;
     debugShaderBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "debug" / "light_debug.vert");
     debugShaderBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH  / "debug" / "light_debug.frag");
-    debugShader = debugShaderBuilder.build();
+    pointDebugShader = debugShaderBuilder.build();
 }
 
 void Menu::draw(const glm::mat4& cameraMVP) {
@@ -109,7 +109,7 @@ void Menu::drawPointLightControls() {
             selectedPointLight = 0U;
         }
     }
-    ImGui::Checkbox("Highlight selected", &m_renderConfig.drawSelectedPointLight);
+    ImGui::Checkbox("Highlight selected##point", &m_renderConfig.drawSelectedPointLight);
     ImGui::NewLine();
 
     // Selection controls
@@ -120,11 +120,41 @@ void Menu::drawPointLightControls() {
         [](const auto& str) { return str.c_str(); });
     ImGui::Combo("Selected point light", (int*) (&selectedPointLight), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
 
-    // Selected point light controls
+    // Selected point light controls (hashes prevent ID conflicts https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-windows-with-the-same-label)
     if (m_lightManager.numPointLights() > 0U) {
         PointLight& selectedLight = m_lightManager.pointLightAt(selectedPointLight);
-        ImGui::ColorEdit3("Colour", glm::value_ptr(selectedLight.color));
-        ImGui::DragFloat3("Position", glm::value_ptr(selectedLight.position), 0.05f);
+        ImGui::ColorEdit3("Colour##point", glm::value_ptr(selectedLight.color));
+        ImGui::DragFloat3("Position##point", glm::value_ptr(selectedLight.position), 0.05f);
+    }
+}
+
+void Menu::drawAreaLightControls() {
+    // Add / remove / draw controls
+    if (ImGui::Button("Add")) { m_lightManager.addAreaLight(glm::vec3(0.0f), glm::vec3(1.0f)); }
+    if (ImGui::Button("Remove selected")) {
+        if (selectedAreaLight < m_lightManager.numAreaLights()) {
+            m_lightManager.removeAreaLight(selectedAreaLight);
+            selectedAreaLight = 0U;
+        }
+    }
+    ImGui::Checkbox("Highlight selected##area", &m_renderConfig.drawSelectedAreaLight);
+    ImGui::NewLine();
+
+    // Selection controls
+    std::vector<std::string> options;
+    for (size_t areaLightIdx = 0U; areaLightIdx < m_lightManager.numAreaLights(); areaLightIdx++) { options.push_back("Area light " + std::to_string(areaLightIdx + 1)); }
+    std::vector<const char*> optionsPointers;
+    std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
+        [](const auto& str) { return str.c_str(); });
+    ImGui::Combo("Selected area light", (int*) (&selectedAreaLight), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+
+    // Selected area light controls (hashes prevent ID conflicts https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-windows-with-the-same-label)
+    if (m_lightManager.numAreaLights() > 0U) {
+        AreaLight& selectedLight = m_lightManager.areaLightAt(selectedAreaLight);
+        ImGui::ColorEdit3("Colour##area", glm::value_ptr(selectedLight.color));
+        ImGui::DragFloat3("Position##area", glm::value_ptr(selectedLight.position), 0.05f);
+        ImGui::SliderFloat("X Rotation", &selectedLight.rotX, -360.0f, 360.0f);
+        ImGui::SliderFloat("Y Rotation", &selectedLight.rotY, -360.0f, 360.0f);
     }
 }
 
@@ -136,23 +166,29 @@ void Menu::drawLightTab() {
         ImGui::NewLine();
         ImGui::Separator();
 
-
         ImGui::Text("Point lights");
         drawPointLightControls();
 
         ImGui::NewLine();
         ImGui::Separator();
 
-        ImGui::Text("Planar lights");
-        // TODO: Add planar light controls
+        ImGui::Text("Area lights");
+        drawAreaLightControls();
 
         ImGui::EndTabItem();
     }
 }
 
+void Menu::drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& color) {
+    glPointSize(radius);
+    glUniform4fv(0, 1, glm::value_ptr(screenPos));
+    glUniform4fv(1, 1, glm::value_ptr(color));
+    glDrawArrays(GL_POINTS, 0, 1);
+}
+
 // TODO: Expand to further light types when added
 void Menu::drawLights(const glm::mat4& cameraMVP) {
-    debugShader.bind();
+    pointDebugShader.bind();
 
     // Draw all lights
     if (m_renderConfig.drawLights) {
@@ -160,11 +196,16 @@ void Menu::drawLights(const glm::mat4& cameraMVP) {
         for (size_t lightIdx = 0U; lightIdx < m_lightManager.numPointLights(); lightIdx++) {
             const PointLight& light     = m_lightManager.pointLightAt(lightIdx);
             const glm::vec4 screenPos   = cameraMVP * glm::vec4(light.position.x, light.position.y, light.position.z, 1.0f);
+            drawPoint(10.0f, screenPos, light.color);
+        }
 
-            glPointSize(10.0f);
-            glUniform4fv(0, 1, glm::value_ptr(screenPos));
-            glUniform3fv(1, 1, glm::value_ptr(light.color));
-            glDrawArrays(GL_POINTS, 0, 1);
+        // Area lights
+        for (size_t lightIdx = 0U; lightIdx < m_lightManager.numAreaLights(); lightIdx++) {
+            const AreaLight& light          = m_lightManager.areaLightAt(lightIdx);
+            const glm::vec4 screenPosStart  = cameraMVP * glm::vec4(light.position, 1.0f);
+            const glm::vec4 screenPosEnd    = cameraMVP * glm::vec4(light.position + light.forwardDirection(), 1.0f);
+            drawPoint(25.0f, screenPosStart, light.color);
+            drawPoint(15.0f, screenPosEnd, light.color);
         }
     }
 
@@ -172,11 +213,13 @@ void Menu::drawLights(const glm::mat4& cameraMVP) {
     if (m_renderConfig.drawSelectedPointLight && m_lightManager.numPointLights() > 0U) {
         const PointLight& light     = m_lightManager.pointLightAt(selectedPointLight);
         const glm::vec4 screenPos   = cameraMVP * glm::vec4(light.position.x, light.position.y, light.position.z, 1.0f);
-        const glm::vec3 color(1.0f, 1.0f, 1.0f);
+        drawPoint(40.0f, screenPos, glm::vec3(1.0f, 1.0f, 1.0f));
+    }
 
-        glPointSize(40.0f);
-        glUniform4fv(0, 1, glm::value_ptr(screenPos));
-        glUniform3fv(1, 1, glm::value_ptr(color));
-        glDrawArrays(GL_POINTS, 0, 1);
+    // Draw selected area light if it exists
+    if (m_renderConfig.drawSelectedAreaLight && m_lightManager.numAreaLights() > 0U) {
+        const AreaLight& light      = m_lightManager.areaLightAt(selectedAreaLight);
+        const glm::vec4 screenPos   = cameraMVP * glm::vec4(light.position.x, light.position.y, light.position.z, 1.0f);
+        drawPoint(40.0f, screenPos, glm::vec3(1.0f, 1.0f, 1.0f));
     }
 }
