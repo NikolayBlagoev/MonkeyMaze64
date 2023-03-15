@@ -6,6 +6,7 @@ DISABLE_WARNINGS_PUSH()
 #include <imgui/imgui.h>
 #include <nativefiledialog/nfd.h>
 DISABLE_WARNINGS_POP()
+#include <utils/constants.h>
 
 #include <filesystem>
 #include <iostream>
@@ -13,9 +14,19 @@ DISABLE_WARNINGS_POP()
 Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager) : 
     m_scene(scene),
     m_renderConfig(renderConfig),
-    m_lightManager(lightManager) {}
+    m_lightManager(lightManager) {
+    ShaderBuilder debugShaderBuilder;
+    debugShaderBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "debug" / "light_debug.vert");
+    debugShaderBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH  / "debug" / "light_debug.frag");
+    debugShader = debugShaderBuilder.build();
+}
 
-void Menu::draw() {
+void Menu::draw(const glm::mat4& cameraMVP) {
+    draw2D();
+    draw3D(cameraMVP);
+}
+
+void Menu::draw2D() {
     ImGui::Begin("Debug Controls");
     ImGui::BeginTabBar("Categories");
     
@@ -25,6 +36,10 @@ void Menu::draw() {
 
     ImGui::EndTabBar();
     ImGui::End();
+}
+
+void Menu::draw3D(const glm::mat4& cameraMVP) {
+    drawLights(cameraMVP);
 }
 
 void Menu::drawCameraTab() {
@@ -81,8 +96,12 @@ void Menu::drawMeshTab() {
     }
 }
 
+void Menu::drawGeneralLightControls() {
+    ImGui::Checkbox("Draw all lights", &m_renderConfig.drawLights);
+}
+
 void Menu::drawPointLightControls() {
-    // Add / remove controls
+    // Add / remove / draw controls
     if (ImGui::Button("Add")) { m_lightManager.addPointLight({ glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 0.0f) }); }
     if (ImGui::Button("Remove selected")) {
         if (selectedPointLight < m_lightManager.numPointLights()) {
@@ -90,6 +109,7 @@ void Menu::drawPointLightControls() {
             selectedPointLight = 0U;
         }
     }
+    ImGui::Checkbox("Highlight selected", &m_renderConfig.drawSelectedPointLight);
     ImGui::NewLine();
 
     // Selection controls
@@ -110,6 +130,13 @@ void Menu::drawPointLightControls() {
 
 void Menu::drawLightTab() {
     if (ImGui::BeginTabItem("Lights")) {
+        ImGui::Text("General");
+        drawGeneralLightControls();
+
+        ImGui::NewLine();
+        ImGui::Separator();
+
+
         ImGui::Text("Point lights");
         drawPointLightControls();
 
@@ -120,5 +147,36 @@ void Menu::drawLightTab() {
         // TODO: Add planar light controls
 
         ImGui::EndTabItem();
+    }
+}
+
+// TODO: Expand to further light types when added
+void Menu::drawLights(const glm::mat4& cameraMVP) {
+    debugShader.bind();
+
+    // Draw all lights
+    if (m_renderConfig.drawLights) {
+        // Point lights
+        for (size_t lightIdx = 0U; lightIdx < m_lightManager.numPointLights(); lightIdx++) {
+            const PointLight& light     = m_lightManager.pointLightAt(lightIdx);
+            const glm::vec4 screenPos   = cameraMVP * glm::vec4(light.position.x, light.position.y, light.position.z, 1.0f);
+
+            glPointSize(10.0f);
+            glUniform4fv(0, 1, glm::value_ptr(screenPos));
+            glUniform3fv(1, 1, glm::value_ptr(light.color));
+            glDrawArrays(GL_POINTS, 0, 1);
+        }
+    }
+
+    // Draw selected point light if it exists
+    if (m_renderConfig.drawSelectedPointLight && m_lightManager.numPointLights() > 0U) {
+        const PointLight& light     = m_lightManager.pointLightAt(selectedPointLight);
+        const glm::vec4 screenPos   = cameraMVP * glm::vec4(light.position.x, light.position.y, light.position.z, 1.0f);
+        const glm::vec3 color(1.0f, 1.0f, 1.0f);
+
+        glPointSize(40.0f);
+        glUniform4fv(0, 1, glm::value_ptr(screenPos));
+        glUniform3fv(1, 1, glm::value_ptr(color));
+        glDrawArrays(GL_POINTS, 0, 1);
     }
 }

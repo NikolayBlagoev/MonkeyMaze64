@@ -8,6 +8,10 @@ struct RenderConfig {
     float verticalFOV       { 60.0f };
     float zoomedVerticalFOV { 35.0f };
     bool constrainVertical  { false };
+
+    // Lighting debug
+    bool drawLights { false };
+    bool drawSelectedPointLight { false };
 };
 
 #endif

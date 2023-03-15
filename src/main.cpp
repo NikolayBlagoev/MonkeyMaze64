@@ -5,6 +5,7 @@
 #include "render/texture.h"
 #include "ui/camera.h"
 #include "ui/menu.h"
+#include "utils/constants.h"
 
 // Always include window first (because it includes glfw, which includes GL which needs to be included AFTER glew).
 // Can't wait for modules to fix this stuff...
@@ -26,13 +27,6 @@ DISABLE_WARNINGS_POP()
 #include <functional>
 #include <iostream>
 #include <vector>
-
-// Constants
-constexpr int32_t WIDTH         = 1920;
-constexpr int32_t HEIGHT        = 1080;
-constexpr float ASPECT_RATIO    = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
-const std::filesystem::path RESOURCES_DIR_PATH  = RESOURCES_DIR;
-const std::filesystem::path SHADERS_DIR_PATH    = SHADERS_DIR;
 
 // Game state
 // TODO: Have a separate struct for this if it becomes too much
@@ -99,7 +93,7 @@ void mouseButtonCallback(int button, int action, int mods) {
 int main(int argc, char* argv[]) {
     // Init core objects
     RenderConfig renderConfig;
-    Window m_window("Final Project", glm::ivec2(WIDTH, HEIGHT), OpenGLVersion::GL46);
+    Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     Scene scene;
     LightManager lightManager;
@@ -115,19 +109,19 @@ int main(int argc, char* argv[]) {
     Shader m_shadowShader;
     try {
         ShaderBuilder defaultBuilder;
-        defaultBuilder.addStage(GL_VERTEX_SHADER, SHADERS_DIR_PATH / "debug.vert");
-        defaultBuilder.addStage(GL_FRAGMENT_SHADER, SHADERS_DIR_PATH / "phong.frag");
+        defaultBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "stock.vert");
+        defaultBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "phong.frag");
         m_defaultShader = defaultBuilder.build();
 
         ShaderBuilder shadowBuilder;
-        shadowBuilder.addStage(GL_VERTEX_SHADER, SHADERS_DIR_PATH / "shadow_debug.vert");
+        shadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadow_stock.vert");
         m_shadowShader = shadowBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
     // Add models and test texture
-    scene.addMesh(RESOURCES_DIR_PATH / "models" / "dragon.obj");
-    scene.addMesh(RESOURCES_DIR_PATH / "models" / "dragon.obj");
-    Texture m_texture(RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+    Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
     // Add test lights
     lightManager.addPointLight({ glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) });
@@ -139,20 +133,20 @@ int main(int argc, char* argv[]) {
         m_window.updateInput();
 
         // Clear the screen
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // ...
         glEnable(GL_DEPTH_TEST);
 
+        // View-projection matrix setup
+        const float fovDegrees = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovDegrees, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
+
         // Controls and UI
         ImGuiIO io = ImGui::GetIO();
-        menu.draw();
+        menu.draw(m_viewProjectionMatrix);
         if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
-
-        // Projection matrix setup
-        const float fovDegrees = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_projectionMatrix = glm::perspective(fovDegrees, ASPECT_RATIO, 0.1f, 30.0f);
 
         // Render each model
         for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
@@ -161,7 +155,7 @@ int main(int argc, char* argv[]) {
 
             // Normals should be transformed differently than positions (ignoring translations + dealing with scaling)
             // https://paroj.github.io/gltut/Illumination/Tut09%20Normal%20Transformation.html
-            const glm::mat4 mvpMatrix           = m_projectionMatrix * mainCamera.viewMatrix() * modelMatrix;
+            const glm::mat4 mvpMatrix           = m_viewProjectionMatrix * modelMatrix;
             const glm::mat3 normalModelMatrix   = glm::inverseTranspose(glm::mat3(modelMatrix));
 
             // Bind shader(s), light(s), and uniform(s)
