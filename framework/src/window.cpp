@@ -44,9 +44,7 @@ Window::Window(std::string_view title, const glm::ivec2& windowSize, OpenGLVersi
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
     }
-#ifndef NDEBUG // Automatically defined by CMake when compiling in Release/MinSizeRel mode.
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-#endif
     
     // HighDPI awareness
     // https://decovar.dev/blog/2019/08/04/glfw-dear-imgui/#high-dpi

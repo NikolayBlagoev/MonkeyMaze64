@@ -31,6 +31,7 @@ LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(re
     // 2D array texture for area light shadow maps
     glGenTextures(1, &shadowTexArr);
     glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, utils::MAX_SHADOW_MAPS);
     glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); // Coordinates outside of [0, 1] range clamp to 0, so they always fail the depth test
     glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTextureParameterf(shadowTexArr, GL_TEXTURE_BORDER_COLOR, 0.0f);
@@ -49,11 +50,7 @@ LightManager::~LightManager() {
 }
 
 void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& color, float xAngle, float yAngle) {
-    AreaLight light { position, xAngle, yAngle, INVALID, color };
-
-    // Resize texture array to accomodate new shadow map
-    glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, areaLights.size() + 1U);
+    AreaLight light = { position, xAngle, yAngle, INVALID, color };
 
     // Create framebuffer to draw to
     glCreateFramebuffers(1, &light.framebuffer);
@@ -63,10 +60,6 @@ void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& colo
 }
 
 void LightManager::removeAreaLight(size_t idx) {
-    // Resize texture array to conserve memory
-    glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, areaLights.size() - 1U);
-
     // Destroy framebuffer corresponding to the shadow map
     const AreaLight& light = areaLights[idx];
     glDeleteFramebuffers(1, &light.framebuffer);

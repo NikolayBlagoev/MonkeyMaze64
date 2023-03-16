@@ -14,6 +14,7 @@ namespace utils {
     constexpr int32_t SHADOWTEX_HEIGHT  = 1024;
     constexpr float SHADOW_ASPECT_RATIO = static_cast<float>(SHADOWTEX_WIDTH) / static_cast<float>(SHADOWTEX_HEIGHT);
     constexpr int32_t SHADOW_START_IDX  = 64;
+    constexpr int32_t MAX_SHADOW_MAPS   = 64;
     
     const std::filesystem::path RESOURCES_DIR_PATH  = RESOURCES_DIR;
     const std::filesystem::path SHADERS_DIR_PATH    = SHADERS_DIR;
