@@ -4,9 +4,11 @@
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
 DISABLE_WARNINGS_POP()
 
 #include <utils/constants.h>
+#include <iostream>
 
 glm::vec3 AreaLight::forwardDirection() const { 
     float radiansRotX = glm::radians(rotX);
@@ -31,10 +33,10 @@ LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(re
     // 2D array texture for area light shadow maps
     glGenTextures(1, &shadowTexArr);
     glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, utils::MAX_SHADOW_MAPS);
-    glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); // Coordinates outside of [0, 1] range clamp to 0, so they always fail the depth test
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, utils::MAX_SHADOW_MAPS); // Hard limit on area lights because fuck you I can't be assed to figure out dynamic resizing
+    glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); // Coordinates outside of [0, 1] range clamp to -MAX_FLOAT, so they always fail the depth test
     glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTextureParameterf(shadowTexArr, GL_TEXTURE_BORDER_COLOR, 0.0f);
+    glTextureParameterfv(shadowTexArr, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(-std::numeric_limits<float>::max())));
     glTextureParameteri(shadowTexArr, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // Linear interpolation of texels to allow for PCF
     glTextureParameteri(shadowTexArr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTextureParameteri(shadowTexArr, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE); // Set texture comparison to return fraction of neighbouring samples passing the below test (https://www.khronos.org/opengl/wiki/Sampler_Object#Comparison_mode)
@@ -54,7 +56,7 @@ void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& colo
 
     // Create framebuffer to draw to
     glCreateFramebuffers(1, &light.framebuffer);
-    glNamedFramebufferTextureLayer(light.framebuffer, GL_DEPTH_ATTACHMENT, shadowTexArr, 0, areaLights.size());
+    glNamedFramebufferTextureLayer(light.framebuffer, GL_DEPTH_ATTACHMENT, shadowTexArr, 0, static_cast<GLint>(areaLights.size()));
 
     areaLights.push_back(light);
 }
@@ -69,7 +71,7 @@ void LightManager::removeAreaLight(size_t idx) {
 
 std::vector<AreaLightShader> LightManager::createAreaLightsShaderData(const glm::mat4& modelMatrix) {
     const glm::mat4 projection = m_renderConfig.shadowMapsProjectionMatrix();
-    std::vector<AreaLightShader> shaderData(areaLights.size());
+    std::vector<AreaLightShader> shaderData;
     for (const AreaLight& light : areaLights) {
         glm::mat4 mvp = projection * light.viewMatrix() * modelMatrix;
         shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color, 0.0f), mvp });

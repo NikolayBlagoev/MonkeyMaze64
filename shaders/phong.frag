@@ -59,7 +59,7 @@ vec3 phongSpecular(vec3 lightColor, vec3 lightPos, vec3 materialProps) {
 
 // @param sampleLightCoord: Homogeneous coordinates of fragment sample tranformed by MVP of shadow-casting light
 // @param shadowArrIdx: Index of the shadow map to be sampled in the shadow map texture array
-float sampleShadow(vec4 sampleLightCoord, int shadowArrIdx) {
+float sampleShadow(vec4 sampleLightCoord, uint shadowArrIdx) {
     // Divide by w because sampleLightCoord are homogeneous coordinates
     sampleLightCoord.xyz /= sampleLightCoord.w;
 
@@ -73,7 +73,7 @@ float sampleShadow(vec4 sampleLightCoord, int shadowArrIdx) {
     // Shadow map value from the corresponding shadow map position ()
     vec4 texcoord;
     texcoord.xyw    = sampleLightCoord.xyz;
-    texcoord.z      = shadowArrIdx - 2; // TODO: AAAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGGGGHHHHHHHHHH
+    texcoord.z      = shadowArrIdx;
     return texture(texShadowArr, texcoord);
 }
 
@@ -84,7 +84,7 @@ void main() {
     fragColor = vec4(0.0, 0.0, 0.0, 0.0);
 
     // Accumulate lighting from point lights
-    for (int lightIdx = 0; lightIdx < pointLightsData.length(); lightIdx++) {
+    for (uint lightIdx = 0U; lightIdx < pointLightsData.length(); lightIdx++) {
         PointLight light    = pointLightsData[lightIdx];
         vec3 lightColor     = light.color.rgb;
         vec3 lightPosition  = light.position.xyz;
@@ -93,15 +93,17 @@ void main() {
     }
 
     // Accumulate lighting from area lights
-    for (int lightIdx = 0; lightIdx < areaLightsData.length(); lightIdx++) {
+    for (uint lightIdx = 0U; lightIdx < areaLightsData.length(); lightIdx++) {
         AreaLight light     = areaLightsData[lightIdx];
         vec3 lightColor     = light.color.rgb;
         vec3 lightPosition  = light.position.xyz;
 
         vec4 fragLightCoord     = light.mvp * vec4(fragPosition, 1.0);
         float successFraction   = sampleShadow(fragLightCoord, lightIdx);
+        if (successFraction != 0.0) {
             vec3 diffuse    = lambertianDiffuse(lightColor, lightPosition, materialProps);
             vec3 specular   = phongSpecular(lightColor, lightPosition, materialProps);
             fragColor.rgb   += successFraction * (diffuse + specular);
+        }
     }
 }
