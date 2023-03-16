@@ -84,18 +84,18 @@ int main(int argc, char* argv[]) {
     Shader m_areaShadowShader;
     try {
         ShaderBuilder defaultBuilder;
-        defaultBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "stock.vert");
-        defaultBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "phong.frag");
+        defaultBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "stock.vert");
+        defaultBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "phong.frag");
         m_defaultShader = defaultBuilder.build();
 
         ShaderBuilder pointShadowBuilder;
-        pointShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadow_point.vert");
-        pointShadowBuilder.addStage(GL_GEOMETRY_SHADER, utils::SHADERS_DIR_PATH / "shadow_point.geom");
-        pointShadowBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "shadow_point.frag");
+        pointShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.vert");
+        pointShadowBuilder.addStage(GL_GEOMETRY_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.geom");
+        pointShadowBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.frag");
         m_pointShadowShader = pointShadowBuilder.build();
 
         ShaderBuilder areaShadowBuilder;
-        areaShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadow_stock.vert");
+        areaShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_stock.vert");
         m_areaShadowShader = areaShadowBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
@@ -131,34 +131,35 @@ int main(int argc, char* argv[]) {
         if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
 
         // Render point lights shadow maps
-        // const glm::mat4 pointLightShadowMapsProjection = renderConfig.pointShadowMapsProjectionMatrix();
-        // glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
-        // for (size_t pointLightNum = 0U; pointLightNum < lightManager.numPointLights(); pointLightNum++) {
-        //     const PointLight& light      = lightManager.pointLightAt(pointLightNum);
-        //     const glm::mat4 lightView   = light.viewMatrix();
+        const glm::mat4 pointLightShadowMapsProjection = renderConfig.pointShadowMapsProjectionMatrix();
+        glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
+        for (size_t pointLightNum = 0U; pointLightNum < lightManager.numPointLights(); pointLightNum++) {
+            const PointLight& light      = lightManager.pointLightAt(pointLightNum);
 
-        //     // Bind shadow shader and shadowmap framebuffer
-        //     m_shadowShader.bind();
-        //     glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffer);
+            // Bind shadow shader and shadowmap framebuffer
+            m_pointShadowShader.bind();
+            glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffer);
 
-        //     // Clear the shadow map and set needed options
-        //     glClearDepth(1.0f);
-        //     glClear(GL_DEPTH_BUFFER_BIT);
-        //     glEnable(GL_DEPTH_TEST);
+            // Clear the shadow map and set needed options
+            glClearDepth(1.0f);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
 
-        //     // Render each model in the scene
-        //     for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
-        //         const GPUMesh& mesh         = scene.meshAt(modelNum);
-        //         const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
+            // Render each model in the scene
+            for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
+                const GPUMesh& mesh         = scene.meshAt(modelNum);
+                const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
 
-        //         // Bind light camera mvp matrix
-        //         const glm::mat4 lightMvp = areaLightShadowMapsProjection * lightView *  modelMatrix;
-        //         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvp));
+                // Bind uniforms
+                const std::array<glm::mat4, 6U> lightMvps = light.genMvpMatrices(modelMatrix, pointLightShadowMapsProjection);
+                glUniform4fv(0, 1, glm::value_ptr(light.position));
+                glUniform1f(1, renderConfig.shadowFarPlane);
+                glUniformMatrix4fv(2, 6, GL_FALSE, glm::value_ptr(lightMvps.front()));
 
-        //         // Bind model's VAO and draw its elements
-        //         mesh.draw();
-        //     }
-        // }
+                // Bind model's VAO and draw its elements
+                mesh.draw();
+            }
+        }
 
         // Render area lights shadow maps
         const glm::mat4 areaLightShadowMapsProjection = renderConfig.areaShadowMapsProjectionMatrix();
