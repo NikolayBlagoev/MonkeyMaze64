@@ -1,9 +1,9 @@
 #version 460
 
 struct PointLight {
-    mat4 mvps[6];
     vec4 position;
     vec4 color;
+    mat4 mvps[6];
 };
 
 struct AreaLight {
