@@ -32,9 +32,6 @@ DISABLE_WARNINGS_POP()
 // TODO: Have a separate struct for this if it becomes too much
 bool cameraZoomed = false;
 
-// In here you can handle key presses
-// key - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__keys.html
-// mods - Any modifier keys pressed, like shift or control
 void onKeyPressed(int key, int mods) {
     switch (key) {
         case GLFW_KEY_LEFT_CONTROL:
@@ -43,9 +40,6 @@ void onKeyPressed(int key, int mods) {
     }
 }
 
-// In here you can handle key releases
-// key - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__keys.html
-// mods - Any modifier keys pressed, like shift or control
 void onKeyReleased(int key, int mods) {
     switch (key) {
         case GLFW_KEY_LEFT_CONTROL:
@@ -54,24 +48,11 @@ void onKeyReleased(int key, int mods) {
     }
 }
 
-// If the mouse is moved this function will be called with the x, y screen-coordinates of the mouse
-void onMouseMove(const glm::dvec2& cursorPos)
-{
-}
+void onMouseMove(const glm::dvec2& cursorPos) {}
 
-// If one of the mouse buttons is pressed this function will be called
-// button - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__buttons.html
-// mods - Any modifier buttons pressed
-void onMouseClicked(int button, int mods)
-{
-}
+void onMouseClicked(int button, int mods) {}
 
-// If one of the mouse buttons is released this function will be called
-// button - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__buttons.html
-// mods - Any modifier buttons pressed
-void onMouseReleased(int button, int mods)
-{
-}
+void onMouseReleased(int button, int mods) {}
 
 void keyCallback(int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) { onKeyPressed(key, mods); }
@@ -99,16 +80,23 @@ int main(int argc, char* argv[]) {
 
     // Build shaders
     Shader m_defaultShader;
-    Shader m_shadowShader;
+    Shader m_pointShadowShader;
+    Shader m_areaShadowShader;
     try {
         ShaderBuilder defaultBuilder;
         defaultBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "stock.vert");
         defaultBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "phong.frag");
         m_defaultShader = defaultBuilder.build();
 
-        ShaderBuilder shadowBuilder;
-        shadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadow_stock.vert");
-        m_shadowShader = shadowBuilder.build();
+        ShaderBuilder pointShadowBuilder;
+        pointShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadow_point.vert");
+        pointShadowBuilder.addStage(GL_GEOMETRY_SHADER, utils::SHADERS_DIR_PATH / "shadow_point.geom");
+        pointShadowBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "shadow_point.frag");
+        m_pointShadowShader = pointShadowBuilder.build();
+
+        ShaderBuilder areaShadowBuilder;
+        areaShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadow_stock.vert");
+        m_areaShadowShader = areaShadowBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
     // Add models and test texture
@@ -117,8 +105,8 @@ int main(int argc, char* argv[]) {
     Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
     // Add test lights
-    lightManager.addPointLight({ glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) });
-    lightManager.addPointLight({ glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) });
+    lightManager.addPointLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
     lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f));
 
@@ -133,7 +121,7 @@ int main(int argc, char* argv[]) {
         // ...
         glEnable(GL_DEPTH_TEST);
 
-        // View-projection matrix setup
+        // View-projection matrices setup
         const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
         const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
 
@@ -142,15 +130,45 @@ int main(int argc, char* argv[]) {
         menu.draw(m_viewProjectionMatrix);
         if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
 
-        // Render shadow maps
-        const glm::mat4 shadowMapsProjection = renderConfig.shadowMapsProjectionMatrix();
+        // Render point lights shadow maps
+        // const glm::mat4 pointLightShadowMapsProjection = renderConfig.pointShadowMapsProjectionMatrix();
+        // glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
+        // for (size_t pointLightNum = 0U; pointLightNum < lightManager.numPointLights(); pointLightNum++) {
+        //     const PointLight& light      = lightManager.pointLightAt(pointLightNum);
+        //     const glm::mat4 lightView   = light.viewMatrix();
+
+        //     // Bind shadow shader and shadowmap framebuffer
+        //     m_shadowShader.bind();
+        //     glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffer);
+
+        //     // Clear the shadow map and set needed options
+        //     glClearDepth(1.0f);
+        //     glClear(GL_DEPTH_BUFFER_BIT);
+        //     glEnable(GL_DEPTH_TEST);
+
+        //     // Render each model in the scene
+        //     for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
+        //         const GPUMesh& mesh         = scene.meshAt(modelNum);
+        //         const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
+
+        //         // Bind light camera mvp matrix
+        //         const glm::mat4 lightMvp = areaLightShadowMapsProjection * lightView *  modelMatrix;
+        //         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvp));
+
+        //         // Bind model's VAO and draw its elements
+        //         mesh.draw();
+        //     }
+        // }
+
+        // Render area lights shadow maps
+        const glm::mat4 areaLightShadowMapsProjection = renderConfig.areaShadowMapsProjectionMatrix();
         glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
         for (size_t areaLightNum = 0U; areaLightNum < lightManager.numAreaLights(); areaLightNum++) {
             const AreaLight& light      = lightManager.areaLightAt(areaLightNum);
             const glm::mat4 lightView   = light.viewMatrix();
 
             // Bind shadow shader and shadowmap framebuffer
-            m_shadowShader.bind();
+            m_areaShadowShader.bind();
             glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffer);
 
             // Clear the shadow map and set needed options
@@ -164,7 +182,7 @@ int main(int argc, char* argv[]) {
                 const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
 
                 // Bind light camera mvp matrix
-                const glm::mat4 lightMvp = shadowMapsProjection * lightView *  modelMatrix;
+                const glm::mat4 lightMvp = areaLightShadowMapsProjection * lightView *  modelMatrix;
                 glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvp));
 
                 // Bind model's VAO and draw its elements
@@ -206,5 +224,5 @@ int main(int argc, char* argv[]) {
         m_window.swapBuffers();
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

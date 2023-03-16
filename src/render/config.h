@@ -22,12 +22,14 @@ struct RenderConfig {
     bool drawSelectedPointLight { false };
     bool drawSelectedAreaLight { false };
 
-    // Area light shadow maps
-    float shadowFovY        = 60.0f; // Degrees
+    // Shadow maps
+    float areaShadowFovY    = 60.0f; // Degrees
     float shadowNearPlane   = 0.5f;
     float shadowFarPlane    = 30.0f;
-    glm::mat4 shadowMapsProjectionMatrix() const { return glm::perspective(glm::radians(shadowFovY), utils::SHADOW_ASPECT_RATIO,
-                                                                           shadowNearPlane, shadowFarPlane); }
+    glm::mat4 areaShadowMapsProjectionMatrix() const { return glm::perspective(glm::radians(areaShadowFovY), utils::SHADOW_ASPECT_RATIO,
+                                                                               shadowNearPlane, shadowFarPlane); }
+    glm::mat4 pointShadowMapsProjectionMatrix() const { return glm::perspective(glm::radians(utils::CUBE_SHADOW_FOV), utils::SHADOW_ASPECT_RATIO,
+                                                                                shadowNearPlane, shadowFarPlane); }
 };
 
 #endif

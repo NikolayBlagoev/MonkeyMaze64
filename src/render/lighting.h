@@ -10,14 +10,29 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 
 #include <render/config.h>
+#include <array>
 #include <vector>
 
 // Vec3 is a universal no-no due to alignment issues; you have been warned (https://stackoverflow.com/a/38172697/14247568)
 
-// TODO: Expand to a shadowing point light w/ cubemap
 struct PointLight {
+    // Spatial data
+    glm::vec3 position;
+
+    // Lighting properties
+    glm::vec3 color;
+    
+    // OpenGL setup 
+    GLuint framebuffer;
+
+    std::array<glm::mat4, 6UL> viewMatrices() const;
+    std::array<glm::mat4, 6UL> genMvpMatrices(const glm::mat4& model, const glm::mat4& projection) const;
+};
+
+struct PointLightShader {
     glm::vec4 position;
     glm::vec4 color;
+    std::array<glm::mat4, 6UL> mvps;
 };
 
 // TODO: Expand with 1. Ability to use texture to define lighting 2. Spotlight functionality
@@ -30,11 +45,11 @@ struct AreaLight {
     float rotX;
     float rotY;
 
-    // OpenGL setup 
-    GLuint framebuffer;
-
     // Lighting properties
     glm::vec3 color;
+
+    // OpenGL setup 
+    GLuint framebuffer;
 
     glm::vec3 forwardDirection() const;
     glm::mat4 viewMatrix() const;
@@ -53,10 +68,11 @@ public:
 
     void bind(const glm::mat4& modelMatrix);
 
-    void addPointLight(const PointLight& light) { pointLights.push_back(light); }
-    void removePointLight(size_t idx)  { pointLights.erase(pointLights.begin() + idx); }
+    void addPointLight(const glm::vec3& position, const glm::vec3& color);
+    void removePointLight(size_t idx);
     size_t numPointLights() { return pointLights.size(); }
     PointLight& pointLightAt(size_t idx) { return pointLights[idx]; }
+    std::vector<PointLightShader> createPointLightsShaderData(const glm::mat4& modelMatrix);
 
     void addAreaLight(const glm::vec3& position, const glm::vec3& color, float xAngle = 0.0f, float yAngle = 0.0f);
     void removeAreaLight(size_t idx);
@@ -70,10 +86,11 @@ private:
     const RenderConfig& m_renderConfig;
 
     GLuint ssboPointLights { INVALID };
+    GLuint pointShadowTexArr { INVALID };
     std::vector<PointLight> pointLights;
 
     GLuint ssboAreaLights { INVALID };
-    GLuint shadowTexArr { INVALID };
+    GLuint areaShadowTexArr { INVALID };
     std::vector<AreaLight> areaLights;
 };
 

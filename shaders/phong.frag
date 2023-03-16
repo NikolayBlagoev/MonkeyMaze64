@@ -1,6 +1,7 @@
 #version 460
 
 struct PointLight {
+    mat4 mvps[6];
     vec4 position;
     vec4 color;
 };
@@ -26,7 +27,8 @@ layout(location = 5) uniform vec3 cameraPos;
 layout(location = 6) uniform float objectShininess = 10.0;
 
 // Shadow map array(s)
-layout(location = 7) uniform sampler2DArrayShadow texShadowArr;
+layout(location = 7) uniform samplerCubeArrayShadow pointShadowTexArr;
+layout(location = 8) uniform sampler2DArrayShadow areaShadowTexArr;
 
 // Input from vertex shader
 in vec3 fragPosition;
@@ -74,7 +76,7 @@ float sampleShadow(vec4 sampleLightCoord, uint shadowArrIdx) {
     vec4 texcoord;
     texcoord.xyw    = sampleLightCoord.xyz;
     texcoord.z      = shadowArrIdx;
-    return texture(texShadowArr, texcoord);
+    return texture(areaShadowTexArr, texcoord);
 }
 
 /*****************************************************************************************************/
