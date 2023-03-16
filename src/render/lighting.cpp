@@ -33,7 +33,6 @@ LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(re
     // 2D array texture for area light shadow maps
     glGenTextures(1, &shadowTexArr);
     glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, utils::MAX_SHADOW_MAPS); // Hard limit on area lights because fuck you I can't be assed to figure out dynamic resizing
     glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); // Coordinates outside of [0, 1] range clamp to -MAX_FLOAT, so they always fail the depth test
     glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTextureParameterfv(shadowTexArr, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(-std::numeric_limits<float>::max())));
@@ -54,6 +53,10 @@ LightManager::~LightManager() {
 void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& color, float xAngle, float yAngle) {
     AreaLight light = { position, xAngle, yAngle, INVALID, color };
 
+    // Resize texture array to fit new shadowmap
+    glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, areaLights.size() + 1UL, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
     // Create framebuffer to draw to
     glCreateFramebuffers(1, &light.framebuffer);
     glNamedFramebufferTextureLayer(light.framebuffer, GL_DEPTH_ATTACHMENT, shadowTexArr, 0, static_cast<GLint>(areaLights.size()));
@@ -62,6 +65,10 @@ void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& colo
 }
 
 void LightManager::removeAreaLight(size_t idx) {
+    // Resize texture array to save space
+    glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, areaLights.size() - 1UL, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
     // Destroy framebuffer corresponding to the shadow map
     const AreaLight& light = areaLights[idx];
     glDeleteFramebuffers(1, &light.framebuffer);
