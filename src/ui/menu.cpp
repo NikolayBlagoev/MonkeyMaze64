@@ -156,8 +156,8 @@ void Menu::drawAreaLightControls() {
         AreaLight& selectedLight = m_lightManager.areaLightAt(selectedAreaLight);
         ImGui::ColorEdit3("Colour##area", glm::value_ptr(selectedLight.color));
         ImGui::DragFloat3("Position##area", glm::value_ptr(selectedLight.position), 0.05f);
-        ImGui::SliderFloat("X Rotation", &selectedLight.rotX, -360.0f, 360.0f);
-        ImGui::SliderFloat("Y Rotation", &selectedLight.rotY, -360.0f, 360.0f);
+        ImGui::SliderFloat("X Rotation", &selectedLight.rotX, 0.0f, 360.0f);
+        ImGui::SliderFloat("Y Rotation", &selectedLight.rotY, 0.0f, 360.0f);
     }
 }
 

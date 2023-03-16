@@ -6,7 +6,7 @@
 namespace utils {
     // Viewport parameters
     constexpr int32_t WIDTH         = 1920;
-    constexpr int32_t HEIGHT        = 1080;
+    constexpr int32_t HEIGHT        = 1040;
     constexpr float ASPECT_RATIO    = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
 
     // Shadow maps parameters

@@ -3,14 +3,16 @@
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtx/transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 DISABLE_WARNINGS_POP()
 
 #include <utils/constants.h>
 
-glm::vec3 AreaLight::forwardDirection() const {
-    const glm::mat4 xRotation   = glm::rotate(glm::radians(rotX), s_xAxis);
-    const glm::mat4 yRotation   = glm::rotate(glm::radians(rotY), s_yAxis);
-    return glm::vec3(xRotation * yRotation * glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+glm::vec3 AreaLight::forwardDirection() const { 
+    float radiansRotX = glm::radians(rotX);
+    float radiansRotY = glm::radians(rotY);
+    glm::vec3 forwardUnscaled = glm::angleAxis(radiansRotX, s_xAxis) * glm::angleAxis(radiansRotY, s_yAxis) * s_xAxis;
+    return glm::normalize(forwardUnscaled);
 }
 
 glm::mat4 AreaLight::viewMatrix() const {
@@ -29,8 +31,9 @@ LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(re
     // 2D array texture for area light shadow maps
     glGenTextures(1, &shadowTexArr);
     glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexArr);
-    glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // Clamp coordinates outside of texture to [0, 1] range
-    glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); // Coordinates outside of [0, 1] range clamp to 0, so they always fail the depth test
+    glTextureParameteri(shadowTexArr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTextureParameterf(shadowTexArr, GL_TEXTURE_BORDER_COLOR, 0.0f);
     glTextureParameteri(shadowTexArr, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // Linear interpolation of texels to allow for PCF
     glTextureParameteri(shadowTexArr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTextureParameteri(shadowTexArr, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE); // Set texture comparison to return fraction of neighbouring samples passing the below test (https://www.khronos.org/opengl/wiki/Sampler_Object#Comparison_mode)
