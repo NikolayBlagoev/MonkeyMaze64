@@ -36,8 +36,6 @@ bool cameraZoomed = false;
 // key - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__keys.html
 // mods - Any modifier keys pressed, like shift or control
 void onKeyPressed(int key, int mods) {
-    std::cout << "Key pressed: " << key << std::endl;
-
     switch (key) {
         case GLFW_KEY_LEFT_CONTROL:
             cameraZoomed = true;
@@ -49,8 +47,6 @@ void onKeyPressed(int key, int mods) {
 // key - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__keys.html
 // mods - Any modifier keys pressed, like shift or control
 void onKeyReleased(int key, int mods) {
-    std::cout << "Key released: " << key << std::endl;
-
     switch (key) {
         case GLFW_KEY_LEFT_CONTROL:
             cameraZoomed = false;
@@ -61,7 +57,6 @@ void onKeyReleased(int key, int mods) {
 // If the mouse is moved this function will be called with the x, y screen-coordinates of the mouse
 void onMouseMove(const glm::dvec2& cursorPos)
 {
-    std::cout << "Mouse at position: " << cursorPos.x << " " << cursorPos.y << std::endl;
 }
 
 // If one of the mouse buttons is pressed this function will be called
@@ -69,7 +64,6 @@ void onMouseMove(const glm::dvec2& cursorPos)
 // mods - Any modifier buttons pressed
 void onMouseClicked(int button, int mods)
 {
-    std::cout << "Pressed mouse button: " << button << std::endl;
 }
 
 // If one of the mouse buttons is released this function will be called
@@ -77,7 +71,6 @@ void onMouseClicked(int button, int mods)
 // mods - Any modifier buttons pressed
 void onMouseReleased(int button, int mods)
 {
-    std::cout << "Released mouse button: " << button << std::endl;
 }
 
 void keyCallback(int key, int scancode, int action, int mods) {
@@ -96,7 +89,7 @@ int main(int argc, char* argv[]) {
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     Scene scene;
-    LightManager lightManager;
+    LightManager lightManager(renderConfig);
     Menu menu(scene, renderConfig, lightManager);
 
     // Register UI callbacks
@@ -119,14 +112,15 @@ int main(int argc, char* argv[]) {
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
     // Add models and test texture
-    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
     Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
     // Add test lights
     lightManager.addPointLight({ glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) });
     lightManager.addPointLight({ glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) });
-    lightManager.addPointLight({ glm::vec4(0.0f, 0.0f, 1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) });
+    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
+    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f));
 
     // Main loop
     while (!m_window.shouldClose()) {
@@ -140,13 +134,47 @@ int main(int argc, char* argv[]) {
         glEnable(GL_DEPTH_TEST);
 
         // View-projection matrix setup
-        const float fovDegrees = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovDegrees, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
+        const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
 
         // Controls and UI
         ImGuiIO io = ImGui::GetIO();
         menu.draw(m_viewProjectionMatrix);
         if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
+
+        // Render shadow maps
+        const glm::mat4 shadowMapsProjection = renderConfig.shadowMapsProjectionMatrix();
+        glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
+        for (size_t areaLightNum = 0U; areaLightNum < lightManager.numAreaLights(); areaLightNum++) {
+            const AreaLight& light      = lightManager.areaLightAt(areaLightNum);
+            const glm::mat4 lightView   = light.viewMatrix();
+
+            // Bind shadow shader and shadowmap framebuffer
+            m_shadowShader.bind();
+            glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffer);
+
+            // Clear the shadow map and set needed options
+            glClearDepth(1.0f);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+
+            // Render each model in the scene
+            for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
+                const GPUMesh& mesh         = scene.meshAt(modelNum);
+                const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
+
+                // Bind light camera mvp matrix
+                const glm::mat4 lightMvp = shadowMapsProjection * lightView *  modelMatrix;
+                glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvp));
+
+                // Bind model's VAO and draw its elements
+                mesh.draw();
+            }
+        }
+
+        // Unbind the last off-screen framebuffer and reset the viewport size
+        glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // Render each model
         for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
@@ -160,7 +188,7 @@ int main(int argc, char* argv[]) {
 
             // Bind shader(s), light(s), and uniform(s)
             m_defaultShader.bind();
-            lightManager.bind();
+            lightManager.bind(modelMatrix);
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvpMatrix));
             glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
             glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(normalModelMatrix));
@@ -171,7 +199,6 @@ int main(int argc, char* argv[]) {
             } else { glUniform1i(4, GL_FALSE); }
             const glm::vec3 cameraPos = mainCamera.cameraPos();
             glUniform3fv(5, 1, glm::value_ptr(cameraPos));
-
             mesh.draw();
         }
 
