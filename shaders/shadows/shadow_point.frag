@@ -1,17 +1,18 @@
 #version 460
 
-layout(location = 0) uniform vec3 lightPos;
-layout(location = 1) uniform float farPlane;
+layout(location = 2) uniform vec3 lightPos;
+layout(location = 3) uniform float nearPlane;
+layout(location = 4) uniform float farPlane;
 
-in vec4 fragPos;
+layout(location = 0) in vec3 fragPos;
 
 void main() {
-    // Get distance between fragment and light source
-    float lightDistance = length(fragPos.xyz - lightPos);
+    // Get distance between vertex and light source
+    float lightDistance = length(fragPos - lightPos);
     
-    // Map to [0:1] range by dividing by farPlane
-    lightDistance = lightDistance / farPlane;
+    // Divide by far plane to get value in range [0:1]
+    lightDistance /= farPlane;
     
-    // Write this as modified depth
+    // Write this as output (modified depth)
     gl_FragDepth = lightDistance;
 }

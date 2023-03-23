@@ -90,7 +90,6 @@ int main(int argc, char* argv[]) {
 
         ShaderBuilder pointShadowBuilder;
         pointShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.vert");
-        pointShadowBuilder.addStage(GL_GEOMETRY_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.geom");
         pointShadowBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.frag");
         m_pointShadowShader = pointShadowBuilder.build();
 
@@ -134,30 +133,32 @@ int main(int argc, char* argv[]) {
         const glm::mat4 pointLightShadowMapsProjection = renderConfig.pointShadowMapsProjectionMatrix();
         glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
         for (size_t pointLightNum = 0U; pointLightNum < lightManager.numPointLights(); pointLightNum++) {
-            const PointLight& light      = lightManager.pointLightAt(pointLightNum);
+            const PointLight& light = lightManager.pointLightAt(pointLightNum);
+            light.wipeFramebuffers();
 
-            // Bind shadow shader and shadowmap framebuffer
-            m_pointShadowShader.bind();
-            glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffer);
-
-            // Clear the shadow map and set needed options
-            glClearDepth(1.0f);
-            glClear(GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_DEPTH_TEST);
-
-            // Render each model in the scene
+            // Render each model
             for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
-                const GPUMesh& mesh         = scene.meshAt(modelNum);
-                const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
+                const GPUMesh& mesh                         = scene.meshAt(modelNum);
+                const glm::mat4 modelMatrix                 = scene.modelMatrix(modelNum);
+                const std::array<glm::mat4, 6U> lightMvps   = light.genMvpMatrices(modelMatrix, pointLightShadowMapsProjection);
 
-                // Bind uniforms
-                const std::array<glm::mat4, 6U> lightMvps = light.genMvpMatrices(modelMatrix, pointLightShadowMapsProjection);
-                glUniform4fv(0, 1, glm::value_ptr(light.position));
-                glUniform1f(1, renderConfig.shadowFarPlane);
-                glUniformMatrix4fv(2, 6, GL_FALSE, glm::value_ptr(lightMvps.front()));
+                // Render each cubemap face
+                for (size_t face = 0UL; face < 6UL; face++) {
+                    // Bind shadow shader and shadowmap framebuffer
+                    m_pointShadowShader.bind();
+                    glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffers[face]);
+                    glEnable(GL_DEPTH_TEST);
 
-                // Bind model's VAO and draw its elements
-                mesh.draw();
+                    // Bind uniforms
+                    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvps[face]));
+                    glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+                    glUniform3fv(2, 1, glm::value_ptr(light.position));
+                    glUniform1f(3, renderConfig.shadowNearPlane);
+                    glUniform1f(4, renderConfig.shadowFarPlane);
+
+                    // Bind model's VAO and draw its elements
+                    mesh.draw();
+                }
             }
         }
 
@@ -218,6 +219,8 @@ int main(int argc, char* argv[]) {
             } else { glUniform1i(4, GL_FALSE); }
             const glm::vec3 cameraPos = mainCamera.cameraPos();
             glUniform3fv(5, 1, glm::value_ptr(cameraPos));
+            glUniform1f(7, renderConfig.shadowNearPlane);
+            glUniform1f(8, renderConfig.shadowFarPlane);
             mesh.draw();
         }
 

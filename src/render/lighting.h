@@ -23,8 +23,9 @@ struct PointLight {
     glm::vec3 color;
     
     // OpenGL setup 
-    GLuint framebuffer;
+    std::array<GLuint, 6UL> framebuffers;
 
+    void wipeFramebuffers() const;
     std::array<glm::mat4, 6UL> viewMatrices() const;
     std::array<glm::mat4, 6UL> genMvpMatrices(const glm::mat4& model, const glm::mat4& projection) const;
 };
