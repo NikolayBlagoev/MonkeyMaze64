@@ -1,11 +1,12 @@
-#include "render/config.h"
-#include "render/lighting.h"
-#include "render/mesh.h"
-#include "render/scene.h"
-#include "render/texture.h"
-#include "ui/camera.h"
-#include "ui/menu.h"
-#include "utils/constants.h"
+#include <render/config.h>
+#include <render/deferred.h>
+#include <render/lighting.h>
+#include <render/mesh.h>
+#include <render/scene.h>
+#include <render/texture.h>
+#include <ui/camera.h>
+#include <ui/menu.h>
+#include <utils/constants.h>
 
 // Always include window first (because it includes glfw, which includes GL which needs to be included AFTER glew).
 // Can't wait for modules to fix this stuff...
@@ -70,6 +71,7 @@ int main(int argc, char* argv[]) {
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     Scene scene;
+    DeferredRenderer deferredRenderer(scene, utils::WIDTH, utils::HEIGHT);
     LightManager lightManager(renderConfig);
     Menu menu(scene, renderConfig, lightManager);
 
@@ -116,8 +118,6 @@ int main(int argc, char* argv[]) {
         // Clear the screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // ...
         glEnable(GL_DEPTH_TEST);
 
         // View-projection matrices setup

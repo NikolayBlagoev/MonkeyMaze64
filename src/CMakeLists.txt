@@ -2,6 +2,7 @@ target_sources(FinalProject
 	PRIVATE
         # "${CMAKE_CURRENT_LIST_DIR}/networking/client.cpp" # Uncomment when a cross-platform solution is working
 
+        "${CMAKE_CURRENT_LIST_DIR}/render/deferred.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/lighting.cpp"
 		"${CMAKE_CURRENT_LIST_DIR}/render/mesh.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/scene.cpp"
