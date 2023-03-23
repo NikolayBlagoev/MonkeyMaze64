@@ -15,7 +15,7 @@ layout(location = 1) out vec3 gNormal;      // Normal buffer
 layout(location = 2) out vec4 gAlbedo;      // Albedo buffer (fourth component is specular shininess)
 
 void main() {
-    gPosition   = fragPos
+    gPosition   = fragPos;
     gNormal     = normalize(fragNormal);
     if (hasTexCoords) { gAlbedo = vec4(texture(colorMap, fragTexCoord).rgb, 10.0); } // TODO: Extract shininess from texture
     else { gAlbedo = vec4(1.0, 1.0, 1.0, 10.0); } // Default white material colour

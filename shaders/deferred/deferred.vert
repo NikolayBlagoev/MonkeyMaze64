@@ -15,7 +15,9 @@ layout(location = 1) out vec3 fragNormal;
 layout(location = 2) out vec2 fragTexCoord;
 
 void main() {
-    fragPos         = (modelMatrix * vec4(position, 1)).xyz;
+    gl_Position = mvpMatrix * vec4(position, 1.0);
+
+    fragPos         = (modelMatrix * vec4(position, 1.0)).xyz;
     fragNormal      = normalModelMatrix * normal;
     fragTexCoord    = texCoord;
 }

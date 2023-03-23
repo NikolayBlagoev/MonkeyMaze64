@@ -51,11 +51,11 @@ glm::mat4 AreaLight::viewMatrix() const {
 }
 
 LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(renderConfig) { 
-    glGenBuffers(1, &ssboPointLights);
-    glGenBuffers(1, &ssboAreaLights);
+    glCreateBuffers(1, &ssboPointLights);
+    glCreateBuffers(1, &ssboAreaLights);
 
     // Cubemap texture array for point light shadow maps
-    glGenTextures(1, &pointShadowTexArr);
+    glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &pointShadowTexArr);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
     glTextureParameteri(pointShadowTexArr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTextureParameteri(pointShadowTexArr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -66,7 +66,7 @@ LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(re
     glTextureParameteri(pointShadowTexArr, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
     // 2D texture array for area light shadow maps
-    glGenTextures(1, &areaShadowTexArr);
+    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &areaShadowTexArr);
     glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
     glTextureParameteri(areaShadowTexArr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); // Coordinates outside of [0, 1] range clamp to -MAX_FLOAT, so they always fail the depth test
     glTextureParameteri(areaShadowTexArr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);

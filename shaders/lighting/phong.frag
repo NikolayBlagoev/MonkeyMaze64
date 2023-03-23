@@ -18,7 +18,7 @@ layout(binding = 1) buffer areaLights { AreaLight areaLightsData[]; };
 // G-buffer data
 layout(location = 0) uniform sampler2D gPosition;
 layout(location = 1) uniform sampler2D gNormal;
-layout(location = 2) uniform sampler2D gfragAlbedo;
+layout(location = 2) uniform sampler2D gAlbedo;
 
 // Camera position
 layout(location = 3) uniform vec3 cameraPos;
@@ -97,7 +97,7 @@ void main() {
     // Extract value from G-buffer
     vec3 fragPos    = texture(gPosition, bufferCoords).xyz;
     vec3 fragNormal = texture(gNormal, bufferCoords).xyz;
-    vec3 fragAlbedo = texture(gfragAlbedo, bufferCoords).rgb;
+    vec3 fragAlbedo = texture(gAlbedo, bufferCoords).rgb;
 
     fragColor = vec4(0.0, 0.0, 0.0, 0.0);
 
