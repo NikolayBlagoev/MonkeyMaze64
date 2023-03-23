@@ -1,8 +1,7 @@
 #version 460
 
 layout(location = 2) uniform vec3 lightPos;
-layout(location = 3) uniform float nearPlane;
-layout(location = 4) uniform float farPlane;
+layout(location = 3) uniform float farPlane;
 
 layout(location = 0) in vec3 fragPos;
 

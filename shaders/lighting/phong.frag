@@ -25,12 +25,11 @@ layout(location = 5) uniform vec3 cameraPos;
 
 // Lighting and shading parameter(s)
 layout(location = 6) uniform float objectShininess = 10.0;
-layout(location = 7) uniform float shadowNearPlane;
-layout(location = 8) uniform float shadowFarPlane;
+layout(location = 7) uniform float shadowFarPlane;
 
 // Shadow map array(s)
-layout(location = 9) uniform samplerCubeArray pointShadowTexArr;
-layout(location = 10) uniform sampler2DArrayShadow areaShadowTexArr;
+layout(location = 8) uniform samplerCubeArrayShadow pointShadowTexArr;
+layout(location = 9) uniform sampler2DArrayShadow areaShadowTexArr;
 
 // Input from vertex shader
 in vec3 fragPosition;
@@ -66,10 +65,10 @@ vec3 phongSpecular(vec3 lightColor, vec3 lightPos, vec3 materialProps) {
 float samplePointShadow(vec3 sampleCoord, uint lightIdx) {
     vec3 lightToSample      = sampleCoord - pointLightsData[lightIdx].position.xyz;
     float clippedDistance   = length(lightToSample) / shadowFarPlane;
-    vec4 texIdx = vec4(lightToSample, lightIdx);
+    vec4 texIdx             = vec4(lightToSample, lightIdx);
 
-    const float EPSILON = 1e-3;
-    return texture(pointShadowTexArr, texIdx).r;
+    const float EPSILON = 1e-3 * exp(4 * clippedDistance); // Adaptive epsilon for shadow acne
+    return texture(pointShadowTexArr, texIdx, clippedDistance - EPSILON);
 }
 
 // @param sampleLightCoord: Homogeneous coordinates of fragment sample tranformed by MVP of shadow-casting light
@@ -98,35 +97,32 @@ void main() {
     const vec3 materialProps    = hasTexCoords ? texture(colorMap, fragTexCoord).rgb : vec3(1.0, 1.0, 1.0);
     fragColor = vec4(0.0, 0.0, 0.0, 0.0);
 
-    float depth = samplePointShadow(fragPosition, 0);
-    fragColor = vec4(depth, depth, depth, 1.0);
-
-    // // Accumulate lighting from point lights
-    // for (uint lightIdx = 0U; lightIdx < pointLightsData.length(); lightIdx++) {
-    //     PointLight light    = pointLightsData[lightIdx];
-    //     vec3 lightColor     = light.color.rgb;
-    //     vec3 lightPosition  = light.position.xyz;
+    // Accumulate lighting from point lights
+    for (uint lightIdx = 0U; lightIdx < pointLightsData.length(); lightIdx++) {
+        PointLight light    = pointLightsData[lightIdx];
+        vec3 lightColor     = light.color.rgb;
+        vec3 lightPosition  = light.position.xyz;
         
-    //     float successFraction   = samplePointShadow(fragPosition, lightIdx);
-    //     if (successFraction != 0.0) {
-    //         vec3 diffuse    = lambertianDiffuse(lightColor, lightPosition, materialProps);
-    //         vec3 specular   = phongSpecular(lightColor, lightPosition, materialProps);
-    //         fragColor.rgb   += successFraction * (diffuse + specular);
-    //     }
-    // }
+        float successFraction   = samplePointShadow(fragPosition, lightIdx);
+        if (successFraction != 0.0) {
+            vec3 diffuse    = lambertianDiffuse(lightColor, lightPosition, materialProps);
+            vec3 specular   = phongSpecular(lightColor, lightPosition, materialProps);
+            fragColor.rgb   += successFraction * (diffuse + specular);
+        }
+    }
 
-    // // Accumulate lighting from area lights
-    // for (uint lightIdx = 0U; lightIdx < areaLightsData.length(); lightIdx++) {
-    //     AreaLight light     = areaLightsData[lightIdx];
-    //     vec3 lightColor     = light.color.rgb;
-    //     vec3 lightPosition  = light.position.xyz;
+    // Accumulate lighting from area lights
+    for (uint lightIdx = 0U; lightIdx < areaLightsData.length(); lightIdx++) {
+        AreaLight light     = areaLightsData[lightIdx];
+        vec3 lightColor     = light.color.rgb;
+        vec3 lightPosition  = light.position.xyz;
 
-    //     vec4 fragLightCoord     = light.mvp * vec4(fragPosition, 1.0);
-    //     float successFraction   = sampleAreaShadow(fragLightCoord, lightIdx);
-    //     if (successFraction != 0.0) {
-    //         vec3 diffuse    = lambertianDiffuse(lightColor, lightPosition, materialProps);
-    //         vec3 specular   = phongSpecular(lightColor, lightPosition, materialProps);
-    //         fragColor.rgb   += successFraction * (diffuse + specular);
-    //     }
-    // }
+        vec4 fragLightCoord     = light.mvp * vec4(fragPosition, 1.0);
+        float successFraction   = sampleAreaShadow(fragLightCoord, lightIdx);
+        if (successFraction != 0.0) {
+            vec3 diffuse    = lambertianDiffuse(lightColor, lightPosition, materialProps);
+            vec3 specular   = phongSpecular(lightColor, lightPosition, materialProps);
+            fragColor.rgb   += successFraction * (diffuse + specular);
+        }
+    }
 }

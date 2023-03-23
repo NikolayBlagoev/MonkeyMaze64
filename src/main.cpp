@@ -153,8 +153,7 @@ int main(int argc, char* argv[]) {
                     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvps[face]));
                     glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                     glUniform3fv(2, 1, glm::value_ptr(light.position));
-                    glUniform1f(3, renderConfig.shadowNearPlane);
-                    glUniform1f(4, renderConfig.shadowFarPlane);
+                    glUniform1f(3, renderConfig.shadowFarPlane);
 
                     // Bind model's VAO and draw its elements
                     mesh.draw();
@@ -219,8 +218,7 @@ int main(int argc, char* argv[]) {
             } else { glUniform1i(4, GL_FALSE); }
             const glm::vec3 cameraPos = mainCamera.cameraPos();
             glUniform3fv(5, 1, glm::value_ptr(cameraPos));
-            glUniform1f(7, renderConfig.shadowNearPlane);
-            glUniform1f(8, renderConfig.shadowFarPlane);
+            glUniform1f(7, renderConfig.shadowFarPlane);
             mesh.draw();
         }
 

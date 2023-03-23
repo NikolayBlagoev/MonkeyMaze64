@@ -62,8 +62,8 @@ LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(re
     glTextureParameteri(pointShadowTexArr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTextureParameteri(pointShadowTexArr, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // Linear interpolation of texels to allow for PCF
     glTextureParameteri(pointShadowTexArr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // glTextureParameteri(pointShadowTexArr, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE); // Set texture comparison to return fraction of neighbouring samples passing the below test (https://www.khronos.org/opengl/wiki/Sampler_Object#Comparison_mode)
-    // glTextureParameteri(pointShadowTexArr, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    glTextureParameteri(pointShadowTexArr, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE); // Set texture comparison to return fraction of neighbouring samples passing the below test (https://www.khronos.org/opengl/wiki/Sampler_Object#Comparison_mode)
+    glTextureParameteri(pointShadowTexArr, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
     // 2D texture array for area light shadow maps
     glGenTextures(1, &areaShadowTexArr);
@@ -167,7 +167,7 @@ void LightManager::bind(const glm::mat4& modelMatrix) {
     // Point lights shadow maps sampler
     glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
-    glUniform1i(9, utils::SHADOW_START_IDX);
+    glUniform1i(8, utils::SHADOW_START_IDX);
 
     // Area lights
     std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData(modelMatrix);
@@ -177,5 +177,5 @@ void LightManager::bind(const glm::mat4& modelMatrix) {
     // Area lights shadow maps sampler
     glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX + 1);
     glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
-    glUniform1i(10, utils::SHADOW_START_IDX + 1);
+    glUniform1i(9, utils::SHADOW_START_IDX + 1);
 }
