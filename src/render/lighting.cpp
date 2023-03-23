@@ -113,12 +113,10 @@ void LightManager::removePointLight(size_t idx) {
     pointLights.erase(pointLights.begin() + idx);
 }
 
-std::vector<PointLightShader> LightManager::createPointLightsShaderData(const glm::mat4& modelMatrix) {
+std::vector<PointLightShader> LightManager::createPointLightsShaderData() {
     const glm::mat4 projection = m_renderConfig.pointShadowMapsProjectionMatrix();
     std::vector<PointLightShader> shaderData;
-    for (const PointLight& light : pointLights) { 
-        shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color, 0.0f), light.genMvpMatrices(modelMatrix, projection) });
-    }
+    for (const PointLight& light : pointLights) { shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color, 0.0f) }); }
     return shaderData;
 }
 
@@ -148,34 +146,34 @@ void LightManager::removeAreaLight(size_t idx) {
     areaLights.erase(areaLights.begin() + idx);
 }
 
-std::vector<AreaLightShader> LightManager::createAreaLightsShaderData(const glm::mat4& modelMatrix) {
+std::vector<AreaLightShader> LightManager::createAreaLightsShaderData() {
     const glm::mat4 projection = m_renderConfig.areaShadowMapsProjectionMatrix();
     std::vector<AreaLightShader> shaderData;
     for (const AreaLight& light : areaLights) {
-        glm::mat4 mvp = projection * light.viewMatrix() * modelMatrix;
-        shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color, 0.0f), mvp });
+        glm::mat4 viewProjection = projection * light.viewMatrix();
+        shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color, 0.0f), viewProjection });
     }
     return shaderData;
 }
 
-void LightManager::bind(const glm::mat4& modelMatrix) {
+void LightManager::bind() {
     // Point lights
-    std::vector<PointLightShader> pointLightsShaderData = createPointLightsShaderData(modelMatrix);
+    std::vector<PointLightShader> pointLightsShaderData = createPointLightsShaderData();
     glNamedBufferData(ssboPointLights, sizeof(PointLightShader) * pointLightsShaderData.size(), pointLightsShaderData.data(), GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboPointLights); // Bind to binding=0
 
     // Point lights shadow maps sampler
     glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
-    glUniform1i(8, utils::SHADOW_START_IDX);
+    glUniform1i(6, utils::SHADOW_START_IDX);
 
     // Area lights
-    std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData(modelMatrix);
+    std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData();
     glNamedBufferData(ssboAreaLights, sizeof(AreaLightShader) * areaLightsShaderData.size(), areaLightsShaderData.data(), GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboAreaLights); // Bind to binding=1
 
     // Area lights shadow maps sampler
     glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX + 1);
     glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
-    glUniform1i(9, utils::SHADOW_START_IDX + 1);
+    glUniform1i(7, utils::SHADOW_START_IDX + 1);
 }
