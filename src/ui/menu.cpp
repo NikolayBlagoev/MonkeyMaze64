@@ -104,7 +104,7 @@ void Menu::drawGeneralLightControls() {
 // (hashes prevent ID conflicts https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-windows-with-the-same-label)
 void Menu::drawPointLightControls() {
     // Add / remove / draw controls
-    if (ImGui::Button("Add##point")) { m_lightManager.addPointLight({ glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 0.0f) }); }
+    if (ImGui::Button("Add##point")) { m_lightManager.addPointLight(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f)); }
     if (ImGui::Button("Remove selected##point")) {
         if (selectedPointLight < m_lightManager.numPointLights()) {
             m_lightManager.removePointLight(selectedPointLight);
@@ -184,7 +184,7 @@ void Menu::drawLightTab() {
 
 void Menu::drawShadowTab() {
     if (ImGui::BeginTabItem("Shadows")) {
-        ImGui::SliderFloat("Shadow Map FoV (Vertical)", &m_renderConfig.shadowFovY, 40.0f, 150.0f);
+        ImGui::SliderFloat("Shadow Map FoV (Vertical)", &m_renderConfig.areaShadowFovY, 40.0f, 150.0f);
         ImGui::SliderFloat("Shadow Map Near Plane", &m_renderConfig.shadowNearPlane, 0.0001f, 1.0f);
         ImGui::SliderFloat("Shadow Map Far Plane", &m_renderConfig.shadowFarPlane, 5.0f, 60.0f);
         ImGui::EndTabItem();

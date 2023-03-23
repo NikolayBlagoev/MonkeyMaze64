@@ -3,6 +3,7 @@
 struct PointLight {
     vec4 position;
     vec4 color;
+    mat4 mvps[6];
 };
 
 struct AreaLight {
@@ -22,11 +23,13 @@ layout(location = 4) uniform bool hasTexCoords;
 // Camera position
 layout(location = 5) uniform vec3 cameraPos;
 
-// Lighting parameter(s)
+// Lighting and shading parameter(s)
 layout(location = 6) uniform float objectShininess = 10.0;
+layout(location = 7) uniform float shadowFarPlane;
 
 // Shadow map array(s)
-layout(location = 7) uniform sampler2DArrayShadow texShadowArr;
+layout(location = 8) uniform samplerCubeArrayShadow pointShadowTexArr;
+layout(location = 9) uniform sampler2DArrayShadow areaShadowTexArr;
 
 // Input from vertex shader
 in vec3 fragPosition;
@@ -57,9 +60,20 @@ vec3 phongSpecular(vec3 lightColor, vec3 lightPos, vec3 materialProps) {
 
 /*****************************************************************************************************/
 
+// @param sampleCoord: Coordinates of fragment sample
+// @param lightIdx: Index of the point light in the SSBO/shadow map
+float samplePointShadow(vec3 sampleCoord, uint lightIdx) {
+    vec3 lightToSample      = sampleCoord - pointLightsData[lightIdx].position.xyz;
+    float clippedDistance   = length(lightToSample) / shadowFarPlane;
+    vec4 texIdx             = vec4(lightToSample, lightIdx);
+
+    const float EPSILON = 1e-3 * exp(4 * clippedDistance); // Adaptive epsilon for shadow acne
+    return texture(pointShadowTexArr, texIdx, clippedDistance - EPSILON);
+}
+
 // @param sampleLightCoord: Homogeneous coordinates of fragment sample tranformed by MVP of shadow-casting light
-// @param shadowArrIdx: Index of the shadow map to be sampled in the shadow map texture array
-float sampleShadow(vec4 sampleLightCoord, uint shadowArrIdx) {
+// @param lightIdx: Index of the area light in the SSBO/shadow map
+float sampleAreaShadow(vec4 sampleLightCoord, uint lightIdx) {
     // Divide by w because sampleLightCoord are homogeneous coordinates
     sampleLightCoord.xyz /= sampleLightCoord.w;
 
@@ -73,8 +87,8 @@ float sampleShadow(vec4 sampleLightCoord, uint shadowArrIdx) {
     // Shadow map value from the corresponding shadow map position ()
     vec4 texcoord;
     texcoord.xyw    = sampleLightCoord.xyz;
-    texcoord.z      = shadowArrIdx;
-    return texture(texShadowArr, texcoord);
+    texcoord.z      = lightIdx;
+    return texture(areaShadowTexArr, texcoord);
 }
 
 /*****************************************************************************************************/
@@ -88,8 +102,13 @@ void main() {
         PointLight light    = pointLightsData[lightIdx];
         vec3 lightColor     = light.color.rgb;
         vec3 lightPosition  = light.position.xyz;
-        fragColor.rgb += lambertianDiffuse(lightColor, lightPosition, materialProps) +
-                         phongSpecular(lightColor, lightPosition, materialProps);
+        
+        float successFraction   = samplePointShadow(fragPosition, lightIdx);
+        if (successFraction != 0.0) {
+            vec3 diffuse    = lambertianDiffuse(lightColor, lightPosition, materialProps);
+            vec3 specular   = phongSpecular(lightColor, lightPosition, materialProps);
+            fragColor.rgb   += successFraction * (diffuse + specular);
+        }
     }
 
     // Accumulate lighting from area lights
@@ -99,7 +118,7 @@ void main() {
         vec3 lightPosition  = light.position.xyz;
 
         vec4 fragLightCoord     = light.mvp * vec4(fragPosition, 1.0);
-        float successFraction   = sampleShadow(fragLightCoord, lightIdx);
+        float successFraction   = sampleAreaShadow(fragLightCoord, lightIdx);
         if (successFraction != 0.0) {
             vec3 diffuse    = lambertianDiffuse(lightColor, lightPosition, materialProps);
             vec3 specular   = phongSpecular(lightColor, lightPosition, materialProps);
