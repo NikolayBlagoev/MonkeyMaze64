@@ -111,6 +111,13 @@ void LightManager::removePointLight(size_t idx) {
     glDeleteFramebuffers(6, light.framebuffers.data());
 
     pointLights.erase(pointLights.begin() + idx);
+
+    // Reattach framebuffers to corresponding texture layers
+    // Plonking out a framebuffer from the beginning or middle causes the framebuffers to become misaligned from their position in the array
+    for (size_t lightIdx = 0UL; lightIdx < pointLights.size(); lightIdx++) {
+        const PointLight& light = pointLights[lightIdx];
+        for (size_t face = 0UL; face < 6UL; face++) { glNamedFramebufferTextureLayer(light.framebuffers[face], GL_DEPTH_ATTACHMENT, pointShadowTexArr, 0, static_cast<GLint>((lightIdx * 6UL) + face)); }
+    }
 }
 
 std::vector<PointLightShader> LightManager::createPointLightsShaderData() {
@@ -135,15 +142,22 @@ void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& colo
 }
 
 void LightManager::removeAreaLight(size_t idx) {
-    // Resize texture array to save space
-    glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, areaLights.size() - 1UL, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-
     // Destroy framebuffer corresponding to the shadow map
     const AreaLight& light = areaLights[idx];
     glDeleteFramebuffers(1, &light.framebuffer);
 
+    // Resize texture array to save space
+    glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, areaLights.size() - 1UL, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
     areaLights.erase(areaLights.begin() + idx);
+
+    // Reattach framebuffers to corresponding texture layers
+    // Plonking out a framebuffer from the beginning or middle causes the framebuffers to become misaligned from their position in the array
+    for (size_t lightIdx = 0UL; lightIdx < areaLights.size(); lightIdx++) {
+        const AreaLight& light = areaLights[lightIdx];
+        glNamedFramebufferTextureLayer(light.framebuffer, GL_DEPTH_ATTACHMENT, areaShadowTexArr, 0, lightIdx);
+    }
 }
 
 std::vector<AreaLightShader> LightManager::createAreaLightsShaderData() {
