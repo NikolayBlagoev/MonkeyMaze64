@@ -91,7 +91,6 @@ Window::Window(std::string_view title, const glm::ivec2& windowSize, OpenGLVersi
     glGetIntegerv(GL_MINOR_VERSION, &glVersionMinor);
     std::cout << "Initialized OpenGL version " << glVersionMajor << "." << glVersionMinor << std::endl;
 
-#if defined(GL_DEBUG_SEVERITY_NOTIFICATION) && !defined(NDEBUG)
     // Custom debug message with breakpoints at the exact error. Only supported on OpenGL 4.1 and higher.
     if (glVersionMajor > 4 || (glVersionMajor == 4 && glVersionMinor >= 3)) {
         // Set OpenGL debug callback when supported (OpenGL 4.3).
@@ -100,7 +99,6 @@ Window::Window(std::string_view title, const glm::ivec2& windowSize, OpenGLVersi
         glDebugMessageCallback(glDebugCallback, nullptr);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     }
-#endif
 
     // Setup Dear ImGui context.
     ImGui::CreateContext();

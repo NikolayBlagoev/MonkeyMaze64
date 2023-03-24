@@ -33,7 +33,6 @@ struct PointLight {
 struct PointLightShader {
     glm::vec4 position;
     glm::vec4 color;
-    std::array<glm::mat4, 6UL> mvps;
 };
 
 // TODO: Expand with 1. Ability to use texture to define lighting 2. Spotlight functionality
@@ -59,7 +58,7 @@ struct AreaLight {
 struct AreaLightShader {
     glm::vec4 position;
     glm::vec4 color;
-    glm::mat4 mvp;
+    glm::mat4 viewProjection;
 };
 
 class LightManager {
@@ -67,19 +66,19 @@ public:
     LightManager(const RenderConfig& renderConfig);
     ~LightManager();
 
-    void bind(const glm::mat4& modelMatrix);
+    void bind();
 
     void addPointLight(const glm::vec3& position, const glm::vec3& color);
     void removePointLight(size_t idx);
     size_t numPointLights() { return pointLights.size(); }
     PointLight& pointLightAt(size_t idx) { return pointLights[idx]; }
-    std::vector<PointLightShader> createPointLightsShaderData(const glm::mat4& modelMatrix);
+    std::vector<PointLightShader> createPointLightsShaderData();
 
     void addAreaLight(const glm::vec3& position, const glm::vec3& color, float xAngle = 0.0f, float yAngle = 0.0f);
     void removeAreaLight(size_t idx);
     size_t numAreaLights() { return areaLights.size(); }
     AreaLight& areaLightAt(size_t idx) { return areaLights[idx]; }
-    std::vector<AreaLightShader> createAreaLightsShaderData(const glm::mat4& modelMatrix);
+    std::vector<AreaLightShader> createAreaLightsShaderData();
 
 private:
     static constexpr GLuint INVALID = 0xFFFFFFFF;

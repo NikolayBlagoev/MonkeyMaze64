@@ -1,11 +1,12 @@
-#include "render/config.h"
-#include "render/lighting.h"
-#include "render/mesh.h"
-#include "render/scene.h"
-#include "render/texture.h"
-#include "ui/camera.h"
-#include "ui/menu.h"
-#include "utils/constants.h"
+#include <render/config.h>
+#include <render/deferred.h>
+#include <render/lighting.h>
+#include <render/mesh.h>
+#include <render/scene.h>
+#include <render/texture.h>
+#include <ui/camera.h>
+#include <ui/menu.h>
+#include <utils/constants.h>
 
 // Always include window first (because it includes glfw, which includes GL which needs to be included AFTER glew).
 // Can't wait for modules to fix this stuff...
@@ -71,6 +72,7 @@ int main(int argc, char* argv[]) {
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     Scene scene;
     LightManager lightManager(renderConfig);
+    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager);
     Menu menu(scene, renderConfig, lightManager);
 
     // Register UI callbacks
@@ -78,16 +80,10 @@ int main(int argc, char* argv[]) {
     m_window.registerMouseMoveCallback(onMouseMove);
     m_window.registerMouseButtonCallback(mouseButtonCallback);
 
-    // Build shaders
-    Shader m_defaultShader;
+    // Build shadow shaders
     Shader m_pointShadowShader;
     Shader m_areaShadowShader;
     try {
-        ShaderBuilder defaultBuilder;
-        defaultBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "stock.vert");
-        defaultBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "phong.frag");
-        m_defaultShader = defaultBuilder.build();
-
         ShaderBuilder pointShadowBuilder;
         pointShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.vert");
         pointShadowBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.frag");
@@ -111,22 +107,18 @@ int main(int argc, char* argv[]) {
 
     // Main loop
     while (!m_window.shouldClose()) {
-        m_window.updateInput();
-
         // Clear the screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // ...
         glEnable(GL_DEPTH_TEST);
 
         // View-projection matrices setup
         const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
         const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
 
-        // Controls and UI
+        // Controls
         ImGuiIO io = ImGui::GetIO();
-        menu.draw(m_viewProjectionMatrix);
+        m_window.updateInput();
         if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
 
         // Render point lights shadow maps
@@ -191,38 +183,15 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // Unbind the last off-screen framebuffer and reset the viewport size
+        // Render scene
+        deferredRenderer.render(m_viewProjectionMatrix, mainCamera.cameraPos());
+
+        // Draw UI
         glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        menu.draw(m_viewProjectionMatrix);
 
-        // Render each model
-        for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
-            const GPUMesh& mesh         = scene.meshAt(modelNum);
-            const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
-
-            // Normals should be transformed differently than positions (ignoring translations + dealing with scaling)
-            // https://paroj.github.io/gltut/Illumination/Tut09%20Normal%20Transformation.html
-            const glm::mat4 mvpMatrix           = m_viewProjectionMatrix * modelMatrix;
-            const glm::mat3 normalModelMatrix   = glm::inverseTranspose(glm::mat3(modelMatrix));
-
-            // Bind shader(s), light(s), and uniform(s)
-            m_defaultShader.bind();
-            lightManager.bind(modelMatrix);
-            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvpMatrix));
-            glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-            glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(normalModelMatrix));
-            if (mesh.hasTextureCoords()) {
-                m_texture.bind(GL_TEXTURE0);
-                glUniform1i(3, 0);
-                glUniform1i(4, GL_TRUE);
-            } else { glUniform1i(4, GL_FALSE); }
-            const glm::vec3 cameraPos = mainCamera.cameraPos();
-            glUniform3fv(5, 1, glm::value_ptr(cameraPos));
-            glUniform1f(7, renderConfig.shadowFarPlane);
-            mesh.draw();
-        }
-
-        // Processes input and swaps the window buffer
+        // Process inputs and swap the window buffer
         m_window.swapBuffers();
     }
 

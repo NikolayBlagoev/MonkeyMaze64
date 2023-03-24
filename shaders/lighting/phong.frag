@@ -3,58 +3,58 @@
 struct PointLight {
     vec4 position;
     vec4 color;
-    mat4 mvps[6];
 };
 
 struct AreaLight {
     vec4 position;
     vec4 color;
-    mat4 mvp;
+    mat4 viewProjection;
 };
 
 // SSBOs
 layout(binding = 0) buffer pointLights { PointLight pointLightsData[]; };
 layout(binding = 1) buffer areaLights { AreaLight areaLightsData[]; };
 
-// Texture data
-layout(location = 3) uniform sampler2D colorMap;
-layout(location = 4) uniform bool hasTexCoords;
+// G-buffer data
+layout(location = 0) uniform sampler2D gPosition;
+layout(location = 1) uniform sampler2D gNormal;
+layout(location = 2) uniform sampler2D gAlbedo;
 
 // Camera position
-layout(location = 5) uniform vec3 cameraPos;
+layout(location = 3) uniform vec3 cameraPos;
 
 // Lighting and shading parameter(s)
-layout(location = 6) uniform float objectShininess = 10.0;
-layout(location = 7) uniform float shadowFarPlane;
+layout(location = 4) uniform float objectShininess = 10.0; // TODO: Remove
+layout(location = 5) uniform float shadowFarPlane;
 
 // Shadow map array(s)
-layout(location = 8) uniform samplerCubeArrayShadow pointShadowTexArr;
-layout(location = 9) uniform sampler2DArrayShadow areaShadowTexArr;
+layout(location = 6) uniform samplerCubeArrayShadow pointShadowTexArr;
+layout(location = 7) uniform sampler2DArrayShadow areaShadowTexArr;
 
-// Input from vertex shader
-in vec3 fragPosition;
-in vec3 fragNormal;
-in vec2 fragTexCoord;
+// Quad texture to use with G-buffer
+layout(location = 0) in vec2 bufferCoords;
 
 // Output
 layout(location = 0) out vec4 fragColor;
 
 /*****************************************************************************************************/
 
-vec3 lambertianDiffuse(vec3 lightColor, vec3 lightPos, vec3 materialProps) {
-    vec3 lightDir = normalize(lightPos - fragPosition);
-    return dot(lightDir, fragNormal) * lightColor * materialProps;
+vec3 lambertianDiffuse(vec3 fragPos, vec3 fragNormal, vec3 fragAlbedo,
+                       vec3 lightColor, vec3 lightPos) {
+    vec3 lightDir = normalize(lightPos - fragPos);
+    return dot(lightDir, fragNormal) * lightColor * fragAlbedo;
 }
 
-vec3 phongSpecular(vec3 lightColor, vec3 lightPos, vec3 materialProps) {
-    vec3 lightToSurface     = normalize(fragPosition - lightPos);
-    vec3 surfaceToCamera    = normalize(cameraPos - fragPosition);
+vec3 phongSpecular(vec3 fragPos, vec3 fragNormal, vec3 fragAlbedo,
+                   vec3 lightColor, vec3 lightPos) {
+    vec3 lightToSurface     = normalize(fragPos - lightPos);
+    vec3 surfaceToCamera    = normalize(cameraPos - fragPos);
     vec3 reflection         = reflect(lightToSurface, fragNormal);
 
     float lightNormalDot    = dot(-lightToSurface, fragNormal);
     float reflectionViewDot = dot(reflection, surfaceToCamera);
     return  lightNormalDot > 0.0 && reflectionViewDot > 0.0 ?
-            materialProps * pow(reflectionViewDot, objectShininess) * lightColor :
+            fragAlbedo * pow(reflectionViewDot, objectShininess) * lightColor :
             vec3(0.0, 0.0, 0.0);
 }
 
@@ -71,7 +71,7 @@ float samplePointShadow(vec3 sampleCoord, uint lightIdx) {
     return texture(pointShadowTexArr, texIdx, clippedDistance - EPSILON);
 }
 
-// @param sampleLightCoord: Homogeneous coordinates of fragment sample tranformed by MVP of shadow-casting light
+// @param sampleLightCoord: Homogeneous coordinates of fragment sample tranformed by viewProjection of shadow-casting light
 // @param lightIdx: Index of the area light in the SSBO/shadow map
 float sampleAreaShadow(vec4 sampleLightCoord, uint lightIdx) {
     // Divide by w because sampleLightCoord are homogeneous coordinates
@@ -94,7 +94,11 @@ float sampleAreaShadow(vec4 sampleLightCoord, uint lightIdx) {
 /*****************************************************************************************************/
 
 void main() {
-    const vec3 materialProps    = hasTexCoords ? texture(colorMap, fragTexCoord).rgb : vec3(1.0, 1.0, 1.0);
+    // Extract value from G-buffer
+    vec3 fragPos    = texture(gPosition, bufferCoords).xyz;
+    vec3 fragNormal = texture(gNormal, bufferCoords).xyz;
+    vec3 fragAlbedo = texture(gAlbedo, bufferCoords).rgb;
+
     fragColor = vec4(0.0, 0.0, 0.0, 0.0);
 
     // Accumulate lighting from point lights
@@ -103,10 +107,10 @@ void main() {
         vec3 lightColor     = light.color.rgb;
         vec3 lightPosition  = light.position.xyz;
         
-        float successFraction   = samplePointShadow(fragPosition, lightIdx);
+        float successFraction   = samplePointShadow(fragPos, lightIdx);
         if (successFraction != 0.0) {
-            vec3 diffuse    = lambertianDiffuse(lightColor, lightPosition, materialProps);
-            vec3 specular   = phongSpecular(lightColor, lightPosition, materialProps);
+            vec3 diffuse    = lambertianDiffuse(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition);
+            vec3 specular   = phongSpecular(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition);
             fragColor.rgb   += successFraction * (diffuse + specular);
         }
     }
@@ -117,11 +121,11 @@ void main() {
         vec3 lightColor     = light.color.rgb;
         vec3 lightPosition  = light.position.xyz;
 
-        vec4 fragLightCoord     = light.mvp * vec4(fragPosition, 1.0);
+        vec4 fragLightCoord     = light.viewProjection * vec4(fragPos, 1.0);
         float successFraction   = sampleAreaShadow(fragLightCoord, lightIdx);
         if (successFraction != 0.0) {
-            vec3 diffuse    = lambertianDiffuse(lightColor, lightPosition, materialProps);
-            vec3 specular   = phongSpecular(lightColor, lightPosition, materialProps);
+            vec3 diffuse    = lambertianDiffuse(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition);
+            vec3 specular   = phongSpecular(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition);
             fragColor.rgb   += successFraction * (diffuse + specular);
         }
     }
