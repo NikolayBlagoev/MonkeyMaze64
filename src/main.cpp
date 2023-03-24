@@ -1,9 +1,11 @@
 #include "render/config.h"
+#include "render/lighting.h"
 #include "render/mesh.h"
 #include "render/scene.h"
 #include "render/texture.h"
 #include "ui/camera.h"
 #include "ui/menu.h"
+#include "utils/constants.h"
 
 // Always include window first (because it includes glfw, which includes GL which needs to be included AFTER glew).
 // Can't wait for modules to fix this stuff...
@@ -26,23 +28,11 @@ DISABLE_WARNINGS_POP()
 #include <iostream>
 #include <vector>
 
-// Constants
-constexpr int32_t WIDTH         = 1920;
-constexpr int32_t HEIGHT        = 1080;
-constexpr float ASPECT_RATIO    = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
-const std::filesystem::path RESOURCES_DIR_PATH  = RESOURCES_DIR;
-const std::filesystem::path SHADERS_DIR_PATH    = SHADERS_DIR;
-
 // Game state
 // TODO: Have a separate struct for this if it becomes too much
 bool cameraZoomed = false;
 
-// In here you can handle key presses
-// key - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__keys.html
-// mods - Any modifier keys pressed, like shift or control
 void onKeyPressed(int key, int mods) {
-    std::cout << "Key pressed: " << key << std::endl;
-
     switch (key) {
         case GLFW_KEY_LEFT_CONTROL:
             cameraZoomed = true;
@@ -50,12 +40,7 @@ void onKeyPressed(int key, int mods) {
     }
 }
 
-// In here you can handle key releases
-// key - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__keys.html
-// mods - Any modifier keys pressed, like shift or control
 void onKeyReleased(int key, int mods) {
-    std::cout << "Key released: " << key << std::endl;
-
     switch (key) {
         case GLFW_KEY_LEFT_CONTROL:
             cameraZoomed = false;
@@ -63,27 +48,11 @@ void onKeyReleased(int key, int mods) {
     }
 }
 
-// If the mouse is moved this function will be called with the x, y screen-coordinates of the mouse
-void onMouseMove(const glm::dvec2& cursorPos)
-{
-    std::cout << "Mouse at position: " << cursorPos.x << " " << cursorPos.y << std::endl;
-}
+void onMouseMove(const glm::dvec2& cursorPos) {}
 
-// If one of the mouse buttons is pressed this function will be called
-// button - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__buttons.html
-// mods - Any modifier buttons pressed
-void onMouseClicked(int button, int mods)
-{
-    std::cout << "Pressed mouse button: " << button << std::endl;
-}
+void onMouseClicked(int button, int mods) {}
 
-// If one of the mouse buttons is released this function will be called
-// button - Integer that corresponds to numbers in https://www.glfw.org/docs/latest/group__buttons.html
-// mods - Any modifier buttons pressed
-void onMouseReleased(int button, int mods)
-{
-    std::cout << "Released mouse button: " << button << std::endl;
-}
+void onMouseReleased(int button, int mods) {}
 
 void keyCallback(int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) { onKeyPressed(key, mods); }
@@ -98,10 +67,11 @@ void mouseButtonCallback(int button, int action, int mods) {
 int main(int argc, char* argv[]) {
     // Init core objects
     RenderConfig renderConfig;
-    Window m_window("Final Project", glm::ivec2(WIDTH, HEIGHT), OpenGLVersion::GL46);
+    Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     Scene scene;
-    Menu menu(scene, renderConfig);
+    LightManager lightManager(renderConfig);
+    Menu menu(scene, renderConfig, lightManager);
 
     // Register UI callbacks
     m_window.registerKeyCallback(keyCallback);
@@ -110,42 +80,120 @@ int main(int argc, char* argv[]) {
 
     // Build shaders
     Shader m_defaultShader;
-    Shader m_shadowShader;
+    Shader m_pointShadowShader;
+    Shader m_areaShadowShader;
     try {
         ShaderBuilder defaultBuilder;
-        defaultBuilder.addStage(GL_VERTEX_SHADER, SHADERS_DIR_PATH / "shader_vert.glsl");
-        defaultBuilder.addStage(GL_FRAGMENT_SHADER, SHADERS_DIR_PATH / "shader_frag.glsl");
+        defaultBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "stock.vert");
+        defaultBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "phong.frag");
         m_defaultShader = defaultBuilder.build();
 
-        ShaderBuilder shadowBuilder;
-        shadowBuilder.addStage(GL_VERTEX_SHADER, SHADERS_DIR_PATH / "shadow_vert.glsl");
-        m_shadowShader = shadowBuilder.build();
+        ShaderBuilder pointShadowBuilder;
+        pointShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.vert");
+        pointShadowBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.frag");
+        m_pointShadowShader = pointShadowBuilder.build();
+
+        ShaderBuilder areaShadowBuilder;
+        areaShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_stock.vert");
+        m_areaShadowShader = areaShadowBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
     // Add models and test texture
-    scene.addMesh(RESOURCES_DIR_PATH / "models" / "dragon.obj");
-    scene.addMesh(RESOURCES_DIR_PATH / "models" / "dragon.obj");
-    Texture m_texture(RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+    Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
+
+    // Add test lights
+    lightManager.addPointLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
+    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f));
 
     // Main loop
     while (!m_window.shouldClose()) {
         m_window.updateInput();
 
         // Clear the screen
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // ...
         glEnable(GL_DEPTH_TEST);
 
+        // View-projection matrices setup
+        const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
+
         // Controls and UI
         ImGuiIO io = ImGui::GetIO();
-        menu.draw();
+        menu.draw(m_viewProjectionMatrix);
         if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
 
-        // Projection matrix setup
-        const float fovDegrees = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_projectionMatrix = glm::perspective(fovDegrees, ASPECT_RATIO, 0.1f, 30.0f);
+        // Render point lights shadow maps
+        const glm::mat4 pointLightShadowMapsProjection = renderConfig.pointShadowMapsProjectionMatrix();
+        glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
+        for (size_t pointLightNum = 0U; pointLightNum < lightManager.numPointLights(); pointLightNum++) {
+            const PointLight& light = lightManager.pointLightAt(pointLightNum);
+            light.wipeFramebuffers();
+
+            // Render each model
+            for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
+                const GPUMesh& mesh                         = scene.meshAt(modelNum);
+                const glm::mat4 modelMatrix                 = scene.modelMatrix(modelNum);
+                const std::array<glm::mat4, 6U> lightMvps   = light.genMvpMatrices(modelMatrix, pointLightShadowMapsProjection);
+
+                // Render each cubemap face
+                for (size_t face = 0UL; face < 6UL; face++) {
+                    // Bind shadow shader and shadowmap framebuffer
+                    m_pointShadowShader.bind();
+                    glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffers[face]);
+                    glEnable(GL_DEPTH_TEST);
+
+                    // Bind uniforms
+                    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvps[face]));
+                    glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+                    glUniform3fv(2, 1, glm::value_ptr(light.position));
+                    glUniform1f(3, renderConfig.shadowFarPlane);
+
+                    // Bind model's VAO and draw its elements
+                    mesh.draw();
+                }
+            }
+        }
+
+        // Render area lights shadow maps
+        const glm::mat4 areaLightShadowMapsProjection = renderConfig.areaShadowMapsProjectionMatrix();
+        glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
+        for (size_t areaLightNum = 0U; areaLightNum < lightManager.numAreaLights(); areaLightNum++) {
+            const AreaLight& light      = lightManager.areaLightAt(areaLightNum);
+            const glm::mat4 lightView   = light.viewMatrix();
+
+            // Bind shadow shader and shadowmap framebuffer
+            m_areaShadowShader.bind();
+            glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffer);
+
+            // Clear the shadow map and set needed options
+            glClearDepth(1.0f);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+
+            // Render each model in the scene
+            for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
+                const GPUMesh& mesh         = scene.meshAt(modelNum);
+                const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
+
+                // Bind light camera mvp matrix
+                const glm::mat4 lightMvp = areaLightShadowMapsProjection * lightView *  modelMatrix;
+                glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvp));
+
+                // Bind model's VAO and draw its elements
+                mesh.draw();
+            }
+        }
+
+        // Unbind the last off-screen framebuffer and reset the viewport size
+        glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // Render each model
         for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
@@ -154,11 +202,12 @@ int main(int argc, char* argv[]) {
 
             // Normals should be transformed differently than positions (ignoring translations + dealing with scaling)
             // https://paroj.github.io/gltut/Illumination/Tut09%20Normal%20Transformation.html
-            const glm::mat4 mvpMatrix           = m_projectionMatrix * mainCamera.viewMatrix() * modelMatrix;
+            const glm::mat4 mvpMatrix           = m_viewProjectionMatrix * modelMatrix;
             const glm::mat3 normalModelMatrix   = glm::inverseTranspose(glm::mat3(modelMatrix));
 
-            // Bind shader(s) and uniform(s)
+            // Bind shader(s), light(s), and uniform(s)
             m_defaultShader.bind();
+            lightManager.bind(modelMatrix);
             glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvpMatrix));
             glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
             glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(normalModelMatrix));
@@ -167,7 +216,9 @@ int main(int argc, char* argv[]) {
                 glUniform1i(3, 0);
                 glUniform1i(4, GL_TRUE);
             } else { glUniform1i(4, GL_FALSE); }
-
+            const glm::vec3 cameraPos = mainCamera.cameraPos();
+            glUniform3fv(5, 1, glm::value_ptr(cameraPos));
+            glUniform1f(7, renderConfig.shadowFarPlane);
             mesh.draw();
         }
 
@@ -175,5 +226,5 @@ int main(int argc, char* argv[]) {
         m_window.swapBuffers();
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

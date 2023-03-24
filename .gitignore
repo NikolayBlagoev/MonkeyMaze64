@@ -36,3 +36,6 @@ build/
 
 # IDE files
 .vscode/
+
+# ImGUI config
+imgui.ini
