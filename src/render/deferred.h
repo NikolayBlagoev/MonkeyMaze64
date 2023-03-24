@@ -26,6 +26,8 @@ private:
     void renderGeometry(const glm::mat4& viewProjectionMatrix) const;
     void bindGBufferTextures() const;
     void renderQuad();
+    void renderDiffuse(const glm::vec3& cameraPos);
+    void renderSpecular(const glm::vec3& cameraPos);
     void copyDepthBuffer();
 
     static constexpr GLuint INVALID = 0xFFFFFFFF;
@@ -44,7 +46,8 @@ private:
     GLuint albedoTex;
 
     Shader geometryPass;
-    Shader lightingPass;
+    Shader lightingDiffuse;
+    Shader lightingSpecular;
 
     RenderConfig& m_renderConfig;
     Scene& m_scene;

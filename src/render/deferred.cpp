@@ -36,15 +36,9 @@ void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::
     // Bind screen framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Bind lighting shader, G-Buffer data, and lighting data
-    lightingPass.bind();
-    bindGBufferTextures();
-    glUniform3fv(3, 1, glm::value_ptr(cameraPos));
-    glUniform1f(5, m_renderConfig.shadowFarPlane);
-    m_lightManager.bind();
-
-    // Draw final screen quad (lighting pass)
-    renderQuad();
+    // For diffuse and specular: bind lighting shader, G-Buffer data, and lighting data
+    renderDiffuse(cameraPos);
+    renderSpecular(cameraPos);
 
     // Copy G-buffer depth data to main framebuffer
     copyDepthBuffer();
@@ -91,6 +85,7 @@ void DeferredRenderer::initBuffers() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+// TODO: Add cases for loading other shaders
 void DeferredRenderer::initShaders() {
     try {
         ShaderBuilder geometryPassBuilder;
@@ -98,10 +93,15 @@ void DeferredRenderer::initShaders() {
         geometryPassBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "deferred" / "deferred.frag");
         geometryPass = geometryPassBuilder.build();
 
-        ShaderBuilder lightingPassBuilder;
-        lightingPassBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "deferred_lighting.vert");
-        lightingPassBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "phong.frag");
-        lightingPass = lightingPassBuilder.build();
+        ShaderBuilder lightingDiffuseBuilder;
+        lightingDiffuseBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "deferred_lighting.vert");
+        lightingDiffuseBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "lambert_diffuse.frag");
+        lightingDiffuse = lightingDiffuseBuilder.build();
+
+        ShaderBuilder lightingSpecularBuilder;
+        lightingSpecularBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "deferred_lighting.vert");
+        lightingSpecularBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "phong_specular.frag");
+        lightingSpecular = lightingSpecularBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 }
 
@@ -176,6 +176,43 @@ void DeferredRenderer::renderQuad() {
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
+
+void DeferredRenderer::renderDiffuse(const glm::vec3& cameraPos) {
+    // Bind shader, G-buffer textures, and general usage uniforms
+    lightingDiffuse.bind();
+    bindGBufferTextures();
+    glUniform3fv(3, 1, glm::value_ptr(cameraPos));
+    glUniform1f(5, m_renderConfig.shadowFarPlane);
+    m_lightManager.bind();
+
+    // Bind shader-specific uniforms
+    // TODO: Add all cases
+    switch (m_renderConfig.diffuseModel) {
+        case DiffuseModel::Lambert:
+            break;
+    }
+
+    renderQuad();
+}
+
+void DeferredRenderer::renderSpecular(const glm::vec3& cameraPos) {
+    // Bind shader, G-buffer textures, and general usage uniforms
+    lightingSpecular.bind();
+    bindGBufferTextures();
+    glUniform3fv(3, 1, glm::value_ptr(cameraPos));
+    glUniform1f(5, m_renderConfig.shadowFarPlane);
+    m_lightManager.bind();
+
+    // Bind shader-specific uniforms
+    // TODO: Add all cases
+    switch (m_renderConfig.specularModel) {
+        case SpecularModel::Phong:
+            break;
+    }
+
+    renderQuad();
+}
+
 
 void DeferredRenderer::copyDepthBuffer() {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
