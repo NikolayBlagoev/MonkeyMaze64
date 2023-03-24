@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     Scene scene;
     LightManager lightManager(renderConfig);
-    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager, utils::WIDTH, utils::HEIGHT);
+    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager);
     Menu menu(scene, renderConfig, lightManager);
 
     // Register UI callbacks
@@ -107,8 +107,6 @@ int main(int argc, char* argv[]) {
 
     // Main loop
     while (!m_window.shouldClose()) {
-        m_window.updateInput();
-
         // Clear the screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -118,9 +116,9 @@ int main(int argc, char* argv[]) {
         const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
         const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
 
-        // Controls and UI
+        // Controls
         ImGuiIO io = ImGui::GetIO();
-        menu.draw(m_viewProjectionMatrix);
+        m_window.updateInput();
         if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
 
         // Render point lights shadow maps
@@ -185,8 +183,13 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // Render the scene
+        // Render scene
         deferredRenderer.render(m_viewProjectionMatrix, mainCamera.cameraPos());
+
+        // Draw UI
+        glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        menu.draw(m_viewProjectionMatrix);
 
         // Process inputs and swap the window buffer
         m_window.swapBuffers();

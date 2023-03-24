@@ -15,18 +15,18 @@ DISABLE_WARNINGS_POP()
 // TODO: Adapt to resize framebuffer sizes when window size changes
 class DeferredRenderer {
 public:
-    DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager,
-                     int32_t screenWidth, int32_t screenHeight);
+    DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager);
     ~DeferredRenderer();
 
     void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos);
 
 private:
-    void initBuffers(int32_t screenWidth, int32_t screenHeight);
+    void initBuffers();
     void initShaders();
     void renderGeometry(const glm::mat4& viewProjectionMatrix) const;
     void bindGBufferTextures() const;
     void renderQuad();
+    void copyDepthBuffer();
 
     static constexpr GLuint INVALID = 0xFFFFFFFF;
 

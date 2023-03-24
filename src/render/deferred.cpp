@@ -10,12 +10,11 @@ DISABLE_WARNINGS_POP()
 #include <stdint.h>
 #include <utils/constants.h>
 
-DeferredRenderer::DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager,
-                                   int32_t screenWidth, int32_t screenHeight)
+DeferredRenderer::DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager)
     : m_renderConfig(renderConfig)
     , m_scene(scene)
     , m_lightManager(lightManager) {
-    initBuffers(screenWidth, screenHeight);
+    initBuffers();
     initShaders();
 }
 
@@ -46,9 +45,12 @@ void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::
 
     // Draw final screen quad (lighting pass)
     renderQuad();
+
+    // Copy G-buffer depth data to main framebuffer
+    copyDepthBuffer();
 }
 
-void DeferredRenderer::initBuffers(int32_t screenWidth, int32_t screenHeight) {
+void DeferredRenderer::initBuffers() {
     // Init G-Buffer
     glCreateFramebuffers(1, &gBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
@@ -57,19 +59,19 @@ void DeferredRenderer::initBuffers(int32_t screenWidth, int32_t screenHeight) {
     // and assign them as render targets
     glCreateTextures(GL_TEXTURE_2D, 1, &positionTex);
     glBindTexture(GL_TEXTURE_2D, positionTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenWidth, screenHeight, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, positionTex, 0);
     glCreateTextures(GL_TEXTURE_2D, 1, &normalTex);
     glBindTexture(GL_TEXTURE_2D, normalTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, screenWidth, screenHeight, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, normalTex, 0);
     glCreateTextures(GL_TEXTURE_2D, 1, &albedoTex);
     glBindTexture(GL_TEXTURE_2D, albedoTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, screenWidth, screenHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, albedoTex, 0);
@@ -79,7 +81,7 @@ void DeferredRenderer::initBuffers(int32_t screenWidth, int32_t screenHeight) {
     // Create and attach depth buffer
     glCreateRenderbuffers(1, &rboDepth);
     glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, screenWidth, screenHeight);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, utils::WIDTH, utils::HEIGHT);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
 
     // Check if framebuffer is complete
@@ -173,5 +175,11 @@ void DeferredRenderer::renderQuad() {
     }
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
+}
+
+void DeferredRenderer::copyDepthBuffer() {
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Write to default framebuffer
+    glBlitFramebuffer(0, 0, utils::WIDTH, utils::HEIGHT, 0, 0, utils::WIDTH, utils::HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
