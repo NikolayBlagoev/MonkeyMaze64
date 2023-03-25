@@ -102,7 +102,7 @@ void main() {
         vec3 lightPosition  = light.position.xyz;
         
         float successFraction   = samplePointShadow(fragPos, lightIdx);
-        if (successFraction != 0.0) { fragColor.rgb   += successFraction * lambertianDiffuse(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition); }
+        if (successFraction != 0.0) { fragColor.rgb += successFraction * phongSpecular(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition); }
     }
 
     // Accumulate lighting from area lights
@@ -113,6 +113,6 @@ void main() {
 
         vec4 fragLightCoord     = light.viewProjection * vec4(fragPos, 1.0);
         float successFraction   = sampleAreaShadow(fragLightCoord, lightIdx);
-        if (successFraction != 0.0) { fragColor.rgb   += successFraction * lambertianDiffuse(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition); }
+        if (successFraction != 0.0) { fragColor.rgb += successFraction * phongSpecular(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition); }
     }
 }

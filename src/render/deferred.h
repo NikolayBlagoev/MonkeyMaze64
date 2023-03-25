@@ -22,6 +22,7 @@ public:
 
 private:
     void initBuffers();
+    void initLightingShaders();
     void initShaders();
     void renderGeometry(const glm::mat4& viewProjectionMatrix) const;
     void bindGBufferTextures() const;

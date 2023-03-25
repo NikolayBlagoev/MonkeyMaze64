@@ -85,24 +85,58 @@ void DeferredRenderer::initBuffers() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-// TODO: Add cases for loading other shaders
+void DeferredRenderer::initLightingShaders() {
+    try {
+        std::string diffuseFileName;
+        switch (m_renderConfig.diffuseModel) {
+            case DiffuseModel::Lambert:
+                diffuseFileName = "lambert.frag";
+                break;
+            case DiffuseModel::ToonLambert:
+                diffuseFileName = "toon_lambert.frag";
+                break;
+            case DiffuseModel::XToonLambert:
+                diffuseFileName = "xtoon_lambert.frag";
+                break;
+        }
+        ShaderBuilder lightingDiffuseBuilder;
+        lightingDiffuseBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "deferred_lighting.vert");
+        lightingDiffuseBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "diffuse" / diffuseFileName);
+        lightingDiffuse = lightingDiffuseBuilder.build();
+
+        std::string specularFileName;
+        switch (m_renderConfig.specularModel) {
+            case SpecularModel::Phong:
+                specularFileName = "phong.frag";
+                break;
+            case SpecularModel::BlinnPhong:
+                specularFileName = "blinn_phong.frag";
+                break;
+            case SpecularModel::ToonBlinnPhong:
+                specularFileName = "toon_blinn_phong.frag";
+                break;
+            case SpecularModel::XToonBlinnPhong:
+                specularFileName = "xtoon_blinn_phong.frag";
+                break;
+        }
+        ShaderBuilder lightingSpecularBuilder;
+        lightingSpecularBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "deferred_lighting.vert");
+        lightingSpecularBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "specular" / specularFileName);
+        lightingSpecular = lightingSpecularBuilder.build();
+    } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
+}
+
 void DeferredRenderer::initShaders() {
+    // Geometry pass
     try {
         ShaderBuilder geometryPassBuilder;
         geometryPassBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "deferred" / "deferred.vert");
         geometryPassBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "deferred" / "deferred.frag");
         geometryPass = geometryPassBuilder.build();
-
-        ShaderBuilder lightingDiffuseBuilder;
-        lightingDiffuseBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "deferred_lighting.vert");
-        lightingDiffuseBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "lambert_diffuse.frag");
-        lightingDiffuse = lightingDiffuseBuilder.build();
-
-        ShaderBuilder lightingSpecularBuilder;
-        lightingSpecularBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "deferred_lighting.vert");
-        lightingSpecularBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "phong_specular.frag");
-        lightingSpecular = lightingSpecularBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
+
+    // Lighting pass
+    initLightingShaders();
 }
 
 void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) const {
@@ -186,9 +220,14 @@ void DeferredRenderer::renderDiffuse(const glm::vec3& cameraPos) {
     m_lightManager.bind();
 
     // Bind shader-specific uniforms
-    // TODO: Add all cases
     switch (m_renderConfig.diffuseModel) {
         case DiffuseModel::Lambert:
+            break;
+        case DiffuseModel::ToonLambert:
+            glUniform1ui(8, m_renderConfig.toonDiscretizeSteps);
+            break;
+        case DiffuseModel::XToonLambert:
+            // TODO: Add XToon texture
             break;
     }
 
@@ -207,6 +246,13 @@ void DeferredRenderer::renderSpecular(const glm::vec3& cameraPos) {
     // TODO: Add all cases
     switch (m_renderConfig.specularModel) {
         case SpecularModel::Phong:
+        case SpecularModel::BlinnPhong:
+            break;
+        case SpecularModel::ToonBlinnPhong:
+            glUniform1f(8, m_renderConfig.toonSpecularThreshold);
+            break;
+        case SpecularModel::XToonBlinnPhong:
+            // TODO: Add XToon texture
             break;
     }
 

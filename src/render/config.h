@@ -7,6 +7,7 @@ DISABLE_WARNINGS_PUSH()
 #include <glm/mat4x4.hpp>
 DISABLE_WARNINGS_POP()
 
+#include <stdint.h>
 #include <utils/constants.h>
 
 enum class DiffuseModel {
@@ -32,8 +33,9 @@ struct RenderConfig {
 
     // Shading
     DiffuseModel diffuseModel { DiffuseModel::Lambert };
-    SpecularModel specularModel { SpecularModel::Phong };
-
+    SpecularModel specularModel { SpecularModel::BlinnPhong };
+    uint32_t toonDiscretizeSteps { 4U };
+    float toonSpecularThreshold { 0.49f };
 
     // Lighting debug
     bool drawLights { false };
