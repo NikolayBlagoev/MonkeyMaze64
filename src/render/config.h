@@ -32,10 +32,15 @@ struct RenderConfig {
     bool constrainVertical  { false };
 
     // Shading
-    DiffuseModel diffuseModel { DiffuseModel::Lambert };
-    SpecularModel specularModel { SpecularModel::BlinnPhong };
-    uint32_t toonDiscretizeSteps { 4U };
-    float toonSpecularThreshold { 0.49f };
+    DiffuseModel diffuseModel       { DiffuseModel::Lambert };
+    SpecularModel specularModel     { SpecularModel::BlinnPhong };
+    uint32_t toonDiscretizeSteps    { 4U };
+    float toonSpecularThreshold     { 0.49f };
+
+    // HDR tonemapping and gamma correction
+    bool useHdr     { true };
+    float exposure  { 1.0f };
+    float gamma     { 2.2f };
 
     // Lighting debug
     bool drawLights { false };
@@ -43,9 +48,9 @@ struct RenderConfig {
     bool drawSelectedAreaLight { false };
 
     // Shadow maps
-    float areaShadowFovY    = 60.0f; // Degrees
-    float shadowNearPlane   = 0.5f;
-    float shadowFarPlane    = 30.0f;
+    float areaShadowFovY    { 60.0f }; // Degrees
+    float shadowNearPlane   { 0.5f };
+    float shadowFarPlane    { 30.0f };
     glm::mat4 areaShadowMapsProjectionMatrix() const { return glm::perspective(glm::radians(areaShadowFovY), utils::SHADOW_ASPECT_RATIO,
                                                                                shadowNearPlane, shadowFarPlane); }
     glm::mat4 pointShadowMapsProjectionMatrix() const { return glm::perspective(glm::radians(utils::CUBE_SHADOW_FOV), utils::SHADOW_ASPECT_RATIO,

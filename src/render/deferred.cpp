@@ -27,29 +27,14 @@ DeferredRenderer::~DeferredRenderer() {
 }
 
 void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) {
-    // Set correct viewport size
-    glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
-
-    // Geometry pass
-    renderGeometry(viewProjectionMatrix);
-
-    // Bind screen framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    // For diffuse and specular: bind lighting shader, G-Buffer data, and lighting data
-    glDepthFunc(GL_ALWAYS);                     // Depth test always passes to allow for combining all fragment results
-    glEnablei(GL_BLEND, 0);                     // Enable blending for main framebuffer
-    glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);    // Blend source and destination fragments based on their alpha components
-    renderDiffuse(cameraPos);
-    renderSpecular(cameraPos);
-    glDisablei(GL_BLEND, 0);                    // Be a good citizen and restore defaults
-    glDepthFunc(GL_LEQUAL);
-
-    // Copy G-buffer depth data to main framebuffer
-    copyDepthBuffer();
+    glViewport(0, 0, utils::WIDTH, utils::HEIGHT);  // Set correct viewport size
+    renderGeometry(viewProjectionMatrix);           // Geometry pass
+    renderLighting(cameraPos);                      // Lighting pass
+    renderHdr();                                    // HDR tonemapping and gamma correction
+    copyDepthBuffer();                              // Copy G-buffer depth data to main framebuffer
 }
 
-void DeferredRenderer::initBuffers() {
+void DeferredRenderer::initGBuffer() {
     // Init G-Buffer
     glCreateFramebuffers(1, &gBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
@@ -88,6 +73,37 @@ void DeferredRenderer::initBuffers() {
     else { std::cout << "Initialized deferred rendering framebuffer" << std::endl; }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void DeferredRenderer::initHdrBuffer() {
+    // Create HDR buffer
+    glCreateFramebuffers(1, &hdrBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
+
+    // Create texture to render to
+    glCreateTextures(GL_TEXTURE_2D, 1, &hdrTex);
+    glBindTexture(GL_TEXTURE_2D, hdrTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdrTex, 0);
+
+    // Create and attach depth buffer
+    glCreateRenderbuffers(1, &hdrDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, hdrDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, utils::WIDTH, utils::HEIGHT);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, hdrDepth);
+
+    // Check if framebuffer is complete
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) { std::cerr << "Failed to initialise HDR intermediate framebuffer" << std::endl; }
+    else { std::cout << "Initialized HDR intermediate framebuffer" << std::endl; }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void DeferredRenderer::initBuffers() {
+    initGBuffer();
+    initHdrBuffer();
 }
 
 void DeferredRenderer::initLightingShaders() {
@@ -132,12 +148,17 @@ void DeferredRenderer::initLightingShaders() {
 }
 
 void DeferredRenderer::initShaders() {
-    // Geometry pass
+    // Geometry pass and HDR rendering
     try {
         ShaderBuilder geometryPassBuilder;
         geometryPassBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "deferred" / "deferred.vert");
         geometryPassBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "deferred" / "deferred.frag");
         geometryPass = geometryPassBuilder.build();
+
+        ShaderBuilder hdrBuilder;
+        hdrBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "hdr" / "hdr.vert");
+        hdrBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "hdr" / "hdr.frag");
+        hdrRender = hdrBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
     // Lighting pass
@@ -263,6 +284,32 @@ void DeferredRenderer::renderSpecular(const glm::vec3& cameraPos) {
     renderQuad();
 }
 
+void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
+    // Bind HDR framebuffer and clear previous values
+    glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // For diffuse and specular: bind lighting shader, G-Buffer data, and lighting data
+    glDepthFunc(GL_ALWAYS);                     // Depth test always passes to allow for combining all fragment results
+    glEnablei(GL_BLEND, hdrBuffer);             // Enable blending for main framebuffer
+    glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);    // Blend source and destination fragments based on their alpha components
+    renderDiffuse(cameraPos);
+    renderSpecular(cameraPos);
+    glDisablei(GL_BLEND, hdrBuffer);            // Be a good citizen and restore defaults
+    glDepthFunc(GL_LEQUAL);
+}
+
+void DeferredRenderer::renderHdr() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    hdrRender.bind();
+    glActiveTexture(GL_TEXTURE0 + utils::HDR_BUFFER_START_IDX);
+    glBindTexture(GL_TEXTURE_2D, hdrTex);
+    glUniform1i(0, utils::HDR_BUFFER_START_IDX);
+    glUniform1i(1, m_renderConfig.useHdr);
+    glUniform1f(2, m_renderConfig.exposure);
+    glUniform1f(3, m_renderConfig.gamma);
+    renderQuad();
+}
 
 void DeferredRenderer::copyDepthBuffer() {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);

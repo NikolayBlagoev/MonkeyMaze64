@@ -22,6 +22,8 @@ public:
     void initLightingShaders();
 
 private:
+    void initGBuffer();
+    void initHdrBuffer();
     void initBuffers();
     void initShaders();
     void renderGeometry(const glm::mat4& viewProjectionMatrix) const;
@@ -29,6 +31,8 @@ private:
     void renderQuad();
     void renderDiffuse(const glm::vec3& cameraPos);
     void renderSpecular(const glm::vec3& cameraPos);
+    void renderLighting(const glm::vec3& cameraPos);
+    void renderHdr();
     void copyDepthBuffer();
 
     static constexpr GLuint INVALID = 0xFFFFFFFF;
@@ -46,9 +50,15 @@ private:
     GLuint normalTex;
     GLuint albedoTex;
 
+    // Intermediate HDR framebuffer to render to before tonemapping and gamma correction
+    GLuint hdrBuffer;
+    GLuint hdrTex;
+    GLuint hdrDepth;
+
     Shader geometryPass;
     Shader lightingDiffuse;
     Shader lightingSpecular;
+    Shader hdrRender;
 
     RenderConfig& m_renderConfig;
     Scene& m_scene;
