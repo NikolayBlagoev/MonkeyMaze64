@@ -37,6 +37,7 @@ void Menu::draw2D() {
     drawLightTab();
     drawShadowTab();
     drawShadingTab();
+    drawRenderTab();
 
     ImGui::EndTabBar();
     ImGui::End();
@@ -232,6 +233,21 @@ void Menu::drawShadingTab() {
 
         ImGui::Text("Toon shading parameters");
         drawToonShadingControls();
+
+        ImGui::EndTabItem();
+    }
+}
+
+void Menu::drawHdrControls() {
+    ImGui::Checkbox("Enable HDR", &m_renderConfig.useHdr);
+    ImGui::InputFloat("Exposure", &m_renderConfig.exposure, 0.1f, 1.0f, "%.1f");
+    ImGui::InputFloat("Gamma", &m_renderConfig.gamma, 0.1f, 1.0f, "%.1f");
+}
+
+void Menu::drawRenderTab() {
+    if (ImGui::BeginTabItem("Rendering")) {
+        ImGui::Text("HDR");
+        drawHdrControls();
 
         ImGui::EndTabItem();
     }

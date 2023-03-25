@@ -291,11 +291,11 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
 
     // For diffuse and specular: bind lighting shader, G-Buffer data, and lighting data
     glDepthFunc(GL_ALWAYS);                     // Depth test always passes to allow for combining all fragment results
-    glEnablei(GL_BLEND, hdrBuffer);             // Enable blending for main framebuffer
+    glEnable(GL_BLEND);                         // Enable blending for HDR framebuffer
     glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);    // Blend source and destination fragments based on their alpha components
     renderDiffuse(cameraPos);
     renderSpecular(cameraPos);
-    glDisablei(GL_BLEND, hdrBuffer);            // Be a good citizen and restore defaults
+    glDisable(GL_BLEND);                        // Be a good citizen and restore defaults
     glDepthFunc(GL_LEQUAL);
 }
 
