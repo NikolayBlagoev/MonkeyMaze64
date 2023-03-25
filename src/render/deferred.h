@@ -19,10 +19,10 @@ public:
     ~DeferredRenderer();
 
     void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos);
+    void initLightingShaders();
 
 private:
     void initBuffers();
-    void initLightingShaders();
     void initShaders();
     void renderGeometry(const glm::mat4& viewProjectionMatrix) const;
     void bindGBufferTextures() const;
