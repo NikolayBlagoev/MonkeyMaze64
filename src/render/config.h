@@ -40,7 +40,7 @@ struct RenderConfig {
     // HDR tonemapping and gamma correction
     bool useHdr     { true };
     float exposure  { 1.0f };
-    float gamma     { 2.2f };
+    float gamma     { 1.0f };
 
     // Lighting debug
     bool drawLights { false };

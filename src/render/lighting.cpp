@@ -87,8 +87,8 @@ LightManager::~LightManager() {
     for (const PointLight& pointLight : pointLights) { glDeleteFramebuffers(6, pointLight.framebuffers.data()); }
 }
 
-void LightManager::addPointLight(const glm::vec3& position, const glm::vec3& color) {
-    PointLight light = { position, color, {INVALID} };
+void LightManager::addPointLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier) {
+    PointLight light = { position, color, intensityMultiplier, {INVALID} };
 
     // Resize texture array to fit new shadowmap
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
@@ -123,12 +123,12 @@ void LightManager::removePointLight(size_t idx) {
 std::vector<PointLightShader> LightManager::createPointLightsShaderData() {
     const glm::mat4 projection = m_renderConfig.pointShadowMapsProjectionMatrix();
     std::vector<PointLightShader> shaderData;
-    for (const PointLight& light : pointLights) { shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color, 0.0f) }); }
+    for (const PointLight& light : pointLights) { shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color * light.intensityMultiplier, 0.0f) }); }
     return shaderData;
 }
 
-void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& color, float xAngle, float yAngle) {
-    AreaLight light = { position, xAngle, yAngle, color, INVALID };
+void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier, float xAngle, float yAngle) {
+    AreaLight light = { position, xAngle, yAngle, color, intensityMultiplier, INVALID };
 
     // Resize texture array to fit new shadowmap
     glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
@@ -165,7 +165,7 @@ std::vector<AreaLightShader> LightManager::createAreaLightsShaderData() {
     std::vector<AreaLightShader> shaderData;
     for (const AreaLight& light : areaLights) {
         glm::mat4 viewProjection = projection * light.viewMatrix();
-        shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color, 0.0f), viewProjection });
+        shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color * light.intensityMultiplier, 0.0f), viewProjection });
     }
     return shaderData;
 }

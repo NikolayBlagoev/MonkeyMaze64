@@ -129,6 +129,7 @@ void Menu::drawPointLightControls() {
     // Selected point light controls
     if (m_lightManager.numPointLights() > 0U) {
         PointLight& selectedLight = m_lightManager.pointLightAt(selectedPointLight);
+        ImGui::InputFloat("Intensity##point", &selectedLight.intensityMultiplier, 0.1f, 1.0f, "%.1f");
         ImGui::ColorEdit3("Colour##point", glm::value_ptr(selectedLight.color));
         ImGui::DragFloat3("Position##point", glm::value_ptr(selectedLight.position), 0.05f);
     }
@@ -158,6 +159,7 @@ void Menu::drawAreaLightControls() {
     // Selected area light controls (hashes prevent ID conflicts https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-windows-with-the-same-label)
     if (m_lightManager.numAreaLights() > 0U) {
         AreaLight& selectedLight = m_lightManager.areaLightAt(selectedAreaLight);
+        ImGui::InputFloat("Intensity##point", &selectedLight.intensityMultiplier, 0.1f, 1.0f, "%.1f");
         ImGui::ColorEdit3("Colour##area", glm::value_ptr(selectedLight.color));
         ImGui::DragFloat3("Position##area", glm::value_ptr(selectedLight.position), 0.05f);
         ImGui::SliderFloat("X Rotation", &selectedLight.rotX, 0.0f, 360.0f);
