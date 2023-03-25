@@ -37,8 +37,13 @@ void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // For diffuse and specular: bind lighting shader, G-Buffer data, and lighting data
+    glDepthFunc(GL_ALWAYS);                     // Depth test always passes to allow for combining all fragment results
+    glEnablei(GL_BLEND, 0);                     // Enable blending for main framebuffer
+    glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);    // Blend source and destination fragments based on their alpha components
     renderDiffuse(cameraPos);
     renderSpecular(cameraPos);
+    glDisablei(GL_BLEND, 0);                    // Be a good citizen and restore defaults
+    glDepthFunc(GL_LEQUAL);
 
     // Copy G-buffer depth data to main framebuffer
     copyDepthBuffer();
@@ -243,7 +248,6 @@ void DeferredRenderer::renderSpecular(const glm::vec3& cameraPos) {
     m_lightManager.bind();
 
     // Bind shader-specific uniforms
-    // TODO: Add all cases
     switch (m_renderConfig.specularModel) {
         case SpecularModel::Phong:
         case SpecularModel::BlinnPhong:

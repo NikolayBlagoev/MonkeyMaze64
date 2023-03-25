@@ -87,7 +87,7 @@ void main() {
     vec3 fragNormal = texture(gNormal, bufferCoords).xyz;
     vec3 fragAlbedo = texture(gAlbedo, bufferCoords).rgb;
 
-    fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+    fragColor = vec4(0.0, 0.0, 0.0, 1.0);
 
     // Accumulate lighting from point lights
     for (uint lightIdx = 0U; lightIdx < pointLightsData.length(); lightIdx++) {
