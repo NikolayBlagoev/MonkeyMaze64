@@ -10,7 +10,7 @@ DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <vector>
 
-struct MeshTransform {
+struct ObjectTransform {
     glm::vec3 scale;
     glm::vec3 rotate; // Angles in degrees
     glm::vec3 translate;
@@ -18,7 +18,7 @@ struct MeshTransform {
 
 class Scene {
 public:
-    void addMesh(std::filesystem::path filePath);
+    size_t addMesh(std::filesystem::path filePath);
     void removeMesh(size_t idx);
 
     size_t numMeshes() { return meshes.size(); }
@@ -26,7 +26,10 @@ public:
 
     glm::mat4 modelMatrix(size_t idx);
 
-    std::vector<MeshTransform> transformParams;
+    std::vector<ObjectTransform> transformParams;
+    bool tryUpdateScale(size_t idx, glm::vec3 scale);
+    bool tryUpdateRotation(size_t idx, glm::vec3 rotation);
+    bool tryUpdateTranslation(size_t idx, glm::vec3 translation);
 
 private:
     std::vector<GPUMesh> meshes;

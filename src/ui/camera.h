@@ -2,6 +2,7 @@
 #define _CAMERA_H_
 
 #include <render/config.h>
+#include <render/scene.h>
 
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
@@ -18,7 +19,11 @@ public:
     Camera(Window* pWindow, const RenderConfig& m_renderConfig,
            const glm::vec3& position, const glm::vec3& forward);
 
+    // Update camera position freely
     void updateInput();
+    // Update camera position with respect to object
+    void updateInput(Scene& scene, size_t idx);
+
     void setUserInteraction(bool enabled);
 
     glm::vec3 cameraPos() const;

@@ -11,7 +11,7 @@ DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <iostream>
 
-Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager) : 
+Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager) :
     m_scene(scene),
     m_renderConfig(renderConfig),
     m_lightManager(lightManager) {
@@ -28,6 +28,9 @@ void Menu::draw(const glm::mat4& cameraMVP) {
 
 void Menu::draw2D() {
     ImGui::Begin("Debug Controls");
+
+    ImGui::Checkbox("Control character", &m_renderConfig.controlCharacter);
+
     ImGui::BeginTabBar("Categories");
     
     drawCameraTab();
@@ -45,11 +48,12 @@ void Menu::draw3D(const glm::mat4& cameraMVP) {
 
 void Menu::drawCameraTab() {
     if (ImGui::BeginTabItem("Camera")) {
-        ImGui::DragFloat("Movement Speed", &m_renderConfig.moveSpeed, 0.001f, 0.01f, 0.09f);
+        ImGui::DragFloat("Movement Speed", &m_renderConfig.moveSpeed, 0.001f, 0.01f, 0.2f);
         ImGui::DragFloat("Look Speed", &m_renderConfig.lookSpeed, 0.0001f, 0.0005f, 0.0050f);
         ImGui::DragFloat("FOV (Vertical)", &m_renderConfig.verticalFOV, 1.0f, 30.0f, 180.0f);
         ImGui::DragFloat("Zoomed FOV (Vertical)", &m_renderConfig.zoomedVerticalFOV, 1.0f, 20.0f, 120.0f);
         ImGui::Checkbox("Constrain Vertical Movement", &m_renderConfig.constrainVertical);
+        ImGui::Checkbox("Invert controls", &m_renderConfig.invertControls);
         ImGui::EndTabItem();
     }
 }

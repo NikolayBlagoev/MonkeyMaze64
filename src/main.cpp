@@ -66,10 +66,19 @@ void mouseButtonCallback(int button, int action, int mods) {
 }
 
 int main(int argc, char* argv[]) {
+    // World setup
+    // * y is up *
+    glm::vec3 characterStart = glm::vec3 (2.0f, 0.25f, 0.0f);
+    glm::vec3 characterCameraStart = characterStart + glm::vec3(0.0f, 0.5f, 1.0f);
+
     // Init core objects
-    RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
-    Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
+
+    RenderConfig renderConfig;
+
+    Camera freeCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
+    Camera characterCamera(&m_window, renderConfig, characterCameraStart, characterStart - characterCameraStart);
+
     Scene scene;
     LightManager lightManager(renderConfig);
     DeferredRenderer deferredRenderer(renderConfig, scene, lightManager);
@@ -96,8 +105,10 @@ int main(int argc, char* argv[]) {
 
     // Add models and test texture
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
-    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+    size_t characterId = scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
     Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
+
+    scene.transformParams[characterId].translate += characterStart;
 
     // Add test lights
     lightManager.addPointLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -107,6 +118,9 @@ int main(int argc, char* argv[]) {
 
     // Main loop
     while (!m_window.shouldClose()) {
+        // Set render config based and selected camera
+        Camera& camera = renderConfig.controlCharacter ? characterCamera : freeCamera;
+
         // Clear the screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -114,12 +128,17 @@ int main(int argc, char* argv[]) {
 
         // View-projection matrices setup
         const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
+        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * camera.viewMatrix();
 
         // Controls
         ImGuiIO io = ImGui::GetIO();
         m_window.updateInput();
-        if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
+        if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
+            if (renderConfig.controlCharacter)
+                camera.updateInput(scene, characterId);
+            else
+                camera.updateInput();
+        }
 
         // Render point lights shadow maps
         const glm::mat4 pointLightShadowMapsProjection = renderConfig.pointShadowMapsProjectionMatrix();
@@ -184,7 +203,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Render scene
-        deferredRenderer.render(m_viewProjectionMatrix, mainCamera.cameraPos());
+        deferredRenderer.render(m_viewProjectionMatrix, camera.cameraPos());
 
         // Draw UI
         glViewport(0, 0, utils::WIDTH, utils::HEIGHT);

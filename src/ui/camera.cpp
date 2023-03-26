@@ -53,7 +53,6 @@ void Camera::rotateY(float angle)
 
 void Camera::updateInput() {
     if (m_userInteraction) {
-        glm::vec3 localMoveDelta { 0 };
         const glm::vec3 right = glm::normalize(glm::cross(m_forward, m_up));
 
         // Forward, backward and strafe
@@ -73,12 +72,96 @@ void Camera::updateInput() {
         }
 
         // Mouse movement
-        const glm::dvec2 cursorPos  = m_pWindow->getCursorPos();
-        const glm::vec2 delta       = m_renderConfig.lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
-        m_prevCursorPos             = cursorPos;
+        const glm::dvec2 cursorPos = m_pWindow->getCursorPos();
+        glm::vec2 delta = m_renderConfig.lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
+        // Invert controls
+        if (m_renderConfig.invertControls)
+            delta *= -1;
+
+        m_prevCursorPos = cursorPos;
         if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
             if (delta.x != 0.0f) { rotateY(delta.x); }
             if (!m_renderConfig.constrainVertical && delta.y != 0.0f) { rotateX(delta.y); }
         }
-    } else { m_prevCursorPos = m_pWindow->getCursorPos(); }
+
+    }
+    else {
+        m_prevCursorPos = m_pWindow->getCursorPos();
+    }
+}
+
+void Camera::updateInput(Scene& scene, size_t idx) {
+    if (m_userInteraction) {
+        glm::vec3 right = glm::normalize(glm::cross(m_forward, m_up));
+        glm::vec3 forward = m_forward;
+        glm::vec3 up = m_up;
+
+        // Eliminate y for forwards and backwards
+        right.y = 0.0f;
+        forward.y = 0.0f;
+
+        // Forward, backward and strafe
+        if (m_pWindow->isKeyPressed(GLFW_KEY_A)) {
+            m_position -= m_renderConfig.moveSpeed * right;
+            scene.transformParams[idx].translate -= m_renderConfig.moveSpeed * right;
+        }
+        if (m_pWindow->isKeyPressed(GLFW_KEY_D)) {
+            m_position += m_renderConfig.moveSpeed * right;
+            scene.transformParams[idx].translate += m_renderConfig.moveSpeed * right;
+        }
+        if (m_pWindow->isKeyPressed(GLFW_KEY_W)) {
+            m_position += m_renderConfig.moveSpeed * forward;
+            scene.transformParams[idx].translate += m_renderConfig.moveSpeed * forward;
+        }
+        if (m_pWindow->isKeyPressed(GLFW_KEY_S)) {
+            m_position -= m_renderConfig.moveSpeed * forward;
+            scene.transformParams[idx].translate -= m_renderConfig.moveSpeed * forward;
+        }
+
+        // Up and down
+        if (!m_renderConfig.constrainVertical) {
+            if (m_pWindow->isKeyPressed(GLFW_KEY_SPACE)) {
+                m_position += m_renderConfig.moveSpeed * up;
+                scene.transformParams[idx].translate += m_renderConfig.moveSpeed * up;
+            }
+            if (m_pWindow->isKeyPressed(GLFW_KEY_C)) {
+                m_position -= m_renderConfig.moveSpeed * up;
+                scene.transformParams[idx].translate -= m_renderConfig.moveSpeed * up;
+            }
+        }
+
+        // Mouse movement
+        const glm::dvec2 cursorPos = m_pWindow->getCursorPos();
+        glm::vec2 delta = m_renderConfig.lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
+        // Invert controls
+        if (m_renderConfig.invertControls)
+            delta *= -1;
+
+        m_prevCursorPos = cursorPos;
+        if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
+
+            if (delta.x != 0.0f) {
+                glm::vec3 objectPos = scene.transformParams[idx].translate;
+
+                glm::vec3 vecToObject = objectPos - m_position;
+                // move to object
+                m_position = objectPos;
+
+                // rotate
+                rotateY(delta.x);
+
+                // move back
+                m_position -= glm::normalize(m_forward) * glm::length(vecToObject);
+
+                scene.transformParams[idx].rotate.y += glm::degrees(delta.x);
+            }
+            if (!m_renderConfig.constrainVertical && delta.y != 0.0f) {
+                // TODO
+                rotateX(delta.y);
+            }
+        }
+    }
+    else {
+        m_prevCursorPos = m_pWindow->getCursorPos();
+    }
 }

@@ -33,9 +33,15 @@
 
 # Build files
 build/
+cmake*
 
 # IDE files
 .vscode/
+.vs/
+.idea
 
 # ImGUI config
 imgui.ini
+
+# Resources
+resources/
