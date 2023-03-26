@@ -36,6 +36,7 @@ bool cameraZoomed = false;
 std::mutex m;
 std::condition_variable cv;
 bool ready_ = false;
+Defined*** boardCopy;
 bool* ready = new bool;
 bool processed = false;
 Generator* gen =  new Generator();
@@ -52,8 +53,11 @@ void worker_thread()
 {
     
     gen->instantiate_terr();
+    boardCopy = gen->board;
     gen->visualise(gen->board, 7,7);
     while(true){
+        //TODO: SAFE ACCESS!!!
+        
         {
             std::unique_lock<std::mutex> lk(m);
             cv.wait(lk, []{ return ready_;});
@@ -61,6 +65,7 @@ void worker_thread()
             ready_ = false;
             lk.unlock();
         }
+
     }
 
     *ready = false;
@@ -206,6 +211,12 @@ int main() {
     // Add models and test texture
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+
+    GPUMesh crossing = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj");
+    GPUMesh room = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj");
+    GPUMesh tjunction = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj");
+    GPUMesh turn = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj");
+
     Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
     // Add test lights
@@ -213,14 +224,29 @@ int main() {
     lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
     lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f));
-
+    MeshTree* boardRoot = new MeshTree();
     // Main loop
+    bool flag = true;
     while (!m_window.shouldClose()) {
         // Clear the screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-
+        if (flag){
+            flag = false;
+            free(boardRoot);
+            boardRoot = new MeshTree();
+            for(int i = 0; i < 7; i ++){
+                // glm::vec3 offset(0.f,10.f*i,0.f);
+                for(int j = 0; j < 7; j++){
+                    if(boardCopy[i][j]->tileType == 1){
+                        scene.root->addChild(new MeshTree(&crossing, glm::vec3(0.f*i, 1.f, 0.f*j), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }
+                }
+            }
+            // scene.root->children.pop_back();
+            // scene.root->addChild(boardRoot);
+        }
         // View-projection matrices setup
         const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
         const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();

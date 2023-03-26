@@ -15,6 +15,9 @@ void Scene::addMesh(std::filesystem::path filePath) {
 }
 
 void Scene::addMesh(MeshTree* nd){
+    if(root == nullptr){
+        root = new MeshTree();
+    }
     root->addChild(nd);
 }
 
