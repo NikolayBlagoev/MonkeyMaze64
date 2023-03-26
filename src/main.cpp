@@ -24,15 +24,48 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 #include <framework/shader.h>
 #include <framework/window.h>
-
+#include <mutex>
+#include <condition_variable>
 #include <functional>
 #include <iostream>
 #include <vector>
-
+#include <generator/generator.h>
 // Game state
 // TODO: Have a separate struct for this if it becomes too much
 bool cameraZoomed = false;
+std::mutex m;
+std::condition_variable cv;
+bool ready_ = false;
+bool* ready = new bool;
+bool processed = false;
+Generator* gen =  new Generator();
+void signalChange(){
+    std::cout<<"Change\n";
+    {
+        ready_ = true;
+        std::unique_lock<std::mutex> lk(m);
+        
+        cv.notify_all();
+    }
+}
+void worker_thread()
+{
+    
+    gen->instantiate_terr();
+    gen->visualise(gen->board, 7,7);
+    while(true){
+        {
+            std::unique_lock<std::mutex> lk(m);
+            cv.wait(lk, []{ return ready_;});
+            std::cout<<"WE GOOOD\n";
+            ready_ = false;
+            lk.unlock();
+        }
+    }
 
+    *ready = false;
+    
+}
 void onKeyPressed(int key, int) {
     switch (key) {
         case GLFW_KEY_LEFT_CONTROL:
@@ -51,7 +84,9 @@ void onKeyReleased(int key, int) {
 
 void onMouseMove(const glm::dvec2&) {}
 
-void onMouseClicked(int , int ) {}
+void onMouseClicked(int , int ) {
+    signalChange();
+}
 
 void onMouseReleased(int , int ) {}
 
@@ -138,6 +173,9 @@ void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform,
 
 int main() {
     // Init core objects
+    *ready = false;
+    std::thread worker(worker_thread);
+    
     RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));

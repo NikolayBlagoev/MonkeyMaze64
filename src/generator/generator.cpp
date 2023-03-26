@@ -1,10 +1,10 @@
 #include "node.h"
-#include <deque>
+
 #include <iostream>
 #include <vector>
 #include <time.h>
 #include <cstdlib>
-
+#include "generator.h"
 const bool opens[18][4] = {
     //1:
     {
@@ -207,21 +207,16 @@ const bool opens[18][4] = {
         false
     }
 }; 
-void visualise(Defined*** board, int y, int x){
+
+void Generator::visualise(Defined*** board, int y, int x){
     for (int i = 0; i < y; i ++){
         for (int j = 0; j < x; j ++){
-           
-            Defined* xe2 = board[i][j];
-            
-            
-               
-            std::cout<<xe2->tileType<<"\t";
-            
+            std::cout<<board[i][j]->tileType<<"\t";    
         }
         std::cout<<std::endl;
     }
 }
-void connect(Defined* a, Defined* b, int dir){
+void Generator::connect(Defined* a, Defined* b, int dir){
     if(dir == 0){
         a->up = b;
         b->down = a;
@@ -236,7 +231,7 @@ void connect(Defined* a, Defined* b, int dir){
         b->right = a;
     }
 } 
-int remove_options(Defined* node, int i, int j){
+int Generator::remove_options(Defined* node, int mm, int mx){
     if(node == nullptr || node->empt){
         return 1099;
     }
@@ -299,7 +294,7 @@ int remove_options(Defined* node, int i, int j){
     return dir_min*100 + min_node;
 }
 
-void constrain(Defined* nd, int opts){
+void Generator::constrain(Defined* nd, int opts){
     if(nd == nullptr || !nd->empt){
         return;
     }
@@ -340,7 +335,7 @@ void constrain(Defined* nd, int opts){
 }
 
 
-void move_l(Defined*** board, std::deque <Defined*> *dq){
+void Generator::move_l(Defined*** board, std::deque <Defined*> *dq){
     for(int i = 0; i < 7; i ++){
         for(int j = 6; j > 0 ; j--){
             board[i][j] = board[i][j-1];
@@ -356,7 +351,24 @@ void move_l(Defined*** board, std::deque <Defined*> *dq){
     }
 }
 
-void move_r(Defined*** board, std::deque <Defined*> *dq){
+void Generator::move_d(Defined*** board, std::deque <Defined*> *dq){
+    for(int j = 0; j < 7; j ++){
+        for(int i = 0; i < 6; i++){
+            board[i][j] = board[i+1][j];
+        }
+    }
+    for(int i = 0; i < 7; i ++){
+        board[6][i] = board[5][i]->down;
+        if(board[6][i] == nullptr){
+            board[6][i] = new Defined();
+            connect(board[5][i], board[6][i], 2);
+            dq->push_back(board[6][i]);
+        }
+    }
+}
+
+
+void Generator::move_r(Defined*** board, std::deque <Defined*> *dq){
     for(int i = 0; i < 7; i ++){
         for(int j = 0; j < 6; j++){
             board[i][j] = board[i][j+1];
@@ -371,7 +383,23 @@ void move_r(Defined*** board, std::deque <Defined*> *dq){
         }
     }
 }
-void assign_all(std::deque <Defined*> *dq){
+
+void Generator::move_u(Defined*** board, std::deque <Defined*> *dq){
+    for(int j = 0; j < 7; j ++){
+        for(int i = 6; i > 0 ; i--){
+            board[i][j] = board[i-1][j];
+        }
+    }
+    for(int i = 0; i < 7; i ++){
+        board[0][i] = board[1][i]->up;
+        if(board[0][i] == nullptr){
+            board[0][i] = new Defined();
+            connect(board[1][i], board[0][i], 0);
+            dq->push_back(board[0][i]);
+        }
+    }
+}
+void Generator::assign_all(std::deque <Defined*> *dq){
     while(!dq->empty()){
         Defined* curr = dq->front();
         dq->pop_front();
@@ -386,27 +414,28 @@ void assign_all(std::deque <Defined*> *dq){
         constrain(curr, count);
     }
 }
-void instantiate_terr(){
+void Generator::instantiate_terr(){
+    
     srand(time(0));
-    Defined*** board;
+    
     board = new Defined**[7];
     for(int i = 0; i < 7; i ++){
         board[i] = new Defined*[7];
     }
     // board[0][0] = 
-    Defined tempt[7][7] =   {  
-        {Defined(), Defined(), Defined(), Defined(), Defined(), Defined(), Defined()},
-        {Defined(), Defined(), Defined(), Defined(10), Defined(), Defined(), Defined()},
-        {Defined(), Defined(), Defined(), Defined(11), Defined(), Defined(), Defined()},
-        {Defined(18),Defined(1),Defined(10),Defined(1), Defined(17), Defined(12),Defined()},
-        {Defined(), Defined(), Defined(), Defined(18), Defined(), Defined(), Defined()},
-        {Defined(), Defined(), Defined(), Defined(1), Defined(), Defined(), Defined()},
-        {Defined(), Defined(), Defined(), Defined(17), Defined(), Defined(), Defined()},
+    Defined* tempt[7][7] =   {  
+        {new Defined(), new Defined(), new Defined(), new Defined(), new Defined(), new Defined(), new Defined()},
+        {new Defined(), new Defined(), new Defined(), new Defined(10), new Defined(), new Defined(), new Defined()},
+        {new Defined(), new Defined(), new Defined(), new Defined(11), new Defined(), new Defined(), new Defined()},
+        {new Defined(18), new Defined(1),new Defined(10), new Defined(1), new Defined(17), new Defined(12), new Defined()},
+        {new Defined(), new Defined(), new Defined(), new Defined(18), new Defined(), new Defined(),new Defined()},
+        {new Defined(),new Defined(), new Defined(), new Defined(1), new Defined(), new Defined(), new Defined()},
+        {new Defined(), new Defined(), new Defined(), new Defined(17), new Defined(), new Defined(), new Defined()},
        
     };
     for(int i = 0; i < 7; i ++){
         for(int j = 0; j < 7; j++)
-            board[i][j] = &tempt[i][j];
+            board[i][j] = tempt[i][j];
     }
     // std::deque<std::deque<Defined>> terrain;
     Defined temp = Defined();
@@ -433,7 +462,7 @@ void instantiate_terr(){
 
     }
 
-    std::deque <Defined*> dq;
+    
     dq.push_back(board[3][3]);
     int max = 100000;
     Defined* max_node = nullptr;
@@ -477,27 +506,33 @@ void instantiate_terr(){
     assign_all(&dq);
     
     
-    while(true){
-        visualise(board, 7,7);
-        int inp = 0;
-        std::cin>>inp;
-        if(inp<1 || inp > 4) continue;
-        if(inp == 1){
-            move_r(board,&dq);
-            move_r(board,&dq);
-            assign_all(&dq);
-        }else if(inp == 3){
-            move_l(board,&dq);
-            move_l(board,&dq);
-            assign_all(&dq);
-        }
+    
+    // while(true){
+    //     visualise(board, 7,7);
+    //     int inp = 0;
+        
 
-    }
+    //     if(inp<1 || inp > 4) continue;
+    //     if(inp == 1){
+    //         move_u(board,&dq);
+    //         move_u(board,&dq);
+    //         assign_all(&dq);
+    //     }else if(inp == 2){
+    //         move_r(board,&dq);
+    //         move_r(board,&dq);
+    //         assign_all(&dq);
+    //     }else if(inp == 3){
+    //         move_d(board,&dq);
+    //         move_d(board,&dq);
+    //         assign_all(&dq);
+    //     }else if(inp == 4){
+    //         move_l(board,&dq);
+    //         move_l(board,&dq);
+    //         assign_all(&dq);
+    //     }
+        
+    // }
     // std::cout<<std::endl;
     // std::cout<<max;
     
-}
-int main(){ 
-    instantiate_terr();
-    return 0;
 }

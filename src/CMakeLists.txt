@@ -10,4 +10,5 @@ target_sources(FinalProject
         "${CMAKE_CURRENT_LIST_DIR}/render/texture.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/mesh_tree.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/ui/camera.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/ui/menu.cpp")
+        "${CMAKE_CURRENT_LIST_DIR}/ui/menu.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/generator/generator.cpp")
