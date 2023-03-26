@@ -277,8 +277,10 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
 
 void DeferredRenderer::renderPostProcessing() {
     // Render post-processing effect(s)
-    GLuint bloomTex = bloomFilter.render(hdrTex);
-
+    GLuint bloomTex;
+    if (m_renderConfig.enableBloom) { bloomTex = bloomFilter.render(hdrTex); }
+    
+    // Bind core HDR and tonemapping data
     hdrRender.bind();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glActiveTexture(GL_TEXTURE0 + utils::HDR_BUFFER_TEX_START_IDX);
@@ -287,9 +289,15 @@ void DeferredRenderer::renderPostProcessing() {
     glUniform1i(1, m_renderConfig.enableHdr);
     glUniform1f(2, m_renderConfig.exposure);
     glUniform1f(3, m_renderConfig.gamma);
-    glActiveTexture(GL_TEXTURE0 + utils::HDR_BUFFER_TEX_START_IDX + 1);
-    glBindTexture(GL_TEXTURE_2D, bloomTex);
-    glUniform1i(4, utils::HDR_BUFFER_TEX_START_IDX + 1);
+
+    // Bind bloom data
+    if (m_renderConfig.enableBloom) {
+        glActiveTexture(GL_TEXTURE0 + utils::HDR_BUFFER_TEX_START_IDX + 1);
+        glBindTexture(GL_TEXTURE_2D, bloomTex);
+        glUniform1i(4, utils::HDR_BUFFER_TEX_START_IDX + 1);
+    }
+    glUniform1i(5, m_renderConfig.enableBloom);
+    
     utils::renderQuad();
 }
 

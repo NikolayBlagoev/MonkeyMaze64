@@ -10,6 +10,7 @@ layout(location = 3) uniform float gamma;
 
 // Post-processing results
 layout(location = 4) uniform sampler2D bloomFilter;
+layout(location = 5) uniform bool enableBloom;
 
 // Quad texture to use with HDR buffer
 layout(location = 0) in vec2 bufferCoords;
@@ -20,7 +21,7 @@ layout(location = 0) out vec4 fragColor;
 void main() {
     // Combine post-processing results
     vec3 hdrColor   = texture(hdrBuffer, bufferCoords).rgb;
-    hdrColor       += texture(bloomFilter, bufferCoords).rgb;
+    if (enableBloom) { hdrColor += texture(bloomFilter, bufferCoords).rgb; }
     
     if (hdr) {
         // vec3 result = hdrColor / (hdrColor + vec3(1.0));     // Reinhard tone mapping
