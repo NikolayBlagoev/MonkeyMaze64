@@ -64,7 +64,7 @@ void mouseButtonCallback(int button, int action, int mods) {
     if (action == GLFW_PRESS) { onMouseClicked(button, mods); }
     else if (action == GLFW_RELEASE) { onMouseReleased(button, mods); }
 }
-void drawMeshTree(MeshTree* mt, glm::mat4 currTransform, 
+void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform, 
         const PointLight& light, Shader& m_pointShadowShader, const glm::mat4& pointLightShadowMapsProjection, RenderConfig& renderConfig){
     if(mt == nullptr) return;
     const MeshTransform& meshTransform = {mt->scale, mt->rotate, mt->offset};
@@ -77,7 +77,7 @@ void drawMeshTree(MeshTree* mt, glm::mat4 currTransform,
     finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // Scale
-    const glm::mat4 modelMatrix = glm::scale(finalTransform, meshTransform.scale);
+    const glm::mat4& modelMatrix = glm::scale(finalTransform, meshTransform.scale);
     if(mt->mesh != nullptr){
         const GPUMesh& mesh                         = *(mt->mesh);
         // std::cout<<"DRAWING"<<std::endl;
@@ -101,9 +101,41 @@ void drawMeshTree(MeshTree* mt, glm::mat4 currTransform,
         }
     }
     for(MeshTree* child : mt->children){
-        drawMeshTree(child,modelMatrix, light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
+        drawMeshTreePtL(child,modelMatrix, light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
     }
 }
+
+void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform, 
+         const glm::mat4& areaLightShadowMapsProjection, const glm::mat4& lightView, RenderConfig& renderConfig){
+    if(mt == nullptr) return;
+    const MeshTransform& meshTransform = {mt->scale, mt->rotate, mt->offset};
+    // Translate
+    glm::mat4 finalTransform = glm::translate(currTransform, meshTransform.translate);
+
+    // Rotate
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    // Scale
+    const glm::mat4& modelMatrix = glm::scale(finalTransform, meshTransform.scale);
+    if(mt->mesh != nullptr){
+        const GPUMesh& mesh                         = *(mt->mesh);
+    
+             
+
+        // Bind light camera mvp matrix
+        const glm::mat4 lightMvp = areaLightShadowMapsProjection * lightView *  modelMatrix;
+        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvp));
+
+        // Bind model's VAO and draw its elements
+        mesh.draw();
+    }
+    for(MeshTree* child : mt->children){
+        drawMeshTreeAL(child,modelMatrix, areaLightShadowMapsProjection, lightView, renderConfig);
+    }
+}
+
 int main() {
     // Init core objects
     RenderConfig renderConfig;
@@ -168,7 +200,7 @@ int main() {
             const PointLight& light = lightManager.pointLightAt(pointLightNum);
             light.wipeFramebuffers();
 
-            drawMeshTree(scene.root,glm::mat4(1),light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
+            drawMeshTreePtL(scene.root,glm::mat4(1),light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
         }
 
         // Render area lights shadow maps
@@ -188,17 +220,8 @@ int main() {
             glEnable(GL_DEPTH_TEST);
 
             // Render each model in the scene
-            for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
-                const GPUMesh& mesh         = scene.meshAt(modelNum);
-                const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
-
-                // Bind light camera mvp matrix
-                const glm::mat4 lightMvp = areaLightShadowMapsProjection * lightView *  modelMatrix;
-                glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvp));
-
-                // Bind model's VAO and draw its elements
-                mesh.draw();
-            }
+            drawMeshTreeAL(scene.root,glm::mat4(1),areaLightShadowMapsProjection, lightView, renderConfig);
+       
         }
 
         // Render scene
