@@ -241,7 +241,7 @@ void Menu::drawShadingTab() {
 }
 
 void Menu::drawHdrControls() {
-    ImGui::Checkbox("Enable HDR", &m_renderConfig.useHdr);
+    ImGui::Checkbox("Enable HDR", &m_renderConfig.enableHdr);
     ImGui::InputFloat("Exposure", &m_renderConfig.exposure, 0.1f, 1.0f, "%.1f");
     ImGui::InputFloat("Gamma", &m_renderConfig.gamma, 0.1f, 1.0f, "%.1f");
 }

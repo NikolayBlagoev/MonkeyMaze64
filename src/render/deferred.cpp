@@ -9,28 +9,35 @@ DISABLE_WARNINGS_POP()
 #include <iostream>
 #include <stdint.h>
 #include <utils/constants.h>
+#include <utils/render_utils.hpp>
 
 DeferredRenderer::DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager)
     : m_renderConfig(renderConfig)
     , m_scene(scene)
-    , m_lightManager(lightManager) {
+    , m_lightManager(lightManager)
+    , bloomFilter(renderConfig) {
     initBuffers();
     initShaders();
 }
 
 DeferredRenderer::~DeferredRenderer() {
+    // G-buffer
     glDeleteBuffers(1, &gBuffer);
     glDeleteTextures(1, &positionTex);
     glDeleteTextures(1, &normalTex);
     glDeleteTextures(1, &albedoTex);
     glDeleteRenderbuffers(1, &rboDepth);
+
+    // HDR buffer
+    glDeleteBuffers(1, &hdrBuffer);
+    glDeleteTextures(1, &hdrTex);
 }
 
 void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) {
     glViewport(0, 0, utils::WIDTH, utils::HEIGHT);  // Set correct viewport size
     renderGeometry(viewProjectionMatrix);           // Geometry pass
     renderLighting(cameraPos);                      // Lighting pass
-    renderHdr();                                    // HDR tonemapping and gamma correction
+    renderPostProcessing();                         // Combine post-processing results; HDR tonemapping and gamma correction
     copyDepthBuffer();                              // Copy G-buffer depth data to main framebuffer
 }
 
@@ -88,12 +95,6 @@ void DeferredRenderer::initHdrBuffer() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdrTex, 0);
 
-    // Create and attach depth buffer
-    glCreateRenderbuffers(1, &hdrDepth);
-    glBindRenderbuffer(GL_RENDERBUFFER, hdrDepth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, utils::WIDTH, utils::HEIGHT);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, hdrDepth);
-
     // Check if framebuffer is complete
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) { std::cerr << "Failed to initialise HDR intermediate framebuffer" << std::endl; }
     else { std::cout << "Initialized HDR intermediate framebuffer" << std::endl; }
@@ -121,7 +122,7 @@ void DeferredRenderer::initLightingShaders() {
                 break;
         }
         ShaderBuilder lightingDiffuseBuilder;
-        lightingDiffuseBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "deferred_lighting.vert");
+        lightingDiffuseBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "screen-quad.vert");;
         lightingDiffuseBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "diffuse" / diffuseFileName);
         lightingDiffuse = lightingDiffuseBuilder.build();
 
@@ -141,7 +142,7 @@ void DeferredRenderer::initLightingShaders() {
                 break;
         }
         ShaderBuilder lightingSpecularBuilder;
-        lightingSpecularBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "deferred_lighting.vert");
+        lightingSpecularBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "screen-quad.vert");;
         lightingSpecularBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "specular" / specularFileName);
         lightingSpecular = lightingSpecularBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
@@ -156,8 +157,8 @@ void DeferredRenderer::initShaders() {
         geometryPass = geometryPassBuilder.build();
 
         ShaderBuilder hdrBuilder;
-        hdrBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "hdr" / "hdr.vert");
-        hdrBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "hdr" / "hdr.frag");
+        hdrBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "screen-quad.vert");
+        hdrBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "hdr.frag");
         hdrRender = hdrBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
@@ -201,40 +202,15 @@ void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) con
 }
 
 void DeferredRenderer::bindGBufferTextures() const {
-    glActiveTexture(GL_TEXTURE0 + utils::G_BUFFER_START_IDX);
+    glActiveTexture(GL_TEXTURE0 + utils::G_BUFFER_TEX_START_IDX);
     glBindTexture(GL_TEXTURE_2D, positionTex);
-    glUniform1i(0, utils::G_BUFFER_START_IDX);
-    glActiveTexture(GL_TEXTURE0 + utils::G_BUFFER_START_IDX + 1);
+    glUniform1i(0, utils::G_BUFFER_TEX_START_IDX);
+    glActiveTexture(GL_TEXTURE0 + utils::G_BUFFER_TEX_START_IDX + 1);
     glBindTexture(GL_TEXTURE_2D, normalTex);
-    glUniform1i(1, utils::G_BUFFER_START_IDX + 1);
-    glActiveTexture(GL_TEXTURE0 + utils::G_BUFFER_START_IDX + 2);
+    glUniform1i(1, utils::G_BUFFER_TEX_START_IDX + 1);
+    glActiveTexture(GL_TEXTURE0 + utils::G_BUFFER_TEX_START_IDX + 2);
     glBindTexture(GL_TEXTURE_2D, albedoTex);
-    glUniform1i(2, utils::G_BUFFER_START_IDX + 2);
-}
-
-void DeferredRenderer::renderQuad() {
-    if (quadVAO == 0U) {
-        std::array<float, 20UL> quadVertices = {
-            // Positions        // Texture coords
-            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-        };
-
-        // Set up plane VAO
-        glCreateVertexArrays(1, &quadVAO);
-        glCreateBuffers(1, &quadVBO);
-        glBindVertexArray(quadVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices.data(), GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    }
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glUniform1i(2, utils::G_BUFFER_TEX_START_IDX + 2);
 }
 
 void DeferredRenderer::renderDiffuse(const glm::vec3& cameraPos) {
@@ -257,7 +233,7 @@ void DeferredRenderer::renderDiffuse(const glm::vec3& cameraPos) {
             break;
     }
 
-    renderQuad();
+    utils::renderQuad();
 }
 
 void DeferredRenderer::renderSpecular(const glm::vec3& cameraPos) {
@@ -281,7 +257,7 @@ void DeferredRenderer::renderSpecular(const glm::vec3& cameraPos) {
             break;
     }
 
-    renderQuad();
+    utils::renderQuad();
 }
 
 void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
@@ -299,16 +275,22 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
     glDepthFunc(GL_LEQUAL);
 }
 
-void DeferredRenderer::renderHdr() {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+void DeferredRenderer::renderPostProcessing() {
+    // Render post-processing effect(s)
+    GLuint bloomTex = bloomFilter.render(hdrTex);
+
     hdrRender.bind();
-    glActiveTexture(GL_TEXTURE0 + utils::HDR_BUFFER_START_IDX);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glActiveTexture(GL_TEXTURE0 + utils::HDR_BUFFER_TEX_START_IDX);
     glBindTexture(GL_TEXTURE_2D, hdrTex);
-    glUniform1i(0, utils::HDR_BUFFER_START_IDX);
-    glUniform1i(1, m_renderConfig.useHdr);
+    glUniform1i(0, utils::HDR_BUFFER_TEX_START_IDX);
+    glUniform1i(1, m_renderConfig.enableHdr);
     glUniform1f(2, m_renderConfig.exposure);
     glUniform1f(3, m_renderConfig.gamma);
-    renderQuad();
+    glActiveTexture(GL_TEXTURE0 + utils::HDR_BUFFER_TEX_START_IDX + 1);
+    glBindTexture(GL_TEXTURE_2D, bloomTex);
+    glUniform1i(4, utils::HDR_BUFFER_TEX_START_IDX + 1);
+    utils::renderQuad();
 }
 
 void DeferredRenderer::copyDepthBuffer() {

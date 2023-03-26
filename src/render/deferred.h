@@ -8,6 +8,7 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 #include <framework/shader.h>
 
+#include <render/bloom.h>
 #include <render/config.h>
 #include <render/lighting.h>
 #include <render/scene.h>
@@ -28,21 +29,16 @@ private:
     void initShaders();
     void renderGeometry(const glm::mat4& viewProjectionMatrix) const;
     void bindGBufferTextures() const;
-    void renderQuad();
     void renderDiffuse(const glm::vec3& cameraPos);
     void renderSpecular(const glm::vec3& cameraPos);
     void renderLighting(const glm::vec3& cameraPos);
-    void renderHdr();
+    void renderPostProcessing();
     void copyDepthBuffer();
 
     static constexpr GLuint INVALID = 0xFFFFFFFF;
 
     GLuint gBuffer;     // Framebuffer ID for the G-buffer
     GLuint rboDepth;    // Depth buffer
-
-    // Quad to render final lighting to
-    GLuint quadVAO = 0U;
-    GLuint quadVBO;
 
     // Textures for storing G-buffer attributes
     // Must match attributes used by fragment shader(s)
@@ -53,7 +49,6 @@ private:
     // Intermediate HDR framebuffer to render to before tonemapping and gamma correction
     GLuint hdrBuffer;
     GLuint hdrTex;
-    GLuint hdrDepth;
 
     Shader geometryPass;
     Shader lightingDiffuse;
@@ -63,6 +58,9 @@ private:
     RenderConfig& m_renderConfig;
     Scene& m_scene;
     LightManager& m_lightManager;
+
+    // Objects managing other rendering bits
+    BloomFilter bloomFilter;
 };
 
 #endif
