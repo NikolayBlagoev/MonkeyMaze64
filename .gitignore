@@ -39,3 +39,6 @@ build/
 
 # ImGUI config
 imgui.ini
+
+# Binary blobs
+/resources

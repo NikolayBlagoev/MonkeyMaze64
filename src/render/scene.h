@@ -22,7 +22,9 @@ public:
     void removeMesh(size_t idx);
     void addMesh(MeshTree* nd);
     size_t numMeshes() { return meshes.size(); }
+
     const GPUMesh& meshAt(size_t idx) { return *(root->children[idx]->mesh); }
+
 
     glm::mat4 modelMatrix(size_t idx);
     MeshTree* root;

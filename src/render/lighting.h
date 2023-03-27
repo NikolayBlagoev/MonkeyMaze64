@@ -21,6 +21,7 @@ struct PointLight {
 
     // Lighting properties
     glm::vec3 color;
+    float intensityMultiplier { 1.0f }; // Color is multiplied by this value before being sent to shader (intended for usage w/ HDR rendering)
     
     // OpenGL setup 
     std::array<GLuint, 6UL> framebuffers;
@@ -47,6 +48,7 @@ struct AreaLight {
 
     // Lighting properties
     glm::vec3 color;
+    float intensityMultiplier { 1.0f }; // Color is multiplied by this value before being sent to shader (intended for usage w/ HDR rendering)
 
     // OpenGL setup 
     GLuint framebuffer;
@@ -68,13 +70,13 @@ public:
 
     void bind();
 
-    void addPointLight(const glm::vec3& position, const glm::vec3& color);
+    void addPointLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier = 1.0f);
     void removePointLight(size_t idx);
     size_t numPointLights() { return pointLights.size(); }
     PointLight& pointLightAt(size_t idx) { return pointLights[idx]; }
     std::vector<PointLightShader> createPointLightsShaderData();
 
-    void addAreaLight(const glm::vec3& position, const glm::vec3& color, float xAngle = 0.0f, float yAngle = 0.0f);
+    void addAreaLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier = 1.0f, float xAngle = 0.0f, float yAngle = 0.0f);
     void removeAreaLight(size_t idx);
     size_t numAreaLights() { return areaLights.size(); }
     AreaLight& areaLightAt(size_t idx) { return areaLights[idx]; }

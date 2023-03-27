@@ -7,18 +7,20 @@ DISABLE_WARNINGS_PUSH()
 #include <nativefiledialog/nfd.h>
 DISABLE_WARNINGS_POP()
 #include <utils/constants.h>
+#include <utils/magic_enum.hpp>
 
 #include <filesystem>
 #include <iostream>
 
-Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager) : 
-    m_scene(scene),
-    m_renderConfig(renderConfig),
-    m_lightManager(lightManager) {
+Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager, DeferredRenderer& deferredRenderer)
+    : m_scene(scene)
+    , m_renderConfig(renderConfig)
+    , m_lightManager(lightManager)
+    , m_deferredRenderer(deferredRenderer) {
     ShaderBuilder debugShaderBuilder;
     debugShaderBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "debug" / "light_debug.vert");
     debugShaderBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH  / "debug" / "light_debug.frag");
-    pointDebugShader = debugShaderBuilder.build();
+    debugShader = debugShaderBuilder.build();
 }
 
 void Menu::draw(const glm::mat4& cameraMVP) {
@@ -34,6 +36,8 @@ void Menu::draw2D() {
     drawMeshTab();
     drawLightTab();
     drawShadowTab();
+    drawShadingTab();
+    drawRenderTab();
 
     ImGui::EndTabBar();
     ImGui::End();
@@ -66,32 +70,51 @@ void Menu::addMesh() {
       else { std::cerr << "Model loading error" << std::endl; }
 }
 
+void Menu::drawMaterialControls() {
+    ImGui::ColorEdit4("Albedo", glm::value_ptr(m_renderConfig.defaultAlbedo));
+    ImGui::SliderFloat("Metallic", &m_renderConfig.defaultMetallic, 0.0f, 1.0f, "%.2f");
+    ImGui::SliderFloat("Roughness", &m_renderConfig.defaultRoughness, 0.0f, 1.0f, "%.2f");
+    ImGui::SliderFloat("AO", &m_renderConfig.defaultAO, 0.0f, 1.0f, "%.2f");
+}
+
+void Menu::drawMeshControls() {
+    // Add / remove controls
+    if (ImGui::Button("Add")) { addMesh(); }
+    if (ImGui::Button("Remove selected")) {
+        if (selectedMesh < m_scene.numMeshes()) {
+            m_scene.removeMesh(selectedMesh);
+            selectedMesh = 0U;
+        }
+    }
+    ImGui::NewLine();
+
+    // Selection controls
+    std::vector<std::string> options;
+    for (size_t meshIdx = 0U; meshIdx < m_scene.numMeshes(); meshIdx++) { options.push_back("Mesh " + std::to_string(meshIdx + 1)); }
+    std::vector<const char*> optionsPointers;
+    std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
+        [](const auto& str) { return str.c_str(); });
+    ImGui::Combo("Selected mesh", (int*) &selectedMesh, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+
+    // Selected mesh controls
+    if (m_scene.numMeshes() > 0U) {
+        ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.transformParams[selectedMesh].scale), 0.05f);
+        ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.transformParams[selectedMesh].rotate), 1.0f, 0.0f, 360.0f);
+        ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.transformParams[selectedMesh].translate), 0.05f);
+    }
+}
+
 void Menu::drawMeshTab() {
     if (ImGui::BeginTabItem("Meshes")) {
-        // Add / remove controls
-        if (ImGui::Button("Add")) { addMesh(); }
-        if (ImGui::Button("Remove selected")) {
-            if (selectedMesh < m_scene.numMeshes()) {
-                m_scene.removeMesh(selectedMesh);
-                selectedMesh = 0U;
-            }
-        }
+        ImGui::Text("Default materials (for objects lacking textures)");
+        drawMaterialControls();
+
         ImGui::NewLine();
+        ImGui::Separator();
 
-        // Selection controls
-        std::vector<std::string> options;
-        for (size_t meshIdx = 0U; meshIdx < m_scene.numMeshes(); meshIdx++) { options.push_back("Mesh " + std::to_string(meshIdx + 1)); }
-        std::vector<const char*> optionsPointers;
-        std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
-            [](const auto& str) { return str.c_str(); });
-        ImGui::Combo("Selected mesh", (int*) (&selectedMesh), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+        ImGui::Text("Mesh controls");
+        drawMeshControls();
 
-        // Selected mesh controls
-        if (m_scene.numMeshes() > 0U) {
-            ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.root->children[selectedMesh]->scale), 0.05f);
-            ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.root->children[selectedMesh]->rotate), 1.0f, 0.0f, 360.0f);
-            ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.root->children[selectedMesh]->offset), 0.05f);
-        }
 
         ImGui::EndTabItem();
     }
@@ -120,11 +143,12 @@ void Menu::drawPointLightControls() {
     std::vector<const char*> optionsPointers;
     std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
         [](const auto& str) { return str.c_str(); });
-    ImGui::Combo("Selected point light", (int*) (&selectedPointLight), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+    ImGui::Combo("Selected point light", (int*) &selectedPointLight, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
 
     // Selected point light controls
     if (m_lightManager.numPointLights() > 0U) {
         PointLight& selectedLight = m_lightManager.pointLightAt(selectedPointLight);
+        ImGui::InputFloat("Intensity##point", &selectedLight.intensityMultiplier, 0.1f, 1.0f, "%.1f");
         ImGui::ColorEdit3("Colour##point", glm::value_ptr(selectedLight.color));
         ImGui::DragFloat3("Position##point", glm::value_ptr(selectedLight.position), 0.05f);
     }
@@ -149,11 +173,12 @@ void Menu::drawAreaLightControls() {
     std::vector<const char*> optionsPointers;
     std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
         [](const auto& str) { return str.c_str(); });
-    ImGui::Combo("Selected area light", (int*) (&selectedAreaLight), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+    ImGui::Combo("Selected area light", (int*) &selectedAreaLight, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
 
     // Selected area light controls (hashes prevent ID conflicts https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-windows-with-the-same-label)
     if (m_lightManager.numAreaLights() > 0U) {
         AreaLight& selectedLight = m_lightManager.areaLightAt(selectedAreaLight);
+        ImGui::InputFloat("Intensity##point", &selectedLight.intensityMultiplier, 0.1f, 1.0f, "%.1f");
         ImGui::ColorEdit3("Colour##area", glm::value_ptr(selectedLight.color));
         ImGui::DragFloat3("Position##area", glm::value_ptr(selectedLight.position), 0.05f);
         ImGui::SliderFloat("X Rotation", &selectedLight.rotX, 0.0f, 360.0f);
@@ -191,6 +216,68 @@ void Menu::drawShadowTab() {
     }
 }
 
+void Menu::drawShaderLoader() {
+    // Shader selection controls
+    constexpr auto optionsDiffuse = magic_enum::enum_names<LightingModel>();
+    std::vector<const char*> optionsDiffusePointers;
+    std::transform(std::begin(optionsDiffuse), std::end(optionsDiffuse), std::back_inserter(optionsDiffusePointers),
+        [](const auto& str) { return str.data(); });
+    ImGui::Combo("Lighting model", (int*) &selectedLightingModel, optionsDiffusePointers.data(), static_cast<int>(optionsDiffusePointers.size()));
+
+    // Load currently selected shaders
+    if (ImGui::Button("Reload shaders")) { 
+        m_renderConfig.lightingModel = selectedLightingModel;
+        m_deferredRenderer.initLightingShader();
+    }
+}
+
+void Menu::drawToonShadingControls() {
+    ImGui::SliderInt("Diffuse discretization steps", (int*) &m_renderConfig.toonDiscretizeSteps, 1, 50);
+    ImGui::SliderFloat("Specular threshold", &m_renderConfig.toonSpecularThreshold, 0.01f, 1.0f);
+}
+
+void Menu::drawShadingTab() {
+    if (ImGui::BeginTabItem("Shading")) {
+        ImGui::Text("Shader loader");
+        drawShaderLoader();
+
+        ImGui::NewLine();
+        ImGui::Separator();
+
+        ImGui::Text("Toon shading parameters");
+        drawToonShadingControls();
+
+        ImGui::EndTabItem();
+    }
+}
+
+void Menu::drawHdrControls() {
+    ImGui::Checkbox("Enable HDR", &m_renderConfig.enableHdr);
+    ImGui::InputFloat("Exposure", &m_renderConfig.exposure, 0.1f, 1.0f, "%.1f");
+    ImGui::InputFloat("Gamma", &m_renderConfig.gamma, 0.1f, 1.0f, "%.1f");
+}
+
+void Menu::drawBloomControls(){
+    ImGui::Checkbox("Enable bloom", &m_renderConfig.enableBloom);
+    ImGui::InputFloat("Brightness threshold", &m_renderConfig.bloomBrightThreshold, 0.1f, 1.0f, "%.1f");
+    ImGui::InputInt("Blur iterations", (int*) &m_renderConfig.bloomIterations, 1, 3);
+}
+
+void Menu::drawRenderTab() {
+    if (ImGui::BeginTabItem("Rendering")) {
+        ImGui::Text("HDR");
+        drawHdrControls();
+
+        ImGui::NewLine();
+        ImGui::Separator();
+
+        ImGui::Text("Bloom");
+        drawBloomControls();
+
+        ImGui::EndTabItem();
+    }
+}
+
 void Menu::drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& color) {
     glPointSize(radius);
     glUniform4fv(0, 1, glm::value_ptr(screenPos));
@@ -199,7 +286,7 @@ void Menu::drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& 
 }
 
 void Menu::drawLights(const glm::mat4& cameraMVP) {
-    pointDebugShader.bind();
+    debugShader.bind();
 
     // Draw all lights
     if (m_renderConfig.drawLights) {
