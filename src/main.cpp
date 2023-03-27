@@ -7,7 +7,7 @@
 #include <ui/camera.h>
 #include <ui/menu.h>
 #include <utils/constants.h>
-
+#include "camera.h"
 // Always include window first (because it includes glfw, which includes GL which needs to be included AFTER glew).
 // Can't wait for modules to fix this stuff...
 #include <framework/disable_all_warnings.h>
@@ -182,7 +182,18 @@ void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform,
         drawMeshTreeAL(child,modelMatrix, areaLightShadowMapsProjection, lightView, renderConfig);
     }
 }
-
+CameraObj* makeCamera(GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMesh* stand1,
+                     glm::vec3 tr, glm::vec3 selfRot, glm::vec3 parRot, glm::vec3 scl){
+    MeshTree* ret = new MeshTree(stand1, tr, selfRot, parRot,  scl);
+    MeshTree* stand2m = new MeshTree(stand2, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(1.f));
+    ret->addChild(stand2m);
+    MeshTree* cameram = new MeshTree(camera, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f, 0.f, -20.f), glm::vec3(1.f));
+    stand2m->addChild(cameram);
+    MeshTree* aperturem = new MeshTree(aperture, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(1.f));
+    cameram->addChild(aperturem);
+    CameraObj* cam = new CameraObj(cameram, stand2m, ret);
+    return cam;
+}
 int main() {
     // Init core objects
     *ready = false;
@@ -227,13 +238,24 @@ int main() {
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
 
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+    GPUMesh camera = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "camera.obj");
+    
 
+    GPUMesh stand2 = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "stand2.obj");
+    GPUMesh stand1 = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "stand1.obj");
+    GPUMesh aperture = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "aperture.obj");
+    
     GPUMesh crossing = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj");
     GPUMesh room = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj");
     GPUMesh tjunction = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj");
     GPUMesh tunnel = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj");
     GPUMesh turn = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj");
-
+    // MeshTree* dummyroom = new MeshTree(&room, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f));
+    // scene.root->addChild(dummyroom);
+    // // glm::vec3(-9.9f, 9.f, 0.f)
+    // CameraObj* dummycam = makeCamera(&aperture, &camera, &stand2, &stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec3(0.f), glm::vec3(0.f, 90.f, 0.f), glm::vec3(1.f));
+    // dummyroom->addChild(dummycam->root);
+    
     // Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
 
@@ -260,46 +282,46 @@ int main() {
                 // glm::vec3 offset(0.f,10.f*i,0.f);
                 for(int j = 0; j < 7; j++){
                     if(boardCopy[i][j]->tileType == 1){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 2){
-                        scene.root->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 3){
-                        scene.root->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 90.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 90.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 4){
-                        scene.root->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 180.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 180.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 5){
-                        scene.root->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 270.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 270.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 6){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 7){
-                        scene.root->addChild(new MeshTree(&tunnel, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&tunnel, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 8){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 9){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 10){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 11){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 12){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 13){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 14){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 15){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 16){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 17){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 18){
-                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     } 
                 }
             }
-            // scene.root->children.pop_back();
-            // scene.root->addChild(boardRoot);
+            scene.root->addChild(boardRoot);
+
         }
         // View-projection matrices setup
         const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);

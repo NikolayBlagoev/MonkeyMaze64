@@ -7,10 +7,13 @@
 #include <vector>
 class ProcObj{
     public:
-        ProcObj(int type,  glm::vec3 scale, glm::vec3 selfRotate, glm::vec3 rotateParent, glm::vec3 translate) : type(type), scale(scale), 
+        ProcObj(int tt,  glm::vec3 scale, glm::vec3 selfRotate, glm::vec3 rotateParent, glm::vec3 translate) : type(tt), scale(scale), 
         selfRotate(selfRotate), rotateParent(rotateParent), translate(translate){
 
         };
+        ProcObj(int tt) : type(tt){
+            
+        }
         int type = 0;
         glm::vec3 scale;
         glm::vec3 selfRotate; // Angles in degrees
