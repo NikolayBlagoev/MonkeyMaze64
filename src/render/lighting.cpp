@@ -92,7 +92,7 @@ void LightManager::addPointLight(const glm::vec3& position, const glm::vec3& col
 
     // Resize texture array to fit new shadowmap
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
-    glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, (pointLights.size() + 1UL) * 6UL, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, static_cast<GLsizei>((pointLights.size() + 1UL) * 6UL), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
     // Create framebuffer to draw to for each face
     glCreateFramebuffers(6, light.framebuffers.data());
@@ -104,7 +104,7 @@ void LightManager::addPointLight(const glm::vec3& position, const glm::vec3& col
 void LightManager::removePointLight(size_t idx) {
     // Resize texture array to save space
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
-    glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, (pointLights.size() - 1UL) * 6UL, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, static_cast<GLsizei>((pointLights.size() - 1UL) * 6UL), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
     // Destroy framebuffers corresponding to the shadow map
     const PointLight& light = pointLights[idx];
@@ -132,7 +132,7 @@ void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& colo
 
     // Resize texture array to fit new shadowmap
     glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, areaLights.size() + 1UL, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, static_cast<GLsizei>(areaLights.size() + 1UL), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
     // Create framebuffer to draw to
     glCreateFramebuffers(1, &light.framebuffer);
@@ -148,7 +148,7 @@ void LightManager::removeAreaLight(size_t idx) {
 
     // Resize texture array to save space
     glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, areaLights.size() - 1UL, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, static_cast<GLsizei>(areaLights.size() - 1UL), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
     areaLights.erase(areaLights.begin() + idx);
 
@@ -156,7 +156,7 @@ void LightManager::removeAreaLight(size_t idx) {
     // Plonking out a framebuffer from the beginning or middle causes the framebuffers to become misaligned from their position in the array
     for (size_t lightIdx = 0UL; lightIdx < areaLights.size(); lightIdx++) {
         const AreaLight& light = areaLights[lightIdx];
-        glNamedFramebufferTextureLayer(light.framebuffer, GL_DEPTH_ATTACHMENT, areaShadowTexArr, 0, lightIdx);
+        glNamedFramebufferTextureLayer(light.framebuffer, GL_DEPTH_ATTACHMENT, areaShadowTexArr, 0, static_cast<GLint>(lightIdx));
     }
 }
 

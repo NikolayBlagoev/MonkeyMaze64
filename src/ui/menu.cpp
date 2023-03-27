@@ -7,18 +7,20 @@ DISABLE_WARNINGS_PUSH()
 #include <nativefiledialog/nfd.h>
 DISABLE_WARNINGS_POP()
 #include <utils/constants.h>
+#include <utils/magic_enum.hpp>
 
 #include <filesystem>
 #include <iostream>
 
-Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager) : 
-    m_scene(scene),
-    m_renderConfig(renderConfig),
-    m_lightManager(lightManager) {
+Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager, DeferredRenderer& deferredRenderer)
+    : m_scene(scene)
+    , m_renderConfig(renderConfig)
+    , m_lightManager(lightManager)
+    , m_deferredRenderer(deferredRenderer) {
     ShaderBuilder debugShaderBuilder;
     debugShaderBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "debug" / "light_debug.vert");
     debugShaderBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH  / "debug" / "light_debug.frag");
-    pointDebugShader = debugShaderBuilder.build();
+    debugShader = debugShaderBuilder.build();
 }
 
 void Menu::draw(const glm::mat4& cameraMVP) {
@@ -34,6 +36,7 @@ void Menu::draw2D() {
     drawMeshTab();
     drawLightTab();
     drawShadowTab();
+    drawShadingTab();
 
     ImGui::EndTabBar();
     ImGui::End();
@@ -84,7 +87,7 @@ void Menu::drawMeshTab() {
         std::vector<const char*> optionsPointers;
         std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
             [](const auto& str) { return str.c_str(); });
-        ImGui::Combo("Selected mesh", (int*) (&selectedMesh), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+        ImGui::Combo("Selected mesh", (int*) &selectedMesh, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
 
         // Selected mesh controls
         if (m_scene.numMeshes() > 0U) {
@@ -120,7 +123,7 @@ void Menu::drawPointLightControls() {
     std::vector<const char*> optionsPointers;
     std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
         [](const auto& str) { return str.c_str(); });
-    ImGui::Combo("Selected point light", (int*) (&selectedPointLight), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+    ImGui::Combo("Selected point light", (int*) &selectedPointLight, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
 
     // Selected point light controls
     if (m_lightManager.numPointLights() > 0U) {
@@ -149,7 +152,7 @@ void Menu::drawAreaLightControls() {
     std::vector<const char*> optionsPointers;
     std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
         [](const auto& str) { return str.c_str(); });
-    ImGui::Combo("Selected area light", (int*) (&selectedAreaLight), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+    ImGui::Combo("Selected area light", (int*) &selectedAreaLight, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
 
     // Selected area light controls (hashes prevent ID conflicts https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-windows-with-the-same-label)
     if (m_lightManager.numAreaLights() > 0U) {
@@ -191,6 +194,49 @@ void Menu::drawShadowTab() {
     }
 }
 
+void Menu::drawShaderLoader() {
+    // Diffuse selection controls
+    constexpr auto optionsDiffuse = magic_enum::enum_names<DiffuseModel>();
+    std::vector<const char*> optionsDiffusePointers;
+    std::transform(std::begin(optionsDiffuse), std::end(optionsDiffuse), std::back_inserter(optionsDiffusePointers),
+        [](const auto& str) { return str.data(); });
+    ImGui::Combo("Diffuse model", (int*) &selectedDiffuseModel, optionsDiffusePointers.data(), static_cast<int>(optionsDiffusePointers.size()));
+
+    // Specular selection controls
+    constexpr auto optionsSpecular = magic_enum::enum_names<SpecularModel>();
+    std::vector<const char*> optionsSpecularPointers;
+    std::transform(std::begin(optionsSpecular), std::end(optionsSpecular), std::back_inserter(optionsSpecularPointers),
+        [](const auto& str) { return str.data(); });
+    ImGui::Combo("Specular model", (int*) &selectedSpecularModel, optionsSpecularPointers.data(), static_cast<int>(optionsSpecularPointers.size()));
+
+    // Load currently selected shaders
+    if (ImGui::Button("Reload shaders")) { 
+        m_renderConfig.diffuseModel     = selectedDiffuseModel;
+        m_renderConfig.specularModel    = selectedSpecularModel;
+        m_deferredRenderer.initLightingShaders();
+    }
+}
+
+void Menu::drawToonShadingControls() {
+    ImGui::SliderInt("Diffuse discretization steps", (int*) &m_renderConfig.toonDiscretizeSteps, 1, 50);
+    ImGui::SliderFloat("Specular threshold", &m_renderConfig.toonSpecularThreshold, 0.01f, 1.0f);
+}
+
+void Menu::drawShadingTab() {
+    if (ImGui::BeginTabItem("Shading")) {
+        ImGui::Text("Shader loader");
+        drawShaderLoader();
+
+        ImGui::NewLine();
+        ImGui::Separator();
+
+        ImGui::Text("Toon shading parameters");
+        drawToonShadingControls();
+
+        ImGui::EndTabItem();
+    }
+}
+
 void Menu::drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& color) {
     glPointSize(radius);
     glUniform4fv(0, 1, glm::value_ptr(screenPos));
@@ -199,7 +245,7 @@ void Menu::drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& 
 }
 
 void Menu::drawLights(const glm::mat4& cameraMVP) {
-    pointDebugShader.bind();
+    debugShader.bind();
 
     // Draw all lights
     if (m_renderConfig.drawLights) {

@@ -7,7 +7,21 @@ DISABLE_WARNINGS_PUSH()
 #include <glm/mat4x4.hpp>
 DISABLE_WARNINGS_POP()
 
+#include <stdint.h>
 #include <utils/constants.h>
+
+enum class DiffuseModel {
+    Lambert,
+    ToonLambert,
+    XToonLambert,
+};
+
+enum class SpecularModel {
+    Phong,
+    BlinnPhong,
+    ToonBlinnPhong,
+    XToonBlinnPhong
+};
 
 struct RenderConfig {
     // Camera (angles in degrees)
@@ -16,6 +30,12 @@ struct RenderConfig {
     float verticalFOV       { 60.0f };
     float zoomedVerticalFOV { 35.0f };
     bool constrainVertical  { false };
+
+    // Shading
+    DiffuseModel diffuseModel { DiffuseModel::Lambert };
+    SpecularModel specularModel { SpecularModel::BlinnPhong };
+    uint32_t toonDiscretizeSteps { 4U };
+    float toonSpecularThreshold { 0.49f };
 
     // Lighting debug
     bool drawLights { false };

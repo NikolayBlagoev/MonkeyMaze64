@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     Scene scene;
     LightManager lightManager(renderConfig);
     DeferredRenderer deferredRenderer(renderConfig, scene, lightManager);
-    Menu menu(scene, renderConfig, lightManager);
+    Menu menu(scene, renderConfig, lightManager, deferredRenderer);
 
     // Register UI callbacks
     m_window.registerKeyCallback(keyCallback);

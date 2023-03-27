@@ -39,27 +39,6 @@ layout(location = 0) out vec4 fragColor;
 
 /*****************************************************************************************************/
 
-vec3 lambertianDiffuse(vec3 fragPos, vec3 fragNormal, vec3 fragAlbedo,
-                       vec3 lightColor, vec3 lightPos) {
-    vec3 lightDir = normalize(lightPos - fragPos);
-    return dot(lightDir, fragNormal) * lightColor * fragAlbedo;
-}
-
-vec3 phongSpecular(vec3 fragPos, vec3 fragNormal, vec3 fragAlbedo,
-                   vec3 lightColor, vec3 lightPos) {
-    vec3 lightToSurface     = normalize(fragPos - lightPos);
-    vec3 surfaceToCamera    = normalize(cameraPos - fragPos);
-    vec3 reflection         = reflect(lightToSurface, fragNormal);
-
-    float lightNormalDot    = dot(-lightToSurface, fragNormal);
-    float reflectionViewDot = dot(reflection, surfaceToCamera);
-    return  lightNormalDot > 0.0 && reflectionViewDot > 0.0 ?
-            fragAlbedo * pow(reflectionViewDot, objectShininess) * lightColor :
-            vec3(0.0, 0.0, 0.0);
-}
-
-/*****************************************************************************************************/
-
 // @param sampleCoord: Coordinates of fragment sample
 // @param lightIdx: Index of the point light in the SSBO/shadow map
 float samplePointShadow(vec3 sampleCoord, uint lightIdx) {
@@ -93,13 +72,29 @@ float sampleAreaShadow(vec4 sampleLightCoord, uint lightIdx) {
 
 /*****************************************************************************************************/
 
+vec3 blinnPhongSpecular(vec3 fragPos, vec3 fragNormal, vec3 fragAlbedo,
+                        vec3 lightColor, vec3 lightPos) {
+    vec3 surfaceToLight     = normalize(lightPos - fragPos);
+    vec3 surfaceToCamera    = normalize(cameraPos - fragPos);
+    vec3 vectorsSum         = surfaceToLight + surfaceToCamera;
+    vec3 halfway            = vectorsSum / length(vectorsSum);
+
+    float lightNormalDot    = dot(surfaceToLight, fragNormal);
+    float normalHalfwayDot  = dot(fragNormal, halfway);
+    return lightNormalDot > 0.0 && normalHalfwayDot > 0.0 ?
+           fragAlbedo * pow(normalHalfwayDot, objectShininess) * lightColor :
+           vec3(0.0, 0.0, 0.0);
+}
+
+/*****************************************************************************************************/
+
 void main() {
     // Extract value from G-buffer
     vec3 fragPos    = texture(gPosition, bufferCoords).xyz;
     vec3 fragNormal = texture(gNormal, bufferCoords).xyz;
     vec3 fragAlbedo = texture(gAlbedo, bufferCoords).rgb;
 
-    fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+    fragColor = vec4(0.0, 0.0, 0.0, 1.0);
 
     // Accumulate lighting from point lights
     for (uint lightIdx = 0U; lightIdx < pointLightsData.length(); lightIdx++) {
@@ -108,11 +103,7 @@ void main() {
         vec3 lightPosition  = light.position.xyz;
         
         float successFraction   = samplePointShadow(fragPos, lightIdx);
-        if (successFraction != 0.0) {
-            vec3 diffuse    = lambertianDiffuse(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition);
-            vec3 specular   = phongSpecular(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition);
-            fragColor.rgb   += successFraction * (diffuse + specular);
-        }
+        if (successFraction != 0.0) { fragColor.rgb += successFraction * blinnPhongSpecular(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition); }
     }
 
     // Accumulate lighting from area lights
@@ -123,10 +114,6 @@ void main() {
 
         vec4 fragLightCoord     = light.viewProjection * vec4(fragPos, 1.0);
         float successFraction   = sampleAreaShadow(fragLightCoord, lightIdx);
-        if (successFraction != 0.0) {
-            vec3 diffuse    = lambertianDiffuse(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition);
-            vec3 specular   = phongSpecular(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition);
-            fragColor.rgb   += successFraction * (diffuse + specular);
-        }
+        if (successFraction != 0.0) { fragColor.rgb += successFraction * blinnPhongSpecular(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition); }
     }
 }
