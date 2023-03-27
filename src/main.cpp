@@ -37,6 +37,7 @@ std::mutex m;
 std::condition_variable cv;
 bool ready_ = false;
 Defined*** boardCopy;
+glm::vec3 offsetBoard (-6.1f,0.f,-6.1f);
 bool* ready = new bool;
 bool processed = false;
 Generator* gen =  new Generator();
@@ -230,9 +231,10 @@ int main() {
     GPUMesh crossing = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj");
     GPUMesh room = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj");
     GPUMesh tjunction = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj");
+    GPUMesh tunnel = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj");
     GPUMesh turn = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj");
 
-    Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
+    // Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
 
     // Add test lights
@@ -251,13 +253,49 @@ int main() {
         if (flag){
             flag = false;
             free(boardRoot);
+            float factorx = 7.72f;
+            float factory = 7.72f;
             boardRoot = new MeshTree();
             for(int i = 0; i < 7; i ++){
                 // glm::vec3 offset(0.f,10.f*i,0.f);
                 for(int j = 0; j < 7; j++){
                     if(boardCopy[i][j]->tileType == 1){
-                        scene.root->addChild(new MeshTree(&room, glm::vec3(0.f*i, 0.f, 0.f*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
-                    }
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 2){
+                        scene.root->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 3){
+                        scene.root->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 90.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 4){
+                        scene.root->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 180.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 5){
+                        scene.root->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 270.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 6){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 7){
+                        scene.root->addChild(new MeshTree(&tunnel, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 8){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 9){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 10){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 11){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 12){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 13){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 14){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 15){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 16){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 17){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 18){
+                        scene.root->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    } 
                 }
             }
             // scene.root->children.pop_back();

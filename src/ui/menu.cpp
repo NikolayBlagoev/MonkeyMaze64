@@ -104,7 +104,7 @@ void Menu::drawMeshControls() {
         }
 
         ImGui::EndTabItem();
-    }
+    
 }
 
 void Menu::drawGeneralLightControls() {
@@ -264,7 +264,21 @@ void Menu::drawRenderTab() {
         ImGui::EndTabItem();
     }
 }
+void Menu::drawMeshTab() {
+    if (ImGui::BeginTabItem("Meshes")) {
+        ImGui::Text("Default materials (for objects lacking textures)");
+        drawMaterialControls();
 
+        ImGui::NewLine();
+        ImGui::Separator();
+
+        ImGui::Text("Mesh controls");
+        drawMeshControls();
+
+
+        ImGui::EndTabItem();
+    }
+}
 void Menu::drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& color) {
     glPointSize(radius);
     glUniform4fv(0, 1, glm::value_ptr(screenPos));

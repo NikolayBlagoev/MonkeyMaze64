@@ -34,7 +34,7 @@ private:
     void renderLighting(const glm::vec3& cameraPos);
     void renderPostProcessing();
     void copyDepthBuffer();
-
+    void helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const; 
     static constexpr GLuint INVALID = 0xFFFFFFFF;
 
     GLuint gBuffer;     // Framebuffer ID for the G-buffer
