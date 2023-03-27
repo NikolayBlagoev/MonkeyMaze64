@@ -51,7 +51,7 @@ private:
     size_t selectedMesh                 { 0U };
     size_t selectedPointLight           { 0U };
     size_t selectedAreaLight            { 0U };
-    LightingModel selectedLightingModel { LightingModel::LambertBlinnPhong };
+    LightingModel selectedLightingModel { LightingModel::PBR };
 };
 
 #endif

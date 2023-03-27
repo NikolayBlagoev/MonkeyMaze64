@@ -15,7 +15,8 @@ enum class LightingModel {
     LambertPhong,
     LambertBlinnPhong,
     Toon,
-    XToon
+    XToon,
+    PBR
 };
 
 struct RenderConfig {
@@ -27,7 +28,7 @@ struct RenderConfig {
     bool constrainVertical  { false };
 
     // Lighting
-    LightingModel lightingModel     { LightingModel::LambertBlinnPhong };
+    LightingModel lightingModel     { LightingModel::PBR };
     uint32_t toonDiscretizeSteps    { 4U };
     float toonSpecularThreshold     { 0.49f };
 

@@ -131,6 +131,9 @@ void DeferredRenderer::initLightingShader() {
             case LightingModel::XToon:
                 lightingFileName = "xtoon.frag";
                 break;
+            case LightingModel::PBR:
+                lightingFileName = "pbr.frag";
+                break;
         }
         ShaderBuilder lightingBuilder;
         lightingBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "screen-quad.vert");;
@@ -258,6 +261,7 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
     switch (m_renderConfig.lightingModel) {
         case LightingModel::LambertPhong:
         case LightingModel::LambertBlinnPhong:
+        case LightingModel::PBR:
             break;
         case LightingModel::Toon:
             glUniform1ui(9, m_renderConfig.toonDiscretizeSteps);
