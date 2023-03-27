@@ -23,5 +23,7 @@ class Generator{
     std::deque <Defined*> dq;
     float acc_cam = 0.f;
     float acc_head = 0.f;
+    float acc_vase = 0.f;
+    float acc_box = 0.f;
 
 };

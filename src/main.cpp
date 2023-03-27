@@ -107,16 +107,19 @@ void mouseButtonCallback(int button, int action, int mods) {
 void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform, 
         const PointLight& light, Shader& m_pointShadowShader, const glm::mat4& pointLightShadowMapsProjection, RenderConfig& renderConfig){
     if(mt == nullptr) return;
-    const MeshTransform& meshTransform = {mt->scale, mt->rotate, mt->offset};
-    // Translate
-    glm::mat4 finalTransform = glm::translate(currTransform, meshTransform.translate);
+    const MeshTransform& meshTransform = {mt->scale, mt->selfRotate, mt->rotateParent, mt->offset};
+   
+    glm::mat4 finalTransform = glm::rotate(currTransform, glm::radians(meshTransform.rotateParent.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+
+    finalTransform = glm::translate(finalTransform, meshTransform.translate);
 
     // Rotate
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    // Scale
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
     const glm::mat4& modelMatrix = glm::scale(finalTransform, meshTransform.scale);
     if(mt->mesh != nullptr){
         const GPUMesh& mesh                         = *(mt->mesh);
@@ -148,16 +151,19 @@ void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform,
 void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform, 
          const glm::mat4& areaLightShadowMapsProjection, const glm::mat4& lightView, RenderConfig& renderConfig){
     if(mt == nullptr) return;
-    const MeshTransform& meshTransform = {mt->scale, mt->rotate, mt->offset};
-    // Translate
-    glm::mat4 finalTransform = glm::translate(currTransform, meshTransform.translate);
+    const MeshTransform& meshTransform = {mt->scale, mt->selfRotate, mt->rotateParent, mt->offset};
+   
+    glm::mat4 finalTransform = glm::rotate(currTransform, glm::radians(meshTransform.rotateParent.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+
+    finalTransform = glm::translate(finalTransform, meshTransform.translate);
 
     // Rotate
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    // Scale
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
     const glm::mat4& modelMatrix = glm::scale(finalTransform, meshTransform.scale);
     if(mt->mesh != nullptr){
         const GPUMesh& mesh                         = *(mt->mesh);
@@ -250,7 +256,7 @@ int main() {
                 // glm::vec3 offset(0.f,10.f*i,0.f);
                 for(int j = 0; j < 7; j++){
                     if(boardCopy[i][j]->tileType == 1){
-                        scene.root->addChild(new MeshTree(&crossing, glm::vec3(0.f*i, 1.f, 0.f*j), glm::vec3(0.f), glm::vec3(0.3f)));
+                        scene.root->addChild(new MeshTree(&room, glm::vec3(0.f*i, 0.f, 0.f*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
                     }
                 }
             }

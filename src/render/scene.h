@@ -12,7 +12,8 @@ DISABLE_WARNINGS_POP()
 
 struct MeshTransform {
     glm::vec3 scale;
-    glm::vec3 rotate; // Angles in degrees
+    glm::vec3 selfRotate; // Angles in degrees
+    glm::vec3 rotateParent;
     glm::vec3 translate;
 };
 

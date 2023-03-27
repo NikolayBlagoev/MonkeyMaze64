@@ -310,7 +310,7 @@ void Generator::constrain(Defined* nd, int opts){
                     }
                     nd->empt = false;
                     nd->tileType = i+1;
-                    std::cout<<"assigned to "<<i+1<<std::endl;
+                    
                     break;
                 }
                 j++;
