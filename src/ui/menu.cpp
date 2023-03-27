@@ -241,15 +241,27 @@ void Menu::drawShadingTab() {
 }
 
 void Menu::drawHdrControls() {
-    ImGui::Checkbox("Enable HDR", &m_renderConfig.useHdr);
+    ImGui::Checkbox("Enable HDR", &m_renderConfig.enableHdr);
     ImGui::InputFloat("Exposure", &m_renderConfig.exposure, 0.1f, 1.0f, "%.1f");
     ImGui::InputFloat("Gamma", &m_renderConfig.gamma, 0.1f, 1.0f, "%.1f");
+}
+
+void Menu::drawBloomControls(){
+    ImGui::Checkbox("Enable bloom", &m_renderConfig.enableBloom);
+    ImGui::InputFloat("Brightness threshold", &m_renderConfig.bloomBrightThreshold, 0.1f, 1.0f, "%.1f");
+    ImGui::InputInt("Blur iterations", (int*) &m_renderConfig.bloomIterations, 1, 3);
 }
 
 void Menu::drawRenderTab() {
     if (ImGui::BeginTabItem("Rendering")) {
         ImGui::Text("HDR");
         drawHdrControls();
+
+        ImGui::NewLine();
+        ImGui::Separator();
+
+        ImGui::Text("Bloom");
+        drawBloomControls();
 
         ImGui::EndTabItem();
     }

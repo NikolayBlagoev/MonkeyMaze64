@@ -38,9 +38,14 @@ struct RenderConfig {
     float toonSpecularThreshold     { 0.49f };
 
     // HDR tonemapping and gamma correction
-    bool useHdr     { true };
+    bool enableHdr  { true };
     float exposure  { 1.0f };
     float gamma     { 1.0f };
+
+    // Bloom
+    bool enableBloom            { true };
+    float bloomBrightThreshold  { 1.0f };
+    uint32_t bloomIterations    { 5U };
 
     // Lighting debug
     bool drawLights { false };

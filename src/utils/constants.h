@@ -10,8 +10,9 @@ namespace utils {
     constexpr float ASPECT_RATIO    = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
 
     // Rendering parameters
-    constexpr int32_t G_BUFFER_START_IDX    = 32;
-    constexpr int32_t HDR_BUFFER_START_IDX  = 48;
+    constexpr int32_t POST_PROCESSING_TEX_START_IDX = 32;
+    constexpr int32_t G_BUFFER_TEX_START_IDX        = 48;
+    constexpr int32_t HDR_BUFFER_TEX_START_IDX      = 56;
 
     // Shadow maps parameters
     constexpr int32_t SHADOWTEX_WIDTH   = 1024;

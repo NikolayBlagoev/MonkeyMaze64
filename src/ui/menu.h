@@ -31,6 +31,7 @@ private:
     void drawToonShadingControls();
     void drawShadingTab();
     void drawHdrControls();
+    void drawBloomControls();
     void drawRenderTab();
 
     // 3D debug view
