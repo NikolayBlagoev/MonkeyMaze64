@@ -12,11 +12,12 @@ DISABLE_WARNINGS_POP()
 #include <render/config.h>
 #include <render/lighting.h>
 #include <render/scene.h>
+#include <render/texture.h>
 
 // TODO: Adapt to resize framebuffer sizes when window size changes
 class DeferredRenderer {
 public:
-    DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager);
+    DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager, const Texture* xToonTex);
     ~DeferredRenderer();
 
     void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos);
@@ -50,9 +51,11 @@ private:
     GLuint hdrBuffer;
     GLuint hdrTex;
 
+    // Shaders and shader-specific info
     Shader geometryPass;
     Shader lightingPass;
     Shader hdrRender;
+    const Texture* m_xToonTex;
 
     RenderConfig& m_renderConfig;
     Scene& m_scene;

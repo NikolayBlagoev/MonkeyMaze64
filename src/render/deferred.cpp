@@ -11,10 +11,11 @@ DISABLE_WARNINGS_POP()
 #include <utils/constants.h>
 #include <utils/render_utils.hpp>
 
-DeferredRenderer::DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager)
+DeferredRenderer::DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager, const Texture* xToonTex)
     : m_renderConfig(renderConfig)
     , m_scene(scene)
     , m_lightManager(lightManager)
+    , m_xToonTex(xToonTex)
     , bloomFilter(renderConfig) {
     initBuffers();
     initShaders();
@@ -218,7 +219,8 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
             glUniform1f(9, m_renderConfig.toonSpecularThreshold);
             break;
         case LightingModel::XToon:
-            // TODO: Add Xtoon texture
+            m_xToonTex->bind(GL_TEXTURE0 + utils::LIGHTING_TEX_START_IDX);
+            glUniform1i(8, utils::LIGHTING_TEX_START_IDX);
             break;
     }
 
