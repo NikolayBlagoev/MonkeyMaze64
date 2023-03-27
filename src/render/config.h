@@ -10,17 +10,11 @@ DISABLE_WARNINGS_POP()
 #include <stdint.h>
 #include <utils/constants.h>
 
-enum class DiffuseModel {
-    Lambert,
-    ToonLambert,
-    XToonLambert,
-};
-
-enum class SpecularModel {
-    Phong,
-    BlinnPhong,
-    ToonBlinnPhong,
-    XToonBlinnPhong
+enum class LightingModel {
+    LambertPhong,
+    LambertBlinnPhong,
+    Toon,
+    XToon
 };
 
 struct RenderConfig {
@@ -32,8 +26,7 @@ struct RenderConfig {
     bool constrainVertical  { false };
 
     // Shading
-    DiffuseModel diffuseModel       { DiffuseModel::Lambert };
-    SpecularModel specularModel     { SpecularModel::BlinnPhong };
+    LightingModel lightingModel     { LightingModel::LambertBlinnPhong };
     uint32_t toonDiscretizeSteps    { 4U };
     float toonSpecularThreshold     { 0.49f };
 

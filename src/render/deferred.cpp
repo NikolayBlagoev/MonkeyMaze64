@@ -107,44 +107,27 @@ void DeferredRenderer::initBuffers() {
     initHdrBuffer();
 }
 
-void DeferredRenderer::initLightingShaders() {
+void DeferredRenderer::initLightingShader() {
     try {
-        std::string diffuseFileName;
-        switch (m_renderConfig.diffuseModel) {
-            case DiffuseModel::Lambert:
-                diffuseFileName = "lambert.frag";
+        std::string lightingFileName;
+        switch (m_renderConfig.lightingModel) {
+            case LightingModel::LambertPhong:
+                lightingFileName = "lambert_phong.frag";
                 break;
-            case DiffuseModel::ToonLambert:
-                diffuseFileName = "toon_lambert.frag";
+            case LightingModel::LambertBlinnPhong:
+                lightingFileName = "lambert_blinn_phong.frag";
                 break;
-            case DiffuseModel::XToonLambert:
-                diffuseFileName = "xtoon_lambert.frag";
+            case LightingModel::Toon:
+                lightingFileName = "toon.frag";
                 break;
-        }
-        ShaderBuilder lightingDiffuseBuilder;
-        lightingDiffuseBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "screen-quad.vert");;
-        lightingDiffuseBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "diffuse" / diffuseFileName);
-        lightingDiffuse = lightingDiffuseBuilder.build();
-
-        std::string specularFileName;
-        switch (m_renderConfig.specularModel) {
-            case SpecularModel::Phong:
-                specularFileName = "phong.frag";
-                break;
-            case SpecularModel::BlinnPhong:
-                specularFileName = "blinn_phong.frag";
-                break;
-            case SpecularModel::ToonBlinnPhong:
-                specularFileName = "toon_blinn_phong.frag";
-                break;
-            case SpecularModel::XToonBlinnPhong:
-                specularFileName = "xtoon_blinn_phong.frag";
+            case LightingModel::XToon:
+                lightingFileName = "xtoon.frag";
                 break;
         }
-        ShaderBuilder lightingSpecularBuilder;
-        lightingSpecularBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "screen-quad.vert");;
-        lightingSpecularBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / "specular" / specularFileName);
-        lightingSpecular = lightingSpecularBuilder.build();
+        ShaderBuilder lightingBuilder;
+        lightingBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "screen-quad.vert");;
+        lightingBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "lighting" / lightingFileName);
+        lightingPass = lightingBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 }
 
@@ -163,7 +146,7 @@ void DeferredRenderer::initShaders() {
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
     // Lighting pass
-    initLightingShaders();
+    initLightingShader();
 }
 
 void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) const {
@@ -213,66 +196,33 @@ void DeferredRenderer::bindGBufferTextures() const {
     glUniform1i(2, utils::G_BUFFER_TEX_START_IDX + 2);
 }
 
-void DeferredRenderer::renderDiffuse(const glm::vec3& cameraPos) {
-    // Bind shader, G-buffer textures, and general usage uniforms
-    lightingDiffuse.bind();
-    bindGBufferTextures();
-    glUniform3fv(3, 1, glm::value_ptr(cameraPos));
-    glUniform1f(5, m_renderConfig.shadowFarPlane);
-    m_lightManager.bind();
-
-    // Bind shader-specific uniforms
-    switch (m_renderConfig.diffuseModel) {
-        case DiffuseModel::Lambert:
-            break;
-        case DiffuseModel::ToonLambert:
-            glUniform1ui(8, m_renderConfig.toonDiscretizeSteps);
-            break;
-        case DiffuseModel::XToonLambert:
-            // TODO: Add XToon texture
-            break;
-    }
-
-    utils::renderQuad();
-}
-
-void DeferredRenderer::renderSpecular(const glm::vec3& cameraPos) {
-    // Bind shader, G-buffer textures, and general usage uniforms
-    lightingSpecular.bind();
-    bindGBufferTextures();
-    glUniform3fv(3, 1, glm::value_ptr(cameraPos));
-    glUniform1f(5, m_renderConfig.shadowFarPlane);
-    m_lightManager.bind();
-
-    // Bind shader-specific uniforms
-    switch (m_renderConfig.specularModel) {
-        case SpecularModel::Phong:
-        case SpecularModel::BlinnPhong:
-            break;
-        case SpecularModel::ToonBlinnPhong:
-            glUniform1f(8, m_renderConfig.toonSpecularThreshold);
-            break;
-        case SpecularModel::XToonBlinnPhong:
-            // TODO: Add XToon texture
-            break;
-    }
-
-    utils::renderQuad();
-}
-
 void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
     // Bind HDR framebuffer and clear previous values
     glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // For diffuse and specular: bind lighting shader, G-Buffer data, and lighting data
-    glDepthFunc(GL_ALWAYS);                     // Depth test always passes to allow for combining all fragment results
-    glEnable(GL_BLEND);                         // Enable blending for HDR framebuffer
-    glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);    // Blend source and destination fragments based on their alpha components
-    renderDiffuse(cameraPos);
-    renderSpecular(cameraPos);
-    glDisable(GL_BLEND);                        // Be a good citizen and restore defaults
-    glDepthFunc(GL_LEQUAL);
+    // Bind shader, G-buffer textures, and general usage uniforms
+    lightingPass.bind();
+    bindGBufferTextures();
+    glUniform3fv(3, 1, glm::value_ptr(cameraPos));
+    glUniform1f(5, m_renderConfig.shadowFarPlane);
+    m_lightManager.bind();
+
+    // Bind shader-specific uniforms
+    switch (m_renderConfig.lightingModel) {
+        case LightingModel::LambertPhong:
+        case LightingModel::LambertBlinnPhong:
+            break;
+        case LightingModel::Toon:
+            glUniform1ui(8, m_renderConfig.toonDiscretizeSteps);
+            glUniform1f(9, m_renderConfig.toonSpecularThreshold);
+            break;
+        case LightingModel::XToon:
+            // TODO: Add Xtoon texture
+            break;
+    }
+
+    utils::renderQuad();
 }
 
 void DeferredRenderer::renderPostProcessing() {

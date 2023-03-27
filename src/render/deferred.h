@@ -20,7 +20,7 @@ public:
     ~DeferredRenderer();
 
     void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos);
-    void initLightingShaders();
+    void initLightingShader();
 
 private:
     void initGBuffer();
@@ -51,8 +51,7 @@ private:
     GLuint hdrTex;
 
     Shader geometryPass;
-    Shader lightingDiffuse;
-    Shader lightingSpecular;
+    Shader lightingPass;
     Shader hdrRender;
 
     RenderConfig& m_renderConfig;

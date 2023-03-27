@@ -46,11 +46,10 @@ private:
 
     Shader debugShader;
 
-    size_t selectedMesh { 0U };
-    size_t selectedPointLight { 0U };
-    size_t selectedAreaLight { 0U };
-    DiffuseModel selectedDiffuseModel { DiffuseModel::Lambert };
-    SpecularModel selectedSpecularModel { SpecularModel::BlinnPhong };
+    size_t selectedMesh                 { 0U };
+    size_t selectedPointLight           { 0U };
+    size_t selectedAreaLight            { 0U };
+    LightingModel selectedLightingModel { LightingModel::LambertBlinnPhong };
 };
 
 #endif

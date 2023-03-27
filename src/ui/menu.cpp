@@ -198,25 +198,17 @@ void Menu::drawShadowTab() {
 }
 
 void Menu::drawShaderLoader() {
-    // Diffuse selection controls
-    constexpr auto optionsDiffuse = magic_enum::enum_names<DiffuseModel>();
+    // Shader selection controls
+    constexpr auto optionsDiffuse = magic_enum::enum_names<LightingModel>();
     std::vector<const char*> optionsDiffusePointers;
     std::transform(std::begin(optionsDiffuse), std::end(optionsDiffuse), std::back_inserter(optionsDiffusePointers),
         [](const auto& str) { return str.data(); });
-    ImGui::Combo("Diffuse model", (int*) &selectedDiffuseModel, optionsDiffusePointers.data(), static_cast<int>(optionsDiffusePointers.size()));
-
-    // Specular selection controls
-    constexpr auto optionsSpecular = magic_enum::enum_names<SpecularModel>();
-    std::vector<const char*> optionsSpecularPointers;
-    std::transform(std::begin(optionsSpecular), std::end(optionsSpecular), std::back_inserter(optionsSpecularPointers),
-        [](const auto& str) { return str.data(); });
-    ImGui::Combo("Specular model", (int*) &selectedSpecularModel, optionsSpecularPointers.data(), static_cast<int>(optionsSpecularPointers.size()));
+    ImGui::Combo("Lighting model", (int*) &selectedLightingModel, optionsDiffusePointers.data(), static_cast<int>(optionsDiffusePointers.size()));
 
     // Load currently selected shaders
     if (ImGui::Button("Reload shaders")) { 
-        m_renderConfig.diffuseModel     = selectedDiffuseModel;
-        m_renderConfig.specularModel    = selectedSpecularModel;
-        m_deferredRenderer.initLightingShaders();
+        m_renderConfig.lightingModel = selectedLightingModel;
+        m_deferredRenderer.initLightingShader();
     }
 }
 
