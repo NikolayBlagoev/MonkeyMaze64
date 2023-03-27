@@ -77,6 +77,10 @@ HitBox Scene::getHitBox(size_t idx) {
     return hitBox;
 }
 
+glm::vec3 Scene::getHitBoxMiddle(size_t idx) {
+    return modelMatrix(idx) * glm::vec4(hitBoxes[idx].getMiddle(), 1);
+}
+
 bool Scene::tryUpdateScale(size_t idx, glm::vec3 scale) {
 //    transformParams[idx].scale += scale;
     return true;
@@ -119,11 +123,20 @@ bool Scene::tryUpdateTranslation(size_t idx, glm::vec3 translation) {
                     bigger.z++;
             }
 
-            if (       (smallerOrEqual.x != 0 && bigger.x != 0)
-                    && (smallerOrEqual.y != 0 && bigger.y != 0)
-                    && (smallerOrEqual.z != 0 && bigger.z != 0)) {
+            bool collision =    (smallerOrEqual.x != 0 && bigger.x != 0)
+                             && (smallerOrEqual.y != 0 && bigger.y != 0)
+                             && (smallerOrEqual.z != 0 && bigger.z != 0);
+
+            if (collision) {
+                float newDist = glm::distance(getHitBoxMiddle(idx), getHitBoxMiddle(i));
+
                 transformParams[idx].translate -= translation;
-                return false;
+                float oldDist = glm::distance(getHitBoxMiddle(idx), getHitBoxMiddle(i));
+
+                if (newDist < oldDist)
+                    return false;
+                else
+                    transformParams[idx].translate += translation;
             }
         }
     }

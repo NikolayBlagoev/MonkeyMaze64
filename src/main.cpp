@@ -68,7 +68,7 @@ void mouseButtonCallback(int button, int action, int mods) {
 int main(int argc, char* argv[]) {
     // World setup
     // * y is up *
-    glm::vec3 characterStart = glm::vec3 (7.0f, 0.25f, 0.0f);
+    glm::vec3 characterStart = glm::vec3 (2.0f, 0.25f, 0.0f);
     glm::vec3 characterCameraStart = characterStart + glm::vec3(0.0f, 1.0f, 2.0f);
 
     // Init core objects

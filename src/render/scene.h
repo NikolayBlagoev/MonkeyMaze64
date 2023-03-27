@@ -20,6 +20,13 @@ struct ObjectTransform {
 
 struct HitBox {
     std::array<glm::vec3, 8> points;
+
+    glm::vec3 getMiddle() {
+        // assume corner points are first and last
+        return {(points[0].x + points[7].x) / 2,
+                (points[0].y + points[7].y) / 2,
+                (points[0].z + points[7].z) / 2};
+    }
 };
 
 class Scene {
@@ -35,6 +42,7 @@ public:
     std::vector<ObjectTransform> transformParams;
 
     HitBox getHitBox(size_t idx);
+    glm::vec3 getHitBoxMiddle(size_t idx);
 
     bool tryUpdateScale(size_t idx, glm::vec3 scale);
     bool tryUpdateRotation(size_t idx, glm::vec3 rotation);
