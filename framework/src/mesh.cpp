@@ -20,22 +20,17 @@ DISABLE_WARNINGS_POP()
 
 static void centerAndScaleToUnitMesh(std::span<Mesh> meshes);
 
-static glm::vec3 construct_vec3(const float* pFloats)
-{
-    return glm::vec3(pFloats[0], pFloats[1], pFloats[2]);
-}
+static glm::vec3 construct_vec3(const float* pFloats) { return glm::vec3(pFloats[0], pFloats[1], pFloats[2]); }
 
 // https://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
 template <class T>
-static void hash_combine(std::size_t& seed, const T& v)
-{
+static void hash_combine(std::size_t& seed, const T& v) {
     std::hash<T> hasher;
     seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 struct VertexHash {
-    size_t operator()(const Vertex& v) const
-    {
+    size_t operator()(const Vertex& v) const {
         size_t seed = 0;
         hash_combine(seed, v.position.x);
         hash_combine(seed, v.position.y);
@@ -49,8 +44,29 @@ struct VertexHash {
     }
 };
 
-std::vector<Mesh> loadMesh(const std::filesystem::path& file, bool centerAndNormalize)
-{
+void computeTangents(Vertex& v0, Vertex& v1, Vertex& v2) {
+    // Compute edge vectors
+    glm::vec3 zeroToOne     = v1.position - v0.position;
+    glm::vec3 zeroToTwo     = v2.position - v0.position;
+    glm::vec2 texZeroToOne  = v1.texCoord - v0.texCoord;
+    glm::vec2 texZeroToTwo  = v2.texCoord - v0.texCoord;
+
+    // Compute tangent and bitangent
+    glm::vec3 tangent, bitangent;
+    float fractional = 1.0f / (texZeroToOne.x * texZeroToTwo.y - texZeroToTwo.x * texZeroToOne.y);
+    tangent.x      = fractional * (texZeroToTwo.y  * zeroToOne.x - texZeroToOne.y * zeroToTwo.x);
+    tangent.y      = fractional * (texZeroToTwo.y  * zeroToOne.y - texZeroToOne.y * zeroToTwo.y);
+    tangent.z      = fractional * (texZeroToTwo.y  * zeroToOne.z - texZeroToOne.y * zeroToTwo.z);
+    bitangent.x    = fractional * (-texZeroToTwo.x * zeroToOne.x + texZeroToOne.x * zeroToTwo.x);
+    bitangent.y    = fractional * (-texZeroToTwo.x * zeroToOne.y + texZeroToOne.x * zeroToTwo.y);
+    bitangent.z    = fractional * (-texZeroToTwo.x * zeroToOne.z + texZeroToOne.x * zeroToTwo.z);
+
+    // Store results in input vertices
+    v0.tangent = v1.tangent = v2.tangent = tangent;
+    v0.bitangent = v1.bitangent = v2.bitangent = bitangent;
+}
+
+std::vector<Mesh> loadMesh(const std::filesystem::path& file, bool centerAndNormalize) {
     if (!std::filesystem::exists(file)) {
         std::cerr << "File " << file << " does not exist." << std::endl;
         throw std::exception();
@@ -117,6 +133,8 @@ std::vector<Mesh> loadMesh(const std::filesystem::path& file, bool centerAndNorm
                         mesh.vertices.push_back(vertex);
                     }
                 }
+                computeTangents(mesh.vertices[triangle.x], mesh.vertices[triangle.y], mesh.vertices[triangle.z]);
+
                 mesh.triangles.push_back(triangle);
             }
 
@@ -147,8 +165,7 @@ std::vector<Mesh> loadMesh(const std::filesystem::path& file, bool centerAndNorm
     return out;
 }
 
-static void centerAndScaleToUnitMesh(std::span<Mesh> meshes)
-{
+static void centerAndScaleToUnitMesh(std::span<Mesh> meshes) {
     std::vector<glm::vec3> positions;
     for (const auto& mesh : meshes)
         std::transform(std::begin(mesh.vertices), std::end(mesh.vertices),
@@ -175,8 +192,7 @@ static void centerAndScaleToUnitMesh(std::span<Mesh> meshes)
     }
 }
 
-Mesh mergeMeshes(std::span<const Mesh> meshes)
-{
+Mesh mergeMeshes(std::span<const Mesh> meshes) {
     Mesh out;
     out.material = meshes[0].material;
     for (const auto& mesh : meshes) {

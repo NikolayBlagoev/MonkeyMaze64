@@ -28,6 +28,7 @@ layout(location = 16) uniform float defaultAO;
 layout(location = 0) in vec3 fragPos;
 layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec2 fragTexCoord;
+layout(location = 3) in mat3 tbn;          // TBN matrix for normal map transformation
 
 // G-buffer output
 layout(location = 0) out vec3 gPosition;    // Position buffer
@@ -38,8 +39,12 @@ layout(location = 3) out vec3 gMaterial;    // Red channel is metallic, green ch
 void main() {
     gPosition   = fragPos;
     
-    // TODO: Process normal map
-    gNormal     = normalize(fragNormal);
+    // Normal
+    if (hasNormal) { 
+        gNormal = texture(normalTex, fragTexCoord).rgb;
+        gNormal = gNormal * 2.0 - 1.0;   
+        gNormal = normalize(tbn * gNormal); 
+    } else { gNormal = normalize(fragNormal); }
 
     // Albedo
     if (hasAlbedo)  { gAlbedo = texture(albedoTex, fragTexCoord); }

@@ -101,20 +101,30 @@ int main(int argc, char* argv[]) {
     std::weak_ptr<const Texture> rustNormal     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_normal.png");
     std::weak_ptr<const Texture> rustMetallic   = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_metallic.png");
     std::weak_ptr<const Texture> rustRoughness  = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_roughness.png");
+    std::weak_ptr<const Texture> stoneAlbedo    = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_COLOR.jpg");
+    std::weak_ptr<const Texture> stoneNormal    = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_NORM.jpg");
+    std::weak_ptr<const Texture> stoneRoughness = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_ROUGH.jpg");
+    std::weak_ptr<const Texture> stoneAO        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_OCC.jpg");
 
-    // Add models and set textures for test sphere
+    // Add models and set textures for test cubes
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "cube.obj");
     scene.meshAt(1).setAlbedo(rustAlbedo);
     scene.meshAt(1).setNormal(rustNormal);
     scene.meshAt(1).setMetallic(rustMetallic);
     scene.meshAt(1).setRoughness(rustRoughness);
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "cube.obj");
+    scene.meshAt(2).setAlbedo(stoneAlbedo);
+    scene.meshAt(2).setNormal(stoneNormal);
+    scene.meshAt(2).setRoughness(stoneRoughness);
+    scene.meshAt(2).setAO(stoneAO);
 
     // Add test lights
-    lightManager.addPointLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
-    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f));
+    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
+    lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 3.0f);
+    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 3.0f);
+    lightManager.addAreaLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
+    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
 
     // Main loop
     while (!m_window.shouldClose()) {
