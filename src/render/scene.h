@@ -9,11 +9,17 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <vector>
+#include <optional>
+#include <array>
 
 struct ObjectTransform {
     glm::vec3 scale;
     glm::vec3 rotate; // Angles in degrees
     glm::vec3 translate;
+};
+
+struct HitBox {
+    std::array<glm::vec3, 8> points;
 };
 
 class Scene {
@@ -27,12 +33,16 @@ public:
     glm::mat4 modelMatrix(size_t idx);
 
     std::vector<ObjectTransform> transformParams;
+
+    HitBox getHitBox(size_t idx);
+
     bool tryUpdateScale(size_t idx, glm::vec3 scale);
     bool tryUpdateRotation(size_t idx, glm::vec3 rotation);
     bool tryUpdateTranslation(size_t idx, glm::vec3 translation);
 
 private:
     std::vector<GPUMesh> meshes;
+    std::vector<HitBox> hitBoxes;
 };
 
 #endif

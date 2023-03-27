@@ -94,9 +94,9 @@ void Camera::updateInput() {
 
 void Camera::updateInput(Scene& scene, size_t idx) {
     if (m_userInteraction) {
-        glm::vec3 right = glm::normalize(glm::cross(m_forward, m_up));
-        glm::vec3 forward = m_forward;
-        glm::vec3 up = m_up;
+        glm::vec3 right = glm::normalize(glm::cross(m_forward, m_up)) * m_renderConfig.moveSpeed;
+        glm::vec3 forward = m_forward * m_renderConfig.moveSpeed;
+        glm::vec3 up = m_up * m_renderConfig.moveSpeed;
 
         // Eliminate y for forwards and backwards
         right.y = 0.0f;
@@ -104,31 +104,31 @@ void Camera::updateInput(Scene& scene, size_t idx) {
 
         // Forward, backward and strafe
         if (m_pWindow->isKeyPressed(GLFW_KEY_A)) {
-            m_position -= m_renderConfig.moveSpeed * right;
-            scene.transformParams[idx].translate -= m_renderConfig.moveSpeed * right;
+            if (scene.tryUpdateTranslation(idx, -right))
+                m_position -= right;
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_D)) {
-            m_position += m_renderConfig.moveSpeed * right;
-            scene.transformParams[idx].translate += m_renderConfig.moveSpeed * right;
+            if (scene.tryUpdateTranslation(idx, right))
+                m_position += right;
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_W)) {
-            m_position += m_renderConfig.moveSpeed * forward;
-            scene.transformParams[idx].translate += m_renderConfig.moveSpeed * forward;
+            if (scene.tryUpdateTranslation(idx, forward))
+                m_position += forward;
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_S)) {
-            m_position -= m_renderConfig.moveSpeed * forward;
-            scene.transformParams[idx].translate -= m_renderConfig.moveSpeed * forward;
+            if (scene.tryUpdateTranslation(idx, -forward))
+                m_position -= forward;
         }
 
         // Up and down
         if (!m_renderConfig.constrainVertical) {
             if (m_pWindow->isKeyPressed(GLFW_KEY_SPACE)) {
-                m_position += m_renderConfig.moveSpeed * up;
-                scene.transformParams[idx].translate += m_renderConfig.moveSpeed * up;
+                if (scene.tryUpdateTranslation(idx, up))
+                    m_position += up;
             }
             if (m_pWindow->isKeyPressed(GLFW_KEY_C)) {
-                m_position -= m_renderConfig.moveSpeed * up;
-                scene.transformParams[idx].translate -= m_renderConfig.moveSpeed * up;
+                if (scene.tryUpdateTranslation(idx, -up))
+                    m_position -= up;
             }
         }
 

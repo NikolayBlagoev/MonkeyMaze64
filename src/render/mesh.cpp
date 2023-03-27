@@ -13,7 +13,7 @@ GPUMesh::GPUMesh(std::filesystem::path filePath)
         throw MeshLoadingException(fmt::format("File {} does not exist", filePath.string().c_str()));
 
     // Defined in <framework/mesh.h>
-    const auto cpuMesh = mergeMeshes(loadMesh(filePath));
+    const Mesh cpuMesh = mergeMeshes(loadMesh(filePath));
 
     // Create Element(/Index) Buffer Objects and Vertex Buffer Object.
     glCreateBuffers(1, &m_ibo);
