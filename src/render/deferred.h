@@ -17,7 +17,7 @@ DISABLE_WARNINGS_POP()
 // TODO: Adapt to resize framebuffer sizes when window size changes
 class DeferredRenderer {
 public:
-    DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager, const Texture* xToonTex);
+    DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager, std::weak_ptr<const Texture> xToonTex);
     ~DeferredRenderer();
 
     void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos);
@@ -28,10 +28,9 @@ private:
     void initHdrBuffer();
     void initBuffers();
     void initShaders();
+    void bindMaterialTextures(const GPUMesh& mesh) const;
     void renderGeometry(const glm::mat4& viewProjectionMatrix) const;
     void bindGBufferTextures() const;
-    void renderDiffuse(const glm::vec3& cameraPos);
-    void renderSpecular(const glm::vec3& cameraPos);
     void renderLighting(const glm::vec3& cameraPos);
     void renderPostProcessing();
     void copyDepthBuffer();
@@ -46,6 +45,7 @@ private:
     GLuint positionTex;
     GLuint normalTex;
     GLuint albedoTex;
+    GLuint materialTex;
 
     // Intermediate HDR framebuffer to render to before tonemapping and gamma correction
     GLuint hdrBuffer;
@@ -55,7 +55,7 @@ private:
     Shader geometryPass;
     Shader lightingPass;
     Shader hdrRender;
-    const Texture* m_xToonTex;
+    std::weak_ptr<const Texture> m_xToonTex;
 
     RenderConfig& m_renderConfig;
     Scene& m_scene;

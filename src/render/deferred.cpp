@@ -11,7 +11,7 @@ DISABLE_WARNINGS_POP()
 #include <utils/constants.h>
 #include <utils/render_utils.hpp>
 
-DeferredRenderer::DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager, const Texture* xToonTex)
+DeferredRenderer::DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager, std::weak_ptr<const Texture> xToonTex)
     : m_renderConfig(renderConfig)
     , m_scene(scene)
     , m_lightManager(lightManager)
@@ -27,6 +27,7 @@ DeferredRenderer::~DeferredRenderer() {
     glDeleteTextures(1, &positionTex);
     glDeleteTextures(1, &normalTex);
     glDeleteTextures(1, &albedoTex);
+    glDeleteTextures(1, &materialTex);
     glDeleteRenderbuffers(1, &rboDepth);
 
     // HDR buffer
@@ -67,8 +68,14 @@ void DeferredRenderer::initGBuffer() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, albedoTex, 0);
-    std::array<GLuint, 3UL> attachments { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-    glDrawBuffers(3, attachments.data());
+    glCreateTextures(GL_TEXTURE_2D, 1, &materialTex);
+    glBindTexture(GL_TEXTURE_2D, materialTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, materialTex, 0);
+    std::array<GLuint, 4UL> attachments { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+    glDrawBuffers(4, attachments.data());
 
     // Create and attach depth buffer
     glCreateRenderbuffers(1, &rboDepth);
@@ -150,6 +157,47 @@ void DeferredRenderer::initShaders() {
     initLightingShader();
 }
 
+void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh) const {
+    // Albedo
+    if (!mesh.getAlbedo().expired()) {
+        mesh.getAlbedo().lock()->bind(GL_TEXTURE0);
+        glUniform1i(3, 0);
+    }
+    glUniform1i(4, !mesh.getNormal().expired());
+    glUniform3fv(5, 1, glm::value_ptr(m_renderConfig.defaultAlbedo));
+
+    // Normal
+    if (!mesh.getNormal().expired()) {
+        mesh.getNormal().lock()->bind(GL_TEXTURE0 + 1);
+        glUniform1i(6, 1);
+    }
+    glUniform1i(7, !mesh.getNormal().expired());
+
+    // Metallic
+    if (!mesh.getMetallic().expired()) {
+        mesh.getMetallic().lock()->bind(GL_TEXTURE0 + 2);
+        glUniform1i(8, 2);
+    }
+    glUniform1i(9, !mesh.getMetallic().expired());
+    glUniform1f(10, m_renderConfig.defaultMetallic);
+
+    // Roughness
+    if (!mesh.getRoughness().expired()) {
+        mesh.getRoughness().lock()->bind(GL_TEXTURE0 + 3);
+        glUniform1i(11, 3);
+    }
+    glUniform1i(12, !mesh.getRoughness().expired());
+    glUniform1f(13, m_renderConfig.defaultRoughness);
+
+    // AO
+    if (!mesh.getAO().expired()) {
+        mesh.getAO().lock()->bind(GL_TEXTURE0 + 4);
+        glUniform1i(14, 3);
+    }
+    glUniform1i(15, !mesh.getAO().expired());
+    glUniform1f(16, m_renderConfig.defaultAO);
+}
+
 void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) const {
     // Bind the G-buffer and clear its previously held values
     glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
@@ -166,18 +214,12 @@ void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) con
         const glm::mat4 mvpMatrix           = viewProjectionMatrix * modelMatrix;
         const glm::mat3 normalModelMatrix   = glm::inverseTranspose(glm::mat3(modelMatrix));
 
-        // Bind shader(s), light(s), and uniform(s)
+        // Bind shader program, transformation matrices, and material property textures
         geometryPass.bind();
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvpMatrix));
         glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
         glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(normalModelMatrix));
-        // TODO: Properly process textures
-        // if (mesh.hasTextureCoords()) {
-        //     m_texture.bind(GL_TEXTURE0);
-        //     glUniform1i(3, 0);
-        //     glUniform1i(4, GL_TRUE);
-        // } else { glUniform1i(4, GL_FALSE); }
-        glUniform1i(4, GL_FALSE); // We don't actually have textures for now :)
+        bindMaterialTextures(mesh);
 
         mesh.draw();
     }
@@ -195,6 +237,9 @@ void DeferredRenderer::bindGBufferTextures() const {
     glActiveTexture(GL_TEXTURE0 + utils::G_BUFFER_TEX_START_IDX + 2);
     glBindTexture(GL_TEXTURE_2D, albedoTex);
     glUniform1i(2, utils::G_BUFFER_TEX_START_IDX + 2);
+    glActiveTexture(GL_TEXTURE0 + utils::G_BUFFER_TEX_START_IDX + 3);
+    glBindTexture(GL_TEXTURE_2D, materialTex);
+    glUniform1i(3, utils::G_BUFFER_TEX_START_IDX + 3);
 }
 
 void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
@@ -205,8 +250,8 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
     // Bind shader, G-buffer textures, and general usage uniforms
     lightingPass.bind();
     bindGBufferTextures();
-    glUniform3fv(3, 1, glm::value_ptr(cameraPos));
-    glUniform1f(5, m_renderConfig.shadowFarPlane);
+    glUniform3fv(4, 1, glm::value_ptr(cameraPos));
+    glUniform1f(6, m_renderConfig.shadowFarPlane);
     m_lightManager.bind();
 
     // Bind shader-specific uniforms
@@ -215,12 +260,12 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
         case LightingModel::LambertBlinnPhong:
             break;
         case LightingModel::Toon:
-            glUniform1ui(8, m_renderConfig.toonDiscretizeSteps);
-            glUniform1f(9, m_renderConfig.toonSpecularThreshold);
+            glUniform1ui(9, m_renderConfig.toonDiscretizeSteps);
+            glUniform1f(10, m_renderConfig.toonSpecularThreshold);
             break;
         case LightingModel::XToon:
-            m_xToonTex->bind(GL_TEXTURE0 + utils::LIGHTING_TEX_START_IDX);
-            glUniform1i(8, utils::LIGHTING_TEX_START_IDX);
+            m_xToonTex.lock()->bind(GL_TEXTURE0 + utils::LIGHTING_TEX_START_IDX);
+            glUniform1i(9, utils::LIGHTING_TEX_START_IDX);
             break;
     }
 

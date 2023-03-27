@@ -73,8 +73,8 @@ int main(int argc, char* argv[]) {
     TextureManager textureManager;
     Scene scene;
     LightManager lightManager(renderConfig);
-    const Texture& xToonTex = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "toon_map.png");
-    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager, &xToonTex);
+    std::weak_ptr<const Texture> xToonTex = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "toon_map.png");
+    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager, xToonTex);
     Menu menu(scene, renderConfig, lightManager, deferredRenderer);
 
     // Register UI callbacks
@@ -97,11 +97,18 @@ int main(int argc, char* argv[]) {
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
     // Load textures
-    // TODO: Add texture loading
+    std::weak_ptr<const Texture> rustAlbedo     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
+    std::weak_ptr<const Texture> rustNormal     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_normal.png");
+    std::weak_ptr<const Texture> rustMetallic   = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_metallic.png");
+    std::weak_ptr<const Texture> rustRoughness  = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_roughness.png");
 
-    // Add models
+    // Add models and set textures for test sphere
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
-    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "cube.obj");
+    scene.meshAt(1).setAlbedo(rustAlbedo);
+    scene.meshAt(1).setNormal(rustNormal);
+    scene.meshAt(1).setMetallic(rustMetallic);
+    scene.meshAt(1).setRoughness(rustRoughness);
 
     // Add test lights
     lightManager.addPointLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));

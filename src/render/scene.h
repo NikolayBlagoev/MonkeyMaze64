@@ -22,7 +22,7 @@ public:
     void removeMesh(size_t idx);
 
     size_t numMeshes() { return meshes.size(); }
-    const GPUMesh& meshAt(size_t idx) { return meshes[idx]; }
+    GPUMesh& meshAt(size_t idx) { return meshes[idx]; }
 
     glm::mat4 modelMatrix(size_t idx);
 

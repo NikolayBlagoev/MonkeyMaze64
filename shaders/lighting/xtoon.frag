@@ -19,20 +19,21 @@ layout(binding = 1) buffer areaLights { AreaLight areaLightsData[]; };
 layout(location = 0) uniform sampler2D gPosition;
 layout(location = 1) uniform sampler2D gNormal;
 layout(location = 2) uniform sampler2D gAlbedo;
+layout(location = 3) uniform sampler2D gMaterial;
 
 // Camera position
-layout(location = 3) uniform vec3 cameraPos;
+layout(location = 4) uniform vec3 cameraPos;
 
 // Lighting and shading parameter(s)
-layout(location = 4) uniform float objectShininess = 10.0; // TODO: Remove
-layout(location = 5) uniform float shadowFarPlane;
+layout(location = 5) uniform float objectShininess = 10.0; // TODO: Remove
+layout(location = 6) uniform float shadowFarPlane;
 
 // Shadow map array(s)
-layout(location = 6) uniform samplerCubeArrayShadow pointShadowTexArr;
-layout(location = 7) uniform sampler2DArrayShadow areaShadowTexArr;
+layout(location = 7) uniform samplerCubeArrayShadow pointShadowTexArr;
+layout(location = 8) uniform sampler2DArrayShadow areaShadowTexArr;
 
 // Shader-specific data
-layout(location = 8) uniform sampler2D texToon;
+layout(location = 9) uniform sampler2D texToon;
 
 // Quad texture to use with G-buffer
 layout(location = 0) in vec2 bufferCoords;

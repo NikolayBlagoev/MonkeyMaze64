@@ -7,40 +7,29 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
+#include <memory>
 #include <vector>
 
 struct ImageLoadingException : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-class Texture {
-public:
-    Texture(std::filesystem::path filePath);
-    Texture(const Texture&) = delete;
-    Texture(Texture&&);
-    ~Texture();
-
-    Texture& operator=(const Texture&) = delete;
-    Texture& operator=(Texture&&) = default;
-
+struct Texture {
     void bind(GLint textureSlot) const;
-    std::string getFileName() const { return fileName; }
 
-private:
     static constexpr GLuint INVALID = 0xFFFFFFFF;
     GLuint m_texture { INVALID };
-
     std::string fileName;
 };
 
 class TextureManager {
 public:
-    const Texture& addTexture(std::filesystem::path filePath);
+    std::weak_ptr<const Texture> addTexture(std::filesystem::path filePath);
     bool removeTexture(std::string fileName);
-    const Texture* getTexture(std::string fileName) const;
+    std::weak_ptr<const Texture> getTexture(std::string fileName) const;
 
 private:
-    std::vector<Texture> textures;
+    std::vector<std::shared_ptr<Texture>> textures;
 };
 
 #endif
