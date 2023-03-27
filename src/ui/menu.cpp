@@ -70,32 +70,50 @@ void Menu::addMesh() {
       else { std::cerr << "Model loading error" << std::endl; }
 }
 
+void Menu::drawMaterialControls() {
+    ImGui::ColorEdit4("Albedo", glm::value_ptr(m_renderConfig.defaultAlbedo));
+    ImGui::SliderFloat("Metallic", &m_renderConfig.defaultMetallic, 0.0f, 1.0f, "%.2f");
+    ImGui::SliderFloat("Roughness", &m_renderConfig.defaultRoughness, 0.0f, 1.0f, "%.2f");
+    ImGui::SliderFloat("AO", &m_renderConfig.defaultAO, 0.0f, 1.0f, "%.2f");
+}
+
+void Menu::drawMeshControls() {
+    // Add / remove controls
+    if (ImGui::Button("Add")) { addMesh(); }
+    if (ImGui::Button("Remove selected")) {
+        if (selectedMesh < m_scene.numMeshes()) {
+            m_scene.removeMesh(selectedMesh);
+            selectedMesh = 0U;
+        }
+    }
+    ImGui::NewLine();
+
+    // Selection controls
+    std::vector<std::string> options;
+    for (size_t meshIdx = 0U; meshIdx < m_scene.numMeshes(); meshIdx++) { options.push_back("Mesh " + std::to_string(meshIdx + 1)); }
+    std::vector<const char*> optionsPointers;
+    std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
+        [](const auto& str) { return str.c_str(); });
+    ImGui::Combo("Selected mesh", (int*) &selectedMesh, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+
+    // Selected mesh controls
+    if (m_scene.numMeshes() > 0U) {
+        ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.transformParams[selectedMesh].scale), 0.05f);
+        ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.transformParams[selectedMesh].rotate), 1.0f, 0.0f, 360.0f);
+        ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.transformParams[selectedMesh].translate), 0.05f);
+    }
+}
+
 void Menu::drawMeshTab() {
     if (ImGui::BeginTabItem("Meshes")) {
-        // Add / remove controls
-        if (ImGui::Button("Add")) { addMesh(); }
-        if (ImGui::Button("Remove selected")) {
-            if (selectedMesh < m_scene.numMeshes()) {
-                m_scene.removeMesh(selectedMesh);
-                selectedMesh = 0U;
-            }
-        }
+        ImGui::Text("Default materials (for objects lacking textures)");
+        drawMaterialControls();
+
         ImGui::NewLine();
+        ImGui::Separator();
 
-        // Selection controls
-        std::vector<std::string> options;
-        for (size_t meshIdx = 0U; meshIdx < m_scene.numMeshes(); meshIdx++) { options.push_back("Mesh " + std::to_string(meshIdx + 1)); }
-        std::vector<const char*> optionsPointers;
-        std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
-            [](const auto& str) { return str.c_str(); });
-        ImGui::Combo("Selected mesh", (int*) &selectedMesh, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
-
-        // Selected mesh controls
-        if (m_scene.numMeshes() > 0U) {
-            ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.transformParams[selectedMesh].scale), 0.05f);
-            ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.transformParams[selectedMesh].rotate), 1.0f, 0.0f, 360.0f);
-            ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.transformParams[selectedMesh].translate), 0.05f);
-        }
+        ImGui::Text("Mesh controls");
+        drawMeshControls();
 
         ImGui::EndTabItem();
     }
@@ -198,25 +216,17 @@ void Menu::drawShadowTab() {
 }
 
 void Menu::drawShaderLoader() {
-    // Diffuse selection controls
-    constexpr auto optionsDiffuse = magic_enum::enum_names<DiffuseModel>();
+    // Shader selection controls
+    constexpr auto optionsDiffuse = magic_enum::enum_names<LightingModel>();
     std::vector<const char*> optionsDiffusePointers;
     std::transform(std::begin(optionsDiffuse), std::end(optionsDiffuse), std::back_inserter(optionsDiffusePointers),
         [](const auto& str) { return str.data(); });
-    ImGui::Combo("Diffuse model", (int*) &selectedDiffuseModel, optionsDiffusePointers.data(), static_cast<int>(optionsDiffusePointers.size()));
-
-    // Specular selection controls
-    constexpr auto optionsSpecular = magic_enum::enum_names<SpecularModel>();
-    std::vector<const char*> optionsSpecularPointers;
-    std::transform(std::begin(optionsSpecular), std::end(optionsSpecular), std::back_inserter(optionsSpecularPointers),
-        [](const auto& str) { return str.data(); });
-    ImGui::Combo("Specular model", (int*) &selectedSpecularModel, optionsSpecularPointers.data(), static_cast<int>(optionsSpecularPointers.size()));
+    ImGui::Combo("Lighting model", (int*) &selectedLightingModel, optionsDiffusePointers.data(), static_cast<int>(optionsDiffusePointers.size()));
 
     // Load currently selected shaders
     if (ImGui::Button("Reload shaders")) { 
-        m_renderConfig.diffuseModel     = selectedDiffuseModel;
-        m_renderConfig.specularModel    = selectedSpecularModel;
-        m_deferredRenderer.initLightingShaders();
+        m_renderConfig.lightingModel = selectedLightingModel;
+        m_deferredRenderer.initLightingShader();
     }
 }
 

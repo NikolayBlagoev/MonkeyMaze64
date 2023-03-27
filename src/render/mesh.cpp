@@ -7,8 +7,7 @@ DISABLE_WARNINGS_POP()
 #include <iostream>
 #include <vector>
 
-GPUMesh::GPUMesh(std::filesystem::path filePath)
-{
+GPUMesh::GPUMesh(std::filesystem::path filePath) {
     if (!std::filesystem::exists(filePath))
         throw MeshLoadingException(fmt::format("File {} does not exist", filePath.string().c_str()));
 
@@ -48,55 +47,45 @@ GPUMesh::GPUMesh(std::filesystem::path filePath)
     m_numIndices = static_cast<GLsizei>(3 * cpuMesh.triangles.size());
 }
 
-GPUMesh::GPUMesh(GPUMesh&& other)
-{
-    moveInto(std::move(other));
-}
+GPUMesh::GPUMesh(GPUMesh&& other) { moveInto(std::move(other)); }
 
-GPUMesh::~GPUMesh()
-{
-    freeGpuMemory();
-}
+GPUMesh::~GPUMesh() { freeGpuMemory(); }
 
-GPUMesh& GPUMesh::operator=(GPUMesh&& other)
-{
+GPUMesh& GPUMesh::operator=(GPUMesh&& other) {
     moveInto(std::move(other));
     return *this;
 }
 
-bool GPUMesh::hasTextureCoords() const
-{
-    return m_hasTextureCoords;
-}
-
-void GPUMesh::draw() const
-{
+void GPUMesh::draw() const {
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, m_numIndices, GL_UNSIGNED_INT, nullptr);
 }
 
-void GPUMesh::moveInto(GPUMesh&& other)
-{
+void GPUMesh::moveInto(GPUMesh&& other) {
     freeGpuMemory();
-    m_numIndices = other.m_numIndices;
-    m_hasTextureCoords = other.m_hasTextureCoords;
-    m_ibo = other.m_ibo;
-    m_vbo = other.m_vbo;
-    m_vao = other.m_vao;
+    m_numIndices    = other.m_numIndices;
+    m_ibo           = other.m_ibo;
+    m_vbo           = other.m_vbo;
+    m_vao           = other.m_vao;
+    m_albedo        = other.m_albedo;
+    m_normal        = other.m_normal;
+    m_metallic      = other.m_metallic;
+    m_roughness     = other.m_roughness;
+    m_ao            = other.m_ao;
 
-    other.m_numIndices = 0;
-    other.m_hasTextureCoords = other.m_hasTextureCoords;
-    other.m_ibo = INVALID;
-    other.m_vbo = INVALID;
-    other.m_vao = INVALID;
+    other.m_numIndices  = 0;
+    other.m_ibo         = INVALID;
+    other.m_vbo         = INVALID;
+    other.m_vao         = INVALID;
+    other.m_albedo      = std::weak_ptr<Texture>();
+    other.m_normal      = std::weak_ptr<Texture>();
+    other.m_metallic    = std::weak_ptr<Texture>();
+    other.m_roughness   = std::weak_ptr<Texture>();
+    other.m_ao          = std::weak_ptr<Texture>();
 }
 
-void GPUMesh::freeGpuMemory()
-{
-    if (m_vao != INVALID)
-        glDeleteVertexArrays(1, &m_vao);
-    if (m_vbo != INVALID)
-        glDeleteBuffers(1, &m_vbo);
-    if (m_ibo != INVALID)
-        glDeleteBuffers(1, &m_ibo);
+void GPUMesh::freeGpuMemory() {
+    if (m_vao != INVALID) { glDeleteVertexArrays(1, &m_vao); }
+    if (m_vbo != INVALID) { glDeleteBuffers(1, &m_vbo); }
+    if (m_ibo != INVALID) { glDeleteBuffers(1, &m_ibo); }
 }

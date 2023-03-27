@@ -70,9 +70,11 @@ int main(int argc, char* argv[]) {
     RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
+    TextureManager textureManager;
     Scene scene;
     LightManager lightManager(renderConfig);
-    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager);
+    std::weak_ptr<const Texture> xToonTex = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "toon_map.png");
+    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager, xToonTex);
     Menu menu(scene, renderConfig, lightManager, deferredRenderer);
 
     // Register UI callbacks
@@ -94,10 +96,19 @@ int main(int argc, char* argv[]) {
         m_areaShadowShader = areaShadowBuilder.build();
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
-    // Add models and test texture
+    // Load textures
+    std::weak_ptr<const Texture> rustAlbedo     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
+    std::weak_ptr<const Texture> rustNormal     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_normal.png");
+    std::weak_ptr<const Texture> rustMetallic   = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_metallic.png");
+    std::weak_ptr<const Texture> rustRoughness  = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_roughness.png");
+
+    // Add models and set textures for test sphere
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
-    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
-    Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "cube.obj");
+    scene.meshAt(1).setAlbedo(rustAlbedo);
+    scene.meshAt(1).setNormal(rustNormal);
+    scene.meshAt(1).setMetallic(rustMetallic);
+    scene.meshAt(1).setRoughness(rustRoughness);
 
     // Add test lights
     lightManager.addPointLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));

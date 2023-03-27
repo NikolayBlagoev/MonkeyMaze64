@@ -5,22 +5,18 @@
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtx/transform.hpp>
 #include <glm/mat4x4.hpp>
+#include <glm/vec4.hpp>
 DISABLE_WARNINGS_POP()
 
 #include <stdint.h>
 #include <utils/constants.h>
 
-enum class DiffuseModel {
-    Lambert,
-    ToonLambert,
-    XToonLambert,
-};
-
-enum class SpecularModel {
-    Phong,
-    BlinnPhong,
-    ToonBlinnPhong,
-    XToonBlinnPhong
+enum class LightingModel {
+    LambertPhong,
+    LambertBlinnPhong,
+    Toon,
+    XToon,
+    PBR
 };
 
 struct RenderConfig {
@@ -31,11 +27,16 @@ struct RenderConfig {
     float zoomedVerticalFOV { 35.0f };
     bool constrainVertical  { false };
 
-    // Shading
-    DiffuseModel diffuseModel       { DiffuseModel::Lambert };
-    SpecularModel specularModel     { SpecularModel::BlinnPhong };
+    // Lighting
+    LightingModel lightingModel     { LightingModel::PBR };
     uint32_t toonDiscretizeSteps    { 4U };
     float toonSpecularThreshold     { 0.49f };
+
+    // Default materials
+    glm::vec4 defaultAlbedo { 1.0f, 1.0f, 1.0f, 1.0f };
+    float defaultMetallic   { 0.0f };
+    float defaultRoughness  { 0.0f };
+    float defaultAO         { 0.0f };
 
     // HDR tonemapping and gamma correction
     bool enableHdr  { true };

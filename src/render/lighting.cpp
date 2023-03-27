@@ -179,7 +179,7 @@ void LightManager::bind() {
     // Point lights shadow maps sampler
     glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
-    glUniform1i(6, utils::SHADOW_START_IDX);
+    glUniform1i(7, utils::SHADOW_START_IDX);
 
     // Area lights
     std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData();
@@ -189,5 +189,5 @@ void LightManager::bind() {
     // Area lights shadow maps sampler
     glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX + 1);
     glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
-    glUniform1i(7, utils::SHADOW_START_IDX + 1);
+    glUniform1i(8, utils::SHADOW_START_IDX + 1);
 }
