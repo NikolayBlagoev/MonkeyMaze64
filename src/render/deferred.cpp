@@ -164,7 +164,7 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh) const {
         glUniform1i(3, 0);
     }
     glUniform1i(4, !mesh.getNormal().expired());
-    glUniform3fv(5, 1, glm::value_ptr(m_renderConfig.defaultAlbedo));
+    glUniform4fv(5, 1, glm::value_ptr(m_renderConfig.defaultAlbedo));
 
     // Normal
     if (!mesh.getNormal().expired()) {

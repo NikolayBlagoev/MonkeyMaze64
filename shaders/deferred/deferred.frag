@@ -3,7 +3,7 @@
 // Albedo data
 layout(location = 3) uniform sampler2D albedoTex;
 layout(location = 4) uniform bool hasAlbedo;
-layout(location = 5) uniform vec3 defaultAlbedo;
+layout(location = 5) uniform vec4 defaultAlbedo;
 
 // Normal map data
 layout(location = 6) uniform sampler2D normalTex;
@@ -32,7 +32,7 @@ layout(location = 2) in vec2 fragTexCoord;
 // G-buffer output
 layout(location = 0) out vec3 gPosition;    // Position buffer
 layout(location = 1) out vec3 gNormal;      // Normal buffer
-layout(location = 2) out vec4 gAlbedo;      // Albedo buffer (fourth component is specular shininess)
+layout(location = 2) out vec4 gAlbedo;      // Albedo buffer
 layout(location = 3) out vec3 gMaterial;    // Red channel is metallic, green channel is roughness, blue channel is AO
 
 void main() {
@@ -42,8 +42,8 @@ void main() {
     gNormal     = normalize(fragNormal);
 
     // Albedo
-    if (hasAlbedo)  { gAlbedo = vec4(texture(albedoTex, fragTexCoord).rgb, 10.0); } // TODO: Extract shininess from texture
-    else            { gAlbedo = vec4(defaultAlbedo, 10.0); }
+    if (hasAlbedo)  { gAlbedo = texture(albedoTex, fragTexCoord); }
+    else            { gAlbedo = defaultAlbedo; }
 
     // Metallic
     if (hasMetallic)    { gMaterial.r = texture(metallicTex, fragTexCoord).r; }

@@ -21,6 +21,8 @@ private:
     // 2D UI
     void drawCameraTab();
     void addMesh();
+    void drawMaterialControls();
+    void drawMeshControls();
     void drawMeshTab();
     void drawGeneralLightControls();
     void drawPointLightControls();

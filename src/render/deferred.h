@@ -45,7 +45,7 @@ private:
     GLuint positionTex;
     GLuint normalTex;
     GLuint albedoTex;
-    GLuint materialTex;
+    GLuint materialTex; // Red channel is metallic, green channel is roughness, blue channel is AO
 
     // Intermediate HDR framebuffer to render to before tonemapping and gamma correction
     GLuint hdrBuffer;

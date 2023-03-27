@@ -5,7 +5,7 @@
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtx/transform.hpp>
 #include <glm/mat4x4.hpp>
-#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 DISABLE_WARNINGS_POP()
 
 #include <stdint.h>
@@ -32,7 +32,7 @@ struct RenderConfig {
     float toonSpecularThreshold     { 0.49f };
 
     // Default materials
-    glm::vec3 defaultAlbedo { 1.0f, 1.0f, 1.0f };
+    glm::vec4 defaultAlbedo { 1.0f, 1.0f, 1.0f, 1.0f };
     float defaultMetallic   { 0.0f };
     float defaultRoughness  { 0.0f };
     float defaultAO         { 0.0f };
