@@ -1,10 +1,6 @@
 #ifndef _TEXTURE_H_
 #define _TEXTURE_H_
 
-#include <framework/disable_all_warnings.h>
-DISABLE_WARNINGS_PUSH()
-#include <glm/vec3.hpp>
-DISABLE_WARNINGS_POP()
 #include <framework/opengl_includes.h>
 
 #include <exception>

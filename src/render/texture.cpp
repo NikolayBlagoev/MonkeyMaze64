@@ -5,26 +5,42 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 #include <framework/image.h>
 
+#include <iostream>
+
 Texture::Texture(std::filesystem::path filePath) {
     // Load image from disk to CPU memory.
-    Image cpuTexture { filePath };
+    Image cpuTexture(filePath);
 
     // Store file name for identification
     fileName = filePath.filename().string();
 
-    // Create a texture on the GPU with 3 channels with 8 bits each.
+    // Create texture with correct format, upload data, and generate mipmaps
     glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
-    glTextureStorage2D(m_texture, 1, GL_RGB8, cpuTexture.width, cpuTexture.height);
-
-    // Upload pixels into the GPU texture.
-    glTextureSubImage2D(m_texture, 0, 0, 0, cpuTexture.width, cpuTexture.height, GL_RGB, GL_FLOAT, cpuTexture.pixels.data());
+    switch (cpuTexture.channels) {
+        case 1:
+            glTextureStorage2D(m_texture, 1, GL_R8, cpuTexture.width, cpuTexture.height);
+            glTextureSubImage2D(m_texture, 0, 0, 0, cpuTexture.width, cpuTexture.height, GL_RED, GL_UNSIGNED_BYTE, cpuTexture.pixels.data());
+            break;
+        case 3:
+            glTextureStorage2D(m_texture, 1, GL_RGB8, cpuTexture.width, cpuTexture.height);
+            glTextureSubImage2D(m_texture, 0, 0, 0, cpuTexture.width, cpuTexture.height, GL_RGB, GL_UNSIGNED_BYTE, cpuTexture.pixels.data());
+            break;
+        case 4:
+            glTextureStorage2D(m_texture, 1, GL_RGBA8, cpuTexture.width, cpuTexture.height);
+            glTextureSubImage2D(m_texture, 0, 0, 0, cpuTexture.width, cpuTexture.height, GL_RGBA, GL_UNSIGNED_BYTE, cpuTexture.pixels.data());
+            break;
+        default:
+            std::cerr << "Number of channels read for texture is not supported" << std::endl;
+            throw std::exception();
+    }
+    glGenerateTextureMipmap(m_texture);
 
     // Set behavior for when texture coordinates are outside the [0, 1] range.
-    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    // Set interpolation for texture sampling (GL_NEAREST for no interpolation).
-    glTextureParameteri(m_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // Set interpolation for texture sampling (mipmaps)
+    glTextureParameteri(m_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTextureParameteri(m_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
