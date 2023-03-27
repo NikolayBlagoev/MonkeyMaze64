@@ -80,8 +80,10 @@ void Camera::updateInput() {
 
         m_prevCursorPos = cursorPos;
         if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
-            if (delta.x != 0.0f) { rotateY(delta.x); }
-            if (!m_renderConfig.constrainVertical && delta.y != 0.0f) { rotateX(delta.y); }
+            rotateY(delta.x);
+
+            if (!m_renderConfig.constrainVertical)
+                rotateX(delta.y);
         }
 
     }
@@ -140,25 +142,22 @@ void Camera::updateInput(Scene& scene, size_t idx) {
         m_prevCursorPos = cursorPos;
         if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
 
-            if (delta.x != 0.0f) {
-                glm::vec3 objectPos = scene.transformParams[idx].translate;
+            glm::vec3 objectPos = scene.transformParams[idx].translate;
+            glm::vec3 vecToObject = objectPos - m_position;
+            // move to object
+            m_position = objectPos;
 
-                glm::vec3 vecToObject = objectPos - m_position;
-                // move to object
-                m_position = objectPos;
+            // rotate
+            rotateY(delta.x);
+            scene.transformParams[idx].rotate.y += glm::degrees(delta.x);
 
-                // rotate
-                rotateY(delta.x);
-
-                // move back
-                m_position -= glm::normalize(m_forward) * glm::length(vecToObject);
-
-                scene.transformParams[idx].rotate.y += glm::degrees(delta.x);
-            }
-            if (!m_renderConfig.constrainVertical && delta.y != 0.0f) {
-                // TODO
+            if (!m_renderConfig.constrainVertical) {
                 rotateX(delta.y);
+                scene.transformParams[idx].rotate.x -= glm::degrees(delta.y);
             }
+
+            // move back
+            m_position -= glm::normalize(m_forward) * glm::length(vecToObject);
         }
     }
     else {

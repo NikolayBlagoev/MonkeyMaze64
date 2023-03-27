@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
     // World setup
     // * y is up *
     glm::vec3 characterStart = glm::vec3 (2.0f, 0.25f, 0.0f);
-    glm::vec3 characterCameraStart = characterStart + glm::vec3(0.0f, 0.5f, 1.0f);
+    glm::vec3 characterCameraStart = characterStart + glm::vec3(0.0f, 1.0f, 2.0f);
 
     // Init core objects
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
@@ -121,16 +121,7 @@ int main(int argc, char* argv[]) {
         // Set render config based and selected camera
         Camera& camera = renderConfig.controlCharacter ? characterCamera : freeCamera;
 
-        // Clear the screen
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
-
-        // View-projection matrices setup
-        const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * camera.viewMatrix();
-
-        // Controls
+        // Controls, update game state
         ImGuiIO io = ImGui::GetIO();
         m_window.updateInput();
         if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
@@ -139,6 +130,15 @@ int main(int argc, char* argv[]) {
             else
                 camera.updateInput();
         }
+
+        // Clear the screen
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+
+        // View-projection matrices setup
+        const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * camera.viewMatrix();
 
         // Render point lights shadow maps
         const glm::mat4 pointLightShadowMapsProjection = renderConfig.pointShadowMapsProjectionMatrix();
