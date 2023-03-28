@@ -360,34 +360,7 @@ int main() {
             const PointLight& light = lightManager.pointLightAt(pointLightNum);
             light.wipeFramebuffers();
 
-<<<<<<< HEAD
-            auto iterators = scene.meshIterators();
-            // Render each model
-            for (auto it = iterators.first; it != iterators.second; ++it) {
-                const GPUMesh& mesh                         = it->second;
-                const glm::mat4 modelMatrix                 = scene.modelMatrix(it->first);
-                const std::array<glm::mat4, 6U> lightMvps   = light.genMvpMatrices(modelMatrix, pointLightShadowMapsProjection);
-
-                // Render each cubemap face
-                for (size_t face = 0UL; face < 6UL; face++) {
-                    // Bind shadow shader and shadowmap framebuffer
-                    m_pointShadowShader.bind();
-                    glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffers[face]);
-                    glEnable(GL_DEPTH_TEST);
-
-                    // Bind uniforms
-                    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvps[face]));
-                    glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                    glUniform3fv(2, 1, glm::value_ptr(light.position));
-                    glUniform1f(3, renderConfig.shadowFarPlane);
-
-                    // Bind model's VAO and draw its elements
-                    mesh.draw();
-                }
-            }
-=======
             drawMeshTreePtL(scene.root,glm::mat4(1),light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
->>>>>>> main
         }
 
         // Render area lights shadow maps
@@ -408,22 +381,8 @@ int main() {
 
             auto iterators = scene.meshIterators();
             // Render each model in the scene
-<<<<<<< HEAD
-            for (auto it = iterators.first; it != iterators.second; ++it) {
-                const GPUMesh& mesh         = it->second;
-                const glm::mat4 modelMatrix = scene.modelMatrix(it->first);
-
-                // Bind light camera mvp matrix
-                const glm::mat4 lightMvp = areaLightShadowMapsProjection * lightView *  modelMatrix;
-                glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvp));
-
-                // Bind model's VAO and draw its elements
-                mesh.draw();
-            }
-=======
             drawMeshTreeAL(scene.root,glm::mat4(1),areaLightShadowMapsProjection, lightView, renderConfig);
        
->>>>>>> main
         }
 
         // Render scene

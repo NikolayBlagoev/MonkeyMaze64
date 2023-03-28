@@ -46,24 +46,24 @@ static int latestKey = 0;
 int Scene::addMesh(std::filesystem::path filePath, bool allowCollision) {
     if (!std::filesystem::exists(filePath))
         throw MeshLoadingException(fmt::format("File {} does not exist", filePath.string().c_str()));
-
+    
+    
     // Defined in <framework/mesh.h>
     Mesh cpuMesh = mergeMeshes(loadMesh(filePath));
-
+    
     int key = latestKey++;
-
-    m_meshes.insert({key, GPUMesh(cpuMesh)});
-    m_transformParams.insert({key, {glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f)}});
+    GPUMesh* gp = new GPUMesh(cpuMesh);
+    // m_meshes.insert({key, GPUMesh(cpuMesh)});
+    // m_transformParams.insert({key, {glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f)}});
     m_hitBoxes.insert({key, makeHitBox(cpuMesh, allowCollision)});
-
+    if(root == nullptr){
+        root = new MeshTree();
+    }
+    root->addChild(new MeshTree(gp, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
     return key;
 }
 
-void Scene::removeMesh(int idx) {
-    m_meshes.erase(idx);
-    m_transformParams.erase(idx);
-    m_hitBoxes.erase(idx);
-}
+
 
 //glm::mat4 Scene::modelMatrix(int idx) {
 //    const ObjectTransform& transform = m_transformParams[idx];
@@ -78,15 +78,7 @@ void Scene::removeMesh(int idx) {
 
 // collision branch end
 
-void Scene::addMesh(std::filesystem::path filePath) { 
-    GPUMesh* gp = new GPUMesh(filePath);
-    // meshes.push_back(GPUMesh(filePath));
-    // transformParams.push_back({glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f)});
-    if(root == nullptr){
-        root = new MeshTree();
-    }
-    root->addChild(new MeshTree(gp, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
-}
+
 
 void Scene::addMesh(MeshTree* nd){
     if(root == nullptr){
@@ -98,12 +90,13 @@ void Scene::addMesh(MeshTree* nd){
 //TODO: remove meshes in a sensible manner
 void Scene::removeMesh(size_t idx) {
     // meshes.erase(meshes.begin() + idx);
-    transformParams.erase(transformParams.begin() + idx);
+    // transformParams.erase(transformParams.begin() + idx);
+    m_hitBoxes.erase(idx);
 }
 
 glm::mat4 Scene::modelMatrix(size_t idx) {
     // const MeshTransform& meshTransform = transformParams[idx];
-    const MeshTransform& meshTransform = {root->children[idx]->scale, root->children[idx]->selfRotate, root->children[idx]->rotateParent, root->children[idx]->offset};
+    const ObjectTransform& meshTransform = {root->children[idx]->scale, root->children[idx]->selfRotate, root->children[idx]->rotateParent, root->children[idx]->offset};
     // Translate
     glm::mat4 finalTransform = glm::mat4(1.f);
     // Rotate
@@ -120,7 +113,7 @@ glm::mat4 Scene::modelMatrix(size_t idx) {
     finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // Scale
-    return glm::scale(finalTransform, transform.scale);
+    return glm::scale(finalTransform, meshTransform.scale);
 }
 
 HitBox Scene::getTransformedHitBox(int idx) {

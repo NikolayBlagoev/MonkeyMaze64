@@ -149,12 +149,13 @@ void Camera::updateInput(Scene& scene, int idx) {
 
             // rotate
             rotateY(delta.x);
-            scene.m_transformParams[idx].rotate.y += glm::degrees(delta.x);
+            //TODO: FIX THIS
+            // scene.m_transformParams[idx].rotate.y += glm::degrees(delta.x);
 
-            if (!m_renderConfig.constrainVertical) {
-                rotateX(delta.y);
-                scene.m_transformParams[idx].rotate.x -= glm::degrees(delta.y);
-            }
+            // if (!m_renderConfig.constrainVertical) {
+            //     rotateX(delta.y);
+            //     scene.m_transformParams[idx].rotate.x -= glm::degrees(delta.y);
+            // }
 
             // move back
             m_position -= glm::normalize(m_forward) * glm::length(vecToObject);

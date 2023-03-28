@@ -35,9 +35,9 @@ struct HitBox {
 
 class Scene {
 public:
-    int addMesh(std::filesystem::path filePath, bool allowCollision);
+    int addMesh(std::filesystem::path filePath, bool allowCollision = true);
     void addMesh(MeshTree* nd);
-    void removeMesh(int idx);
+    void removeMesh(size_t idx);
 
     const GPUMesh& meshAt(size_t idx) { return *(root->children[idx]->mesh); }
 
@@ -47,7 +47,7 @@ public:
         return std::pair{m_meshes.begin(), m_meshes.end()};
     }
 
-    glm::mat4 modelMatrix(int idx);
+    glm::mat4 modelMatrix(size_t idx);
 
     std::unordered_map<int, ObjectTransform> m_transformParams;
     std::unordered_map<int, GPUMesh> m_meshes;
