@@ -1,6 +1,6 @@
 #ifndef _SCENE_H_
 #define _SCENE_H_
-
+#include "mesh_tree.h"
 #include "mesh.h"
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -20,16 +20,20 @@ class Scene {
 public:
     void addMesh(std::filesystem::path filePath);
     void removeMesh(size_t idx);
-
+    void addMesh(MeshTree* nd);
     size_t numMeshes() { return meshes.size(); }
-    GPUMesh& meshAt(size_t idx) { return meshes[idx]; }
+
+    const GPUMesh& meshAt(size_t idx) { return *(root->children[idx]->mesh); }
+
 
     glm::mat4 modelMatrix(size_t idx);
-
+    MeshTree* root;
     std::vector<MeshTransform> transformParams;
 
 private:
     std::vector<GPUMesh> meshes;
+    
+    
 };
 
 #endif
