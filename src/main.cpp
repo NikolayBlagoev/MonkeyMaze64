@@ -29,6 +29,10 @@ DISABLE_WARNINGS_POP()
 #include <functional>
 #include <iostream>
 #include <vector>
+#include <movements/bezier.h>
+#include <sys/time.h>
+#include <ctime>
+#include <chrono>
 #include <generator/generator.h>
 // Game state
 // TODO: Have a separate struct for this if it becomes too much
@@ -233,14 +237,16 @@ int main() {
     std::weak_ptr<const Texture> rustNormal     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_normal.png");
     std::weak_ptr<const Texture> rustMetallic   = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_metallic.png");
     std::weak_ptr<const Texture> rustRoughness  = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_roughness.png");
-    std::weak_ptr<const Texture> stoneAlbedo    = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_COLOR.jpg");
-    std::weak_ptr<const Texture> stoneNormal    = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_NORM.jpg");
-    std::weak_ptr<const Texture> stoneRoughness = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_ROUGH.jpg");
-    std::weak_ptr<const Texture> stoneAO        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_OCC.jpg");
+    std::weak_ptr<const Texture> stoneAlbedo    = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
+    std::weak_ptr<const Texture> stoneNormal    = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
+    std::weak_ptr<const Texture> stoneRoughness = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
+    std::weak_ptr<const Texture> stoneAO        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
 
     // Add models
+    GPUMesh dragon = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
-    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+    MeshTree* drg = new MeshTree(&dragon, glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(1.f));
+    scene.addMesh(drg);
 
     GPUMesh camera = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "camera.obj");
     
@@ -269,15 +275,26 @@ int main() {
     lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
     lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f));
     MeshTree* boardRoot = new MeshTree();
-
     // Main loop
+    std::chrono::high_resolution_clock timer; 
+    using ms = std::chrono::microseconds;
+    std::chrono::time_point millisec_since_epoch = timer.now();
+    
+    BezierCurve3d b3d = BezierCurve3d(glm::vec3(0.f), glm::vec3(1.f , 1.f, 0.f), glm::vec3(-1.f , 2.f, 0.f), glm::vec3(0.f, 3.f, 0.f));
+    b3d.prev_time = millisec_since_epoch;
+    b3d.total_time = 10.f;
     bool flag = true;
     while (!m_window.shouldClose()) {
+        millisec_since_epoch = timer.now();
+        float delta = std::chrono::duration<float>(millisec_since_epoch - b3d.prev_time).count();
+        drg->offset=b3d.pos_t(delta/b3d.total_time);
+        std::cout<< drg->offset.y<< " "<< delta <<" "<< CLOCKS_PER_SEC << std::endl;
+        // // b3d.prev_time = millisec_since_epoch;
         // Clear the screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-        if (flag){
+        if (false){
             flag = false;
             free(boardRoot);
             float factorx = 7.72f;
