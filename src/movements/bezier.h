@@ -31,7 +31,17 @@ class BezierCurve4d{
         glm::vec4 p1, p2, p3, p4;
         glm::vec4 pos_t(float t){
             if(t>1) return p4;
-            return float(pow(1.f-t,3))*p1 + 3 * float(pow(1.f-t,2)) *t * p3 + 3 * float(pow(t,2)) * (1.f - t) * p3 + float(pow(t,3))*p4;
+            return float(pow(1.f-t,3)) * p1 + 3 * float(pow(1.f-t,2)) * t * p3 + 3 * float(pow(t,2)) * (1.f - t) * p3 + float(pow(t,3))*p4;
+        }
+
+        static glm::vec4* qToangl(glm::vec4& inp){
+            glm::vec4 in = glm::normalize(inp);
+            float angle_rad = acos(in.w) * 2.f;
+            float angle_deg = angle_rad * 180.f / 3.141592f;
+            float x = in.x / sin(angle_rad/2.f);
+            float y = in.y / sin(angle_rad/2.f);
+            float z = in.z / sin(angle_rad/2.f);
+            return new glm::vec4(x,y,z,angle_deg);
         }
 };
 
