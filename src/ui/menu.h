@@ -39,9 +39,9 @@ private:
     Shader pointDebugShader;
     Shader lineDebugShader;
 
-    size_t selectedMesh { 0U };
-    size_t selectedPointLight { 0U };
-    size_t selectedAreaLight { 0U };
+    int selectedMesh            { 0 };
+    size_t selectedPointLight   { 0U };
+    size_t selectedAreaLight    { 0U };
 };
 
 #endif

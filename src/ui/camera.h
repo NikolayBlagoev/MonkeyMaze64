@@ -22,7 +22,7 @@ public:
     // Update camera position freely
     void updateInput();
     // Update camera position with respect to object
-    void updateInput(Scene& scene, size_t idx);
+    void updateInput(Scene& scene, int idx);
 
     void setUserInteraction(bool enabled);
 

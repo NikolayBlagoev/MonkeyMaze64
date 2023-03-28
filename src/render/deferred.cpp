@@ -111,10 +111,11 @@ void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) con
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    auto iterators = m_scene.meshIterators();
     // Render each model
-    for (size_t modelNum = 0U; modelNum < m_scene.numMeshes(); modelNum++) {
-        const GPUMesh& mesh         = m_scene.meshAt(modelNum);
-        const glm::mat4 modelMatrix = m_scene.modelMatrix(modelNum);
+    for (auto it = iterators.first; it != iterators.second; ++it) {
+        const GPUMesh& mesh         = it->second;
+        const glm::mat4 modelMatrix = m_scene.modelMatrix(it->first);
 
         // Normals should be transformed differently than positions (ignoring translations + dealing with scaling)
         // https://paroj.github.io/gltut/Illumination/Tut09%20Normal%20Transformation.html

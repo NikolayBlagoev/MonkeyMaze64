@@ -11,6 +11,8 @@ DISABLE_WARNINGS_POP()
 #include <vector>
 #include <optional>
 #include <array>
+#include <unordered_map>
+#include <map>
 
 struct ObjectTransform {
     glm::vec3 scale;
@@ -31,26 +33,27 @@ struct HitBox {
 
 class Scene {
 public:
-    size_t addMesh(std::filesystem::path filePath);
-    void removeMesh(size_t idx);
+    int addMesh(std::filesystem::path filePath);
+    void removeMesh(int idx);
 
-    size_t numMeshes() { return meshes.size(); }
-    const GPUMesh& meshAt(size_t idx) { return meshes[idx]; }
+    auto meshIterators() {
+        return std::pair{meshes.begin(), meshes.end()};
+    }
 
-    glm::mat4 modelMatrix(size_t idx);
+    glm::mat4 modelMatrix(int idx);
 
-    std::vector<ObjectTransform> transformParams;
+    std::unordered_map<int, ObjectTransform> transformParams;
+    std::unordered_map<int, GPUMesh> meshes;
 
-    HitBox getHitBox(size_t idx);
-    glm::vec3 getHitBoxMiddle(size_t idx);
+    HitBox getHitBox(int idx);
+    glm::vec3 getHitBoxMiddle(int idx);
 
-    bool tryUpdateScale(size_t idx, glm::vec3 scale);
-    bool tryUpdateRotation(size_t idx, glm::vec3 rotation);
-    bool tryUpdateTranslation(size_t idx, glm::vec3 translation);
+    bool tryUpdateScale(int idx, glm::vec3 scale);
+    bool tryUpdateRotation(int idx, glm::vec3 rotation);
+    bool tryUpdateTranslation(int idx, glm::vec3 translation);
 
 private:
-    std::vector<GPUMesh> meshes;
-    std::vector<HitBox> hitBoxes;
+    std::unordered_map<int, HitBox> hitBoxes;
 };
 
 #endif

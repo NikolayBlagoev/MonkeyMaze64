@@ -40,21 +40,25 @@ static HitBox makeHitBox(std::filesystem::path filePath) {
     return {points};
 }
 
-size_t Scene::addMesh(std::filesystem::path filePath) {
-    meshes.push_back(GPUMesh(filePath));
-    transformParams.push_back({glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f)});
-    hitBoxes.push_back(makeHitBox(filePath));
+static int latestKey = 0;
 
-    return meshes.size() - 1;
+int Scene::addMesh(std::filesystem::path filePath) {
+    int key = latestKey++;
+
+    meshes.insert({key, GPUMesh(filePath)});
+    transformParams.insert({key, {glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f)}});
+    hitBoxes.insert({key, makeHitBox(filePath)});
+
+    return key;
 }
 
-void Scene::removeMesh(size_t idx) {
-    meshes.erase(meshes.begin() + idx);
-    transformParams.erase(transformParams.begin() + idx);
-    hitBoxes.erase(hitBoxes.begin() + idx);
+void Scene::removeMesh(int idx) {
+    meshes.erase(idx);
+    transformParams.erase(idx);
+    hitBoxes.erase(idx);
 }
 
-glm::mat4 Scene::modelMatrix(size_t idx) {
+glm::mat4 Scene::modelMatrix(int idx) {
     const ObjectTransform& transform = transformParams[idx];
 
     // Translate
@@ -69,7 +73,7 @@ glm::mat4 Scene::modelMatrix(size_t idx) {
     return glm::scale(finalTransform, transform.scale);
 }
 
-HitBox Scene::getHitBox(size_t idx) {
+HitBox Scene::getHitBox(int idx) {
     HitBox hitBox = hitBoxes[idx];
     for (glm::vec3& point : hitBox.points) {
         point = modelMatrix(idx) * glm::vec4(point, 1);
@@ -77,29 +81,27 @@ HitBox Scene::getHitBox(size_t idx) {
     return hitBox;
 }
 
-glm::vec3 Scene::getHitBoxMiddle(size_t idx) {
+glm::vec3 Scene::getHitBoxMiddle(int idx) {
     return modelMatrix(idx) * glm::vec4(hitBoxes[idx].getMiddle(), 1);
 }
 
-bool Scene::tryUpdateScale(size_t idx, glm::vec3 scale) {
+bool Scene::tryUpdateScale(int idx, glm::vec3 scale) {
 //    transformParams[idx].scale += scale;
     return true;
 }
 
-bool Scene::tryUpdateRotation(size_t idx, glm::vec3 rotation) {
+bool Scene::tryUpdateRotation(int idx, glm::vec3 rotation) {
 //    transformParams[idx].rotate += rotation;
     return true;
 }
 
-bool Scene::tryUpdateTranslation(size_t idx, glm::vec3 translation) {
+bool Scene::tryUpdateTranslation(int idx, glm::vec3 translation) {
     transformParams[idx].translate += translation;
     HitBox newHitBox = getHitBox(idx);
-
-    for (int i = 0; i < hitBoxes.size(); ++i) {
-        if (i == idx)
+auto bla = transformParams.begin();
+    for (auto& [key, curHitBox] : hitBoxes) {
+        if (key == idx)
             continue;
-
-        HitBox curHitBox = hitBoxes[i];
 
         for (glm::vec3 newPoint : newHitBox.points) {
 
@@ -128,10 +130,10 @@ bool Scene::tryUpdateTranslation(size_t idx, glm::vec3 translation) {
                              && (smallerOrEqual.z != 0 && bigger.z != 0);
 
             if (collision) {
-                float newDist = glm::distance(getHitBoxMiddle(idx), getHitBoxMiddle(i));
+                float newDist = glm::distance(getHitBoxMiddle(idx), getHitBoxMiddle(key));
 
                 transformParams[idx].translate -= translation;
-                float oldDist = glm::distance(getHitBoxMiddle(idx), getHitBoxMiddle(i));
+                float oldDist = glm::distance(getHitBoxMiddle(idx), getHitBoxMiddle(key));
 
                 if (newDist < oldDist)
                     return false;

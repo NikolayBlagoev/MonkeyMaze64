@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
 
     // Add models and test texture
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
-    size_t characterId = scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+    int characterId = scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
     Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
     scene.transformParams[characterId].translate += characterStart;
@@ -147,10 +147,11 @@ int main(int argc, char* argv[]) {
             const PointLight& light = lightManager.pointLightAt(pointLightNum);
             light.wipeFramebuffers();
 
+            auto iterators = scene.meshIterators();
             // Render each model
-            for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
-                const GPUMesh& mesh                         = scene.meshAt(modelNum);
-                const glm::mat4 modelMatrix                 = scene.modelMatrix(modelNum);
+            for (auto it = iterators.first; it != iterators.second; ++it) {
+                const GPUMesh& mesh                         = it->second;
+                const glm::mat4 modelMatrix                 = scene.modelMatrix(it->first);
                 const std::array<glm::mat4, 6U> lightMvps   = light.genMvpMatrices(modelMatrix, pointLightShadowMapsProjection);
 
                 // Render each cubemap face
@@ -188,10 +189,11 @@ int main(int argc, char* argv[]) {
             glClear(GL_DEPTH_BUFFER_BIT);
             glEnable(GL_DEPTH_TEST);
 
+            auto iterators = scene.meshIterators();
             // Render each model in the scene
-            for (size_t modelNum = 0U; modelNum < scene.numMeshes(); modelNum++) {
-                const GPUMesh& mesh         = scene.meshAt(modelNum);
-                const glm::mat4 modelMatrix = scene.modelMatrix(modelNum);
+            for (auto it = iterators.first; it != iterators.second; ++it) {
+                const GPUMesh& mesh         = it->second;
+                const glm::mat4 modelMatrix = scene.modelMatrix(it->first);
 
                 // Bind light camera mvp matrix
                 const glm::mat4 lightMvp = areaLightShadowMapsProjection * lightView *  modelMatrix;
