@@ -1,6 +1,6 @@
 #ifndef _SCENE_H_
 #define _SCENE_H_
-
+#include "mesh_tree.h"
 #include "mesh.h"
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -16,7 +16,8 @@ DISABLE_WARNINGS_POP()
 
 struct ObjectTransform {
     glm::vec3 scale;
-    glm::vec3 rotate; // Angles in degrees
+    glm::vec3 selfRotate; // Angles in degrees
+    glm::vec3 rotateParent;
     glm::vec3 translate;
 };
 
@@ -35,7 +36,12 @@ struct HitBox {
 class Scene {
 public:
     int addMesh(std::filesystem::path filePath, bool allowCollision);
+    void addMesh(MeshTree* nd);
     void removeMesh(int idx);
+
+    const GPUMesh& meshAt(size_t idx) { return *(root->children[idx]->mesh); }
+
+    MeshTree* root;
 
     auto meshIterators() {
         return std::pair{m_meshes.begin(), m_meshes.end()};
