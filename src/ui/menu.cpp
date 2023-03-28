@@ -64,7 +64,7 @@ void Menu::addMesh() {
         
     if (result == NFD_OKAY) {
         std::filesystem::path objPath(outPath);
-        m_scene.addMesh(objPath);
+        m_scene.addMesh(objPath, true);
         free(outPath);
     } else if (result == NFD_CANCEL) { std::cout << "Model loading cancelled" << std::endl; }
       else { std::cerr << "Model loading error" << std::endl; }
@@ -75,9 +75,9 @@ void Menu::drawMeshTab() {
         // Add / remove controls
         if (ImGui::Button("Add")) { addMesh(); }
         if (ImGui::Button("Remove selected")) {
-            if (m_scene.meshes.contains(selectedMesh)) {
+            if (m_scene.m_meshes.contains(selectedMesh)) {
                 m_scene.removeMesh(selectedMesh);
-                selectedMesh = m_scene.meshes.begin()->first;
+                selectedMesh = m_scene.m_meshes.begin()->first;
             }
         }
         ImGui::NewLine();
@@ -94,10 +94,10 @@ void Menu::drawMeshTab() {
         ImGui::Combo("Selected mesh", (int*) (&selectedMesh), optionsPointers.data(), static_cast<int>(optionsPointers.size()));
 
         // Selected mesh controls
-        if (m_scene.meshes.contains(selectedMesh)) {
-            ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.transformParams[selectedMesh].scale), 0.05f);
-            ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.transformParams[selectedMesh].rotate), 1.0f, 0.0f, 360.0f);
-            ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.transformParams[selectedMesh].translate), 0.05f);
+        if (m_scene.m_meshes.contains(selectedMesh)) {
+            ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.m_transformParams[selectedMesh].scale), 0.05f);
+            ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.m_transformParams[selectedMesh].rotate), 1.0f, 0.0f, 360.0f);
+            ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.m_transformParams[selectedMesh].translate), 0.05f);
         }
 
         ImGui::EndTabItem();

@@ -104,30 +104,30 @@ void Camera::updateInput(Scene& scene, int idx) {
 
         // Forward, backward and strafe
         if (m_pWindow->isKeyPressed(GLFW_KEY_A)) {
-            if (scene.tryUpdateTranslation(idx, -right))
+            if (scene.checkTranslationValid(idx, -right))
                 m_position -= right;
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_D)) {
-            if (scene.tryUpdateTranslation(idx, right))
+            if (scene.checkTranslationValid(idx, right))
                 m_position += right;
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_W)) {
-            if (scene.tryUpdateTranslation(idx, forward))
+            if (scene.checkTranslationValid(idx, forward))
                 m_position += forward;
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_S)) {
-            if (scene.tryUpdateTranslation(idx, -forward))
+            if (scene.checkTranslationValid(idx, -forward))
                 m_position -= forward;
         }
 
         // Up and down
         if (!m_renderConfig.constrainVertical) {
             if (m_pWindow->isKeyPressed(GLFW_KEY_SPACE)) {
-                if (scene.tryUpdateTranslation(idx, up))
+                if (scene.checkTranslationValid(idx, up))
                     m_position += up;
             }
             if (m_pWindow->isKeyPressed(GLFW_KEY_C)) {
-                if (scene.tryUpdateTranslation(idx, -up))
+                if (scene.checkTranslationValid(idx, -up))
                     m_position -= up;
             }
         }
@@ -142,18 +142,18 @@ void Camera::updateInput(Scene& scene, int idx) {
         m_prevCursorPos = cursorPos;
         if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
 
-            glm::vec3 objectPos = scene.transformParams[idx].translate;
+            glm::vec3 objectPos = scene.m_transformParams[idx].translate;
             glm::vec3 vecToObject = objectPos - m_position;
             // move to object
             m_position = objectPos;
 
             // rotate
             rotateY(delta.x);
-            scene.transformParams[idx].rotate.y += glm::degrees(delta.x);
+            scene.m_transformParams[idx].rotate.y += glm::degrees(delta.x);
 
             if (!m_renderConfig.constrainVertical) {
                 rotateX(delta.y);
-                scene.transformParams[idx].rotate.x -= glm::degrees(delta.y);
+                scene.m_transformParams[idx].rotate.x -= glm::degrees(delta.y);
             }
 
             // move back

@@ -104,11 +104,13 @@ int main(int argc, char* argv[]) {
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
     // Add models and test texture
-    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
-    int characterId = scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj", true);
+    int characterId = scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj", true);
+    int extraObjId = scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj", false);
     Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
-    scene.transformParams[characterId].translate += characterStart;
+    scene.m_transformParams[characterId].translate += characterStart;
+    scene.m_transformParams[extraObjId].translate += characterStart + glm::vec3(2.0f, 0.0f, 0.0f);
 
     // Add test lights
     lightManager.addPointLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));

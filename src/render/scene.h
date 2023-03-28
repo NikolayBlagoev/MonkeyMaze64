@@ -21,6 +21,7 @@ struct ObjectTransform {
 };
 
 struct HitBox {
+    bool allowCollision;
     std::array<glm::vec3, 8> points;
 
     glm::vec3 getMiddle() {
@@ -33,27 +34,29 @@ struct HitBox {
 
 class Scene {
 public:
-    int addMesh(std::filesystem::path filePath);
+    int addMesh(std::filesystem::path filePath, bool allowCollision);
     void removeMesh(int idx);
 
     auto meshIterators() {
-        return std::pair{meshes.begin(), meshes.end()};
+        return std::pair{m_meshes.begin(), m_meshes.end()};
     }
 
     glm::mat4 modelMatrix(int idx);
 
-    std::unordered_map<int, ObjectTransform> transformParams;
-    std::unordered_map<int, GPUMesh> meshes;
+    std::unordered_map<int, ObjectTransform> m_transformParams;
+    std::unordered_map<int, GPUMesh> m_meshes;
 
-    HitBox getHitBox(int idx);
-    glm::vec3 getHitBoxMiddle(int idx);
+    HitBox getTransformedHitBox(int idx);
+    glm::vec3 getTransformedHitBoxMiddle(int idx);
 
-    bool tryUpdateScale(int idx, glm::vec3 scale);
-    bool tryUpdateRotation(int idx, glm::vec3 rotation);
-    bool tryUpdateTranslation(int idx, glm::vec3 translation);
+    bool collide(int a, int b);
+
+    bool checkScaleValid(int idx, glm::vec3 scale);
+    bool checkRotationValid(int idx, glm::vec3 rotation);
+    bool checkTranslationValid(int idx, glm::vec3 translation);
 
 private:
-    std::unordered_map<int, HitBox> hitBoxes;
+    std::unordered_map<int, HitBox> m_hitBoxes;
 };
 
 #endif

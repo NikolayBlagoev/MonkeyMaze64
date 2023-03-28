@@ -5,7 +5,7 @@ DISABLE_WARNINGS_PUSH()
 #include <glm/gtx/transform.hpp>
 DISABLE_WARNINGS_POP()
 
-static HitBox makeHitBox(std::filesystem::path filePath) {
+static HitBox makeHitBox(std::filesystem::path filePath, bool allowCollision) {
     const Mesh cpuMesh = mergeMeshes(loadMesh(filePath));
 
     std::array<std::array<float, 3>, 2> minMax{};
@@ -37,29 +37,29 @@ static HitBox makeHitBox(std::filesystem::path filePath) {
         }
     }
 
-    return {points};
+    return {allowCollision, points};
 }
 
 static int latestKey = 0;
 
-int Scene::addMesh(std::filesystem::path filePath) {
+int Scene::addMesh(std::filesystem::path filePath, bool allowCollision) {
     int key = latestKey++;
 
-    meshes.insert({key, GPUMesh(filePath)});
-    transformParams.insert({key, {glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f)}});
-    hitBoxes.insert({key, makeHitBox(filePath)});
+    m_meshes.insert({key, GPUMesh(filePath)});
+    m_transformParams.insert({key, {glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f)}});
+    m_hitBoxes.insert({key, makeHitBox(filePath, allowCollision)});
 
     return key;
 }
 
 void Scene::removeMesh(int idx) {
-    meshes.erase(idx);
-    transformParams.erase(idx);
-    hitBoxes.erase(idx);
+    m_meshes.erase(idx);
+    m_transformParams.erase(idx);
+    m_hitBoxes.erase(idx);
 }
 
 glm::mat4 Scene::modelMatrix(int idx) {
-    const ObjectTransform& transform = transformParams[idx];
+    const ObjectTransform& transform = m_transformParams[idx];
 
     // Translate
     glm::mat4 finalTransform = glm::translate(transform.translate);
@@ -73,73 +73,87 @@ glm::mat4 Scene::modelMatrix(int idx) {
     return glm::scale(finalTransform, transform.scale);
 }
 
-HitBox Scene::getHitBox(int idx) {
-    HitBox hitBox = hitBoxes[idx];
+HitBox Scene::getTransformedHitBox(int idx) {
+    HitBox hitBox = m_hitBoxes[idx];
     for (glm::vec3& point : hitBox.points) {
         point = modelMatrix(idx) * glm::vec4(point, 1);
     }
     return hitBox;
 }
 
-glm::vec3 Scene::getHitBoxMiddle(int idx) {
-    return modelMatrix(idx) * glm::vec4(hitBoxes[idx].getMiddle(), 1);
+glm::vec3 Scene::getTransformedHitBoxMiddle(int idx) {
+    return modelMatrix(idx) * glm::vec4(m_hitBoxes[idx].getMiddle(), 1);
 }
 
-bool Scene::tryUpdateScale(int idx, glm::vec3 scale) {
-//    transformParams[idx].scale += scale;
+bool Scene::collide(int a, int b) {
+    HitBox hitBoxA = getTransformedHitBox(a);
+    HitBox hitBoxB = getTransformedHitBox(b);
+
+    for (glm::vec3 newPoint : hitBoxA.points) {
+
+        glm::vec3 smallerOrEqual(0);
+        glm::vec3 bigger(0);
+
+        for (glm::vec3 curPoint: hitBoxB.points) {
+            if (newPoint.x <= curPoint.x)
+                smallerOrEqual.x++;
+            else
+                bigger.x++;
+
+            if (newPoint.y <= curPoint.y)
+                smallerOrEqual.y++;
+            else
+                bigger.y++;
+
+            if (newPoint.z <= curPoint.z)
+                smallerOrEqual.z++;
+            else
+                bigger.z++;
+        }
+
+        bool collision = (smallerOrEqual.x != 0 && bigger.x != 0)
+                         && (smallerOrEqual.y != 0 && bigger.y != 0)
+                         && (smallerOrEqual.z != 0 && bigger.z != 0);
+
+        if (collision)
+            return true;
+    }
+
+    return false;
+}
+
+bool Scene::checkScaleValid(int idx, glm::vec3 scale) {
+//    m_transformParams[idx].scale += scale;
     return true;
 }
 
-bool Scene::tryUpdateRotation(int idx, glm::vec3 rotation) {
-//    transformParams[idx].rotate += rotation;
+bool Scene::checkRotationValid(int idx, glm::vec3 rotation) {
+//    m_transformParams[idx].rotate += rotation;
     return true;
 }
 
-bool Scene::tryUpdateTranslation(int idx, glm::vec3 translation) {
-    transformParams[idx].translate += translation;
-    HitBox newHitBox = getHitBox(idx);
-auto bla = transformParams.begin();
-    for (auto& [key, curHitBox] : hitBoxes) {
+bool Scene::checkTranslationValid(int idx, glm::vec3 translation) {
+    m_transformParams[idx].translate += translation;
+
+    for (auto& [key, other] : m_hitBoxes) {
         if (key == idx)
             continue;
 
-        for (glm::vec3 newPoint : newHitBox.points) {
+        bool collision = collide(idx, key);
 
-            glm::vec3 smallerOrEqual(0);
-            glm::vec3 bigger(0);
+        if (collision) {
+            if (m_hitBoxes[idx].allowCollision && other.allowCollision)
+                continue;
 
-            for (glm::vec3 curPoint : curHitBox.points) {
-                if (newPoint.x <= curPoint.x)
-                    smallerOrEqual.x++;
-                else
-                    bigger.x++;
+            float newDist = glm::distance(getTransformedHitBoxMiddle(idx), getTransformedHitBoxMiddle(key));
 
-                if (newPoint.y <= curPoint.y)
-                    smallerOrEqual.y++;
-                else
-                    bigger.y++;
+            m_transformParams[idx].translate -= translation;
+            float oldDist = glm::distance(getTransformedHitBoxMiddle(idx), getTransformedHitBoxMiddle(key));
 
-                if (newPoint.z <= curPoint.z)
-                    smallerOrEqual.z++;
-                else
-                    bigger.z++;
-            }
-
-            bool collision =    (smallerOrEqual.x != 0 && bigger.x != 0)
-                             && (smallerOrEqual.y != 0 && bigger.y != 0)
-                             && (smallerOrEqual.z != 0 && bigger.z != 0);
-
-            if (collision) {
-                float newDist = glm::distance(getHitBoxMiddle(idx), getHitBoxMiddle(key));
-
-                transformParams[idx].translate -= translation;
-                float oldDist = glm::distance(getHitBoxMiddle(idx), getHitBoxMiddle(key));
-
-                if (newDist < oldDist)
-                    return false;
-                else
-                    transformParams[idx].translate += translation;
-            }
+            if (newDist < oldDist)
+                return false;
+            else
+                m_transformParams[idx].translate += translation;
         }
     }
 
