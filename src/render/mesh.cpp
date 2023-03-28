@@ -7,14 +7,8 @@ DISABLE_WARNINGS_POP()
 #include <iostream>
 #include <vector>
 
-GPUMesh::GPUMesh(std::filesystem::path filePath)
+GPUMesh::GPUMesh(Mesh& cpuMesh)
 {
-    if (!std::filesystem::exists(filePath))
-        throw MeshLoadingException(fmt::format("File {} does not exist", filePath.string().c_str()));
-
-    // Defined in <framework/mesh.h>
-    const Mesh cpuMesh = mergeMeshes(loadMesh(filePath));
-
     // Create Element(/Index) Buffer Objects and Vertex Buffer Object.
     glCreateBuffers(1, &m_ibo);
     glNamedBufferStorage(m_ibo, static_cast<GLsizeiptr>(cpuMesh.triangles.size() * sizeof(decltype(cpuMesh.triangles)::value_type)), cpuMesh.triangles.data(), 0);

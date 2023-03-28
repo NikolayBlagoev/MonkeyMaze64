@@ -1,13 +1,12 @@
 #include "scene.h"
 #include "framework/mesh.h"
+#include "fmt/format.h"
 
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtx/transform.hpp>
 DISABLE_WARNINGS_POP()
 
-static HitBox makeHitBox(std::filesystem::path filePath, bool allowCollision) {
-    const Mesh cpuMesh = mergeMeshes(loadMesh(filePath));
-
+static HitBox makeHitBox(Mesh& cpuMesh, bool allowCollision) {
     std::array<std::array<float, 3>, 2> minMax{};
 
     for (Vertex vertex : cpuMesh.vertices) {
@@ -43,11 +42,17 @@ static HitBox makeHitBox(std::filesystem::path filePath, bool allowCollision) {
 static int latestKey = 0;
 
 int Scene::addMesh(std::filesystem::path filePath, bool allowCollision) {
+    if (!std::filesystem::exists(filePath))
+        throw MeshLoadingException(fmt::format("File {} does not exist", filePath.string().c_str()));
+
+    // Defined in <framework/mesh.h>
+    Mesh cpuMesh = mergeMeshes(loadMesh(filePath));
+
     int key = latestKey++;
 
-    m_meshes.insert({key, GPUMesh(filePath)});
+    m_meshes.insert({key, GPUMesh(cpuMesh)});
     m_transformParams.insert({key, {glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f)}});
-    m_hitBoxes.insert({key, makeHitBox(filePath, allowCollision)});
+    m_hitBoxes.insert({key, makeHitBox(cpuMesh, allowCollision)});
 
     return key;
 }
