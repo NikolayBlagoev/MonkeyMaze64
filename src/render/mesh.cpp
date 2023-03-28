@@ -17,7 +17,6 @@ GPUMesh::GPUMesh(std::filesystem::path filePath) {
     // Create Element(/Index) Buffer Objects and Vertex Buffer Object.
     glCreateBuffers(1, &m_ibo);
     glNamedBufferStorage(m_ibo, static_cast<GLsizeiptr>(cpuMesh.triangles.size() * sizeof(decltype(cpuMesh.triangles)::value_type)), cpuMesh.triangles.data(), 0);
-
     glCreateBuffers(1, &m_vbo);
     glNamedBufferStorage(m_vbo, static_cast<GLsizeiptr>(cpuMesh.vertices.size() * sizeof(decltype(cpuMesh.vertices)::value_type)), cpuMesh.vertices.data(), 0);
 
@@ -30,18 +29,27 @@ GPUMesh::GPUMesh(std::filesystem::path filePath) {
 
     // We bind the vertex buffer to slot 0 of the VAO and tell the VBO how large each vertex is (stride).
     glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(Vertex));
-    // Tell OpenGL that we will be using vertex attributes 0, 1 and 2.
+
+    // Tell OpenGL that we will be using vertex attributes [0:4]
     glEnableVertexArrayAttrib(m_vao, 0);
     glEnableVertexArrayAttrib(m_vao, 1);
     glEnableVertexArrayAttrib(m_vao, 2);
+    glEnableVertexArrayAttrib(m_vao, 3);
+    glEnableVertexArrayAttrib(m_vao, 4);
+
     // We tell OpenGL what each vertex looks like and how they are mapped to the shader (location = ...).
-    glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, 0, offsetof(Vertex, position));
+    glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, false, offsetof(Vertex, position));
     glVertexArrayAttribFormat(m_vao, 1, 3, GL_FLOAT, false, offsetof(Vertex, normal));
     glVertexArrayAttribFormat(m_vao, 2, 2, GL_FLOAT, false, offsetof(Vertex, texCoord));
+    glVertexArrayAttribFormat(m_vao, 3, 3, GL_FLOAT, false, offsetof(Vertex, tangent));
+    glVertexArrayAttribFormat(m_vao, 4, 3, GL_FLOAT, false, offsetof(Vertex, bitangent));
+
     // For each of the vertex attributes we tell OpenGL to get them from VBO at slot 0.
     glVertexArrayAttribBinding(m_vao, 0, 0);
     glVertexArrayAttribBinding(m_vao, 1, 0);
     glVertexArrayAttribBinding(m_vao, 2, 0);
+    glVertexArrayAttribBinding(m_vao, 3, 0);
+    glVertexArrayAttribBinding(m_vao, 4, 0);
 
     // Each triangle has 3 vertices.
     m_numIndices = static_cast<GLsizei>(3 * cpuMesh.triangles.size());
