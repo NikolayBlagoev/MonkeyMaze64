@@ -4,6 +4,7 @@
 #include <vector>
 #include <time.h>
 #include <cstdlib>
+#include <cmath>
 #include "generator.h"
 const bool opens[18][4] = {
     //1:
@@ -308,9 +309,20 @@ void Generator::constrain(Defined* nd, int opts){
                     if(i!=5 || opts > 16){
                         flag = false;
                     }
+                    if((i >= 1 && i <= 4) || i>=14){
+                        float res = exp(-0.2f*(rand()%10));
+                        if( res > acc_cam ){
+                            std::cout<<"ADDING CAMERA "<<res << " "<<acc_cam<<std::endl;
+                            nd->objs.push_back(new ProcObj(0));
+                            acc_cam = 1.f;
+                        }else{
+                            std::cout<<"NOT ADDING CAMERA "<<res << " "<<acc_cam<<std::endl;
+                            acc_cam -= 0.1f;
+                        }
+                    }
                     nd->empt = false;
                     nd->tileType = i+1;
-                    std::cout<<"assigned to "<<i+1<<std::endl;
+                    
                     break;
                 }
                 j++;

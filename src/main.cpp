@@ -7,7 +7,7 @@
 #include <ui/camera.h>
 #include <ui/menu.h>
 #include <utils/constants.h>
-
+#include "camera.h"
 // Always include window first (because it includes glfw, which includes GL which needs to be included AFTER glew).
 // Can't wait for modules to fix this stuff...
 #include <framework/disable_all_warnings.h>
@@ -37,6 +37,7 @@ std::mutex m;
 std::condition_variable cv;
 bool ready_ = false;
 Defined*** boardCopy;
+glm::vec3 offsetBoard (-6.1f,0.f,-6.1f);
 bool* ready = new bool;
 bool processed = false;
 Generator* gen =  new Generator();
@@ -107,16 +108,19 @@ void mouseButtonCallback(int button, int action, int mods) {
 void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform, 
         const PointLight& light, Shader& m_pointShadowShader, const glm::mat4& pointLightShadowMapsProjection, RenderConfig& renderConfig){
     if(mt == nullptr) return;
-    const MeshTransform& meshTransform = {mt->scale, mt->rotate, mt->offset};
-    // Translate
-    glm::mat4 finalTransform = glm::translate(currTransform, meshTransform.translate);
+    const MeshTransform& meshTransform = {mt->scale, mt->selfRotate, mt->rotateParent, mt->offset};
+   
+    glm::mat4 finalTransform = glm::rotate(currTransform, glm::radians(meshTransform.rotateParent.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+
+    finalTransform = glm::translate(finalTransform, meshTransform.translate);
 
     // Rotate
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    // Scale
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
     const glm::mat4& modelMatrix = glm::scale(finalTransform, meshTransform.scale);
     if(mt->mesh != nullptr){
         const GPUMesh& mesh                         = *(mt->mesh);
@@ -148,16 +152,19 @@ void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform,
 void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform, 
          const glm::mat4& areaLightShadowMapsProjection, const glm::mat4& lightView, RenderConfig& renderConfig){
     if(mt == nullptr) return;
-    const MeshTransform& meshTransform = {mt->scale, mt->rotate, mt->offset};
-    // Translate
-    glm::mat4 finalTransform = glm::translate(currTransform, meshTransform.translate);
+    const MeshTransform& meshTransform = {mt->scale, mt->selfRotate, mt->rotateParent, mt->offset};
+   
+    glm::mat4 finalTransform = glm::rotate(currTransform, glm::radians(meshTransform.rotateParent.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+
+    finalTransform = glm::translate(finalTransform, meshTransform.translate);
 
     // Rotate
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    // Scale
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
     const glm::mat4& modelMatrix = glm::scale(finalTransform, meshTransform.scale);
     if(mt->mesh != nullptr){
         const GPUMesh& mesh                         = *(mt->mesh);
@@ -175,7 +182,18 @@ void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform,
         drawMeshTreeAL(child,modelMatrix, areaLightShadowMapsProjection, lightView, renderConfig);
     }
 }
-
+CameraObj* makeCamera(GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMesh* stand1,
+                     glm::vec3 tr, glm::vec3 selfRot, glm::vec3 parRot, glm::vec3 scl){
+    MeshTree* ret = new MeshTree(stand1, tr, selfRot, parRot,  scl);
+    MeshTree* stand2m = new MeshTree(stand2, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(1.f));
+    ret->addChild(stand2m);
+    MeshTree* cameram = new MeshTree(camera, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f, 0.f, -20.f), glm::vec3(1.f));
+    stand2m->addChild(cameram);
+    MeshTree* aperturem = new MeshTree(aperture, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(1.f));
+    cameram->addChild(aperturem);
+    CameraObj* cam = new CameraObj(cameram, stand2m, ret);
+    return cam;
+}
 int main() {
     // Init core objects
     *ready = false;
@@ -223,12 +241,27 @@ int main() {
     // Add models
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
+
+    GPUMesh camera = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "camera.obj");
+    
+
+    GPUMesh stand2 = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "stand2.obj");
+    GPUMesh stand1 = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "stand1.obj");
+    GPUMesh aperture = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "aperture.obj");
+    
+
     GPUMesh crossing = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj");
     GPUMesh room = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj");
     GPUMesh tjunction = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj");
+    GPUMesh tunnel = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj");
     GPUMesh turn = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj");
-
-    Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
+    // MeshTree* dummyroom = new MeshTree(&room, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f));
+    // scene.root->addChild(dummyroom);
+    // // glm::vec3(-9.9f, 9.f, 0.f)
+    // CameraObj* dummycam = makeCamera(&aperture, &camera, &stand2, &stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec3(0.f), glm::vec3(0.f, 90.f, 0.f), glm::vec3(1.f));
+    // dummyroom->addChild(dummycam->root);
+    
+    // Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
     // Add test lights
     lightManager.addPointLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -247,17 +280,53 @@ int main() {
         if (flag){
             flag = false;
             free(boardRoot);
+            float factorx = 7.72f;
+            float factory = 7.72f;
             boardRoot = new MeshTree();
             for(int i = 0; i < 7; i ++){
                 // glm::vec3 offset(0.f,10.f*i,0.f);
                 for(int j = 0; j < 7; j++){
                     if(boardCopy[i][j]->tileType == 1){
-                        scene.root->addChild(new MeshTree(&crossing, glm::vec3(0.f*i, 1.f, 0.f*j), glm::vec3(0.f), glm::vec3(0.3f)));
-                    }
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 2){
+                        boardRoot->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 3){
+                        boardRoot->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 90.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 4){
+                        boardRoot->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 180.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 5){
+                        boardRoot->addChild(new MeshTree(&room, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f, 270.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 6){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 7){
+                        boardRoot->addChild(new MeshTree(&tunnel, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 8){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 9){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 10){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 11){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 12){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 13){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 14){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 15){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 16){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 17){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    }else if(boardCopy[i][j]->tileType == 18){
+                        boardRoot->addChild(new MeshTree(&crossing, offsetBoard + glm::vec3(factorx*i, 0.f, factory*j), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(0.3f)));
+                    } 
                 }
             }
-            // scene.root->children.pop_back();
-            // scene.root->addChild(boardRoot);
+            scene.root->addChild(boardRoot);
+
         }
         // View-projection matrices setup
         const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
