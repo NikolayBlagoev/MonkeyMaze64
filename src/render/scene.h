@@ -14,13 +14,6 @@ DISABLE_WARNINGS_POP()
 #include <unordered_map>
 #include <map>
 
-struct ObjectTransform {
-    glm::vec3 scale;
-    glm::vec3 selfRotate; // Angles in degrees
-    glm::vec3 rotateParent;
-    glm::vec3 translate;
-};
-
 struct HitBox {
     bool allowCollision;
     std::array<glm::vec3, 8> points;

@@ -110,7 +110,7 @@ void mouseButtonCallback(int button, int action, int mods) {
 void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform, 
         const PointLight& light, Shader& m_pointShadowShader, const glm::mat4& pointLightShadowMapsProjection, RenderConfig& renderConfig){
     if(mt == nullptr) return;
-    const ObjectTransform& meshTransform = {mt->scale, mt->selfRotate, mt->rotateParent, mt->offset};
+    const ObjectTransform& meshTransform = mt->objectTransform;
    
     glm::mat4 finalTransform = glm::rotate(currTransform, glm::radians(meshTransform.rotateParent.x), glm::vec3(1.0f, 0.0f, 0.0f));
     finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -153,7 +153,8 @@ void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform,
 void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform, 
          const glm::mat4& areaLightShadowMapsProjection, const glm::mat4& lightView, RenderConfig& renderConfig){
     if(mt == nullptr) return;
-    const ObjectTransform& meshTransform = {mt->scale, mt->selfRotate, mt->rotateParent, mt->offset};
+
+    const ObjectTransform& meshTransform = mt->objectTransform;
    
     glm::mat4 finalTransform = glm::rotate(currTransform, glm::radians(meshTransform.rotateParent.x), glm::vec3(1.0f, 0.0f, 0.0f));
     finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -186,12 +187,12 @@ void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform,
 
 CameraObj* makeCamera(GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMesh* stand1,
                      glm::vec3 tr, glm::vec3 selfRot, glm::vec3 parRot, glm::vec3 scl){
-    MeshTree* ret = new MeshTree(stand1, tr, selfRot, parRot,  scl);
-    MeshTree* stand2m = new MeshTree(stand2, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(1.f));
+    MeshTree* ret = new MeshTree(stand1, {tr, selfRot, parRot,  scl});
+    MeshTree* stand2m = new MeshTree(stand2, {glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(1.f)});
     ret->addChild(stand2m);
-    MeshTree* cameram = new MeshTree(camera, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f, 0.f, -20.f), glm::vec3(1.f));
+    MeshTree* cameram = new MeshTree(camera, {glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f, 0.f, -20.f), glm::vec3(1.f)});
     stand2m->addChild(cameram);
-    MeshTree* aperturem = new MeshTree(aperture, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(1.f));
+    MeshTree* aperturem = new MeshTree(aperture, {glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.f), glm::vec3(1.f)});
     cameram->addChild(aperturem);
     CameraObj* cam = new CameraObj(cameram, stand2m, ret);
     return cam;
@@ -205,6 +206,7 @@ int main() {
     RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
     Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
+    Camera characterCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     TextureManager textureManager;
 
     Scene scene;
@@ -246,13 +248,13 @@ int main() {
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
 
-    GPUMesh camera = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "camera.obj");
-    
+    GPUMesh cameraMesh = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "camera.obj");
+
 
     GPUMesh stand2 = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "stand2.obj");
     GPUMesh stand1 = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "stand1.obj");
     GPUMesh aperture = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "aperture.obj");
-    
+
 
     GPUMesh crossing = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj");
     GPUMesh room = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj");
@@ -267,9 +269,6 @@ int main() {
     
     // Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
-    scene.m_transformParams[characterId].translate += characterStart;
-    scene.m_transformParams[extraObjId].translate += characterStart + glm::vec3(2.0f, 0.0f, 0.0f);
-
     // Add test lights
     lightManager.addPointLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -281,14 +280,14 @@ int main() {
     bool flag = true;
     while (!m_window.shouldClose()) {
         // Set render config based and selected camera
-        Camera& camera = renderConfig.controlCharacter ? characterCamera : freeCamera;
+        Camera& camera = renderConfig.controlCharacter ? characterCamera : mainCamera;
 
         // Controls, update game state
         ImGuiIO io = ImGui::GetIO();
         m_window.updateInput();
         if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
             if (renderConfig.controlCharacter)
-                camera.updateInput(scene, characterId);
+                camera.updateInput(scene, 0); // TODO: add character id
             else
                 camera.updateInput();
         }

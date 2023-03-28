@@ -202,7 +202,7 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh) const {
 }
 void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const{
     if(mt == nullptr) return;
-    const ObjectTransform& meshTransform = {mt->scale, mt->selfRotate, mt->rotateParent, mt->offset};
+    const ObjectTransform& meshTransform = mt->objectTransform;
    
     glm::mat4 finalTransform = glm::rotate(currTransform, glm::radians(meshTransform.rotateParent.x), glm::vec3(1.0f, 0.0f, 0.0f));
     finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));

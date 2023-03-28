@@ -16,6 +16,7 @@ struct MeshLoadingException : public std::runtime_error {
 
 class GPUMesh {
 public:
+    GPUMesh(std::filesystem::path filePath);
     GPUMesh(Mesh& cpuMesh);
     // Cannot copy a GPU mesh because it would require reference counting of GPU resources.
     GPUMesh(const GPUMesh&) = delete;
@@ -44,6 +45,7 @@ public:
 private:
     void moveInto(GPUMesh&&);
     void freeGpuMemory();
+    void init(Mesh& cpuMesh);
 
 private:
     static constexpr GLuint INVALID = 0xFFFFFFFF;

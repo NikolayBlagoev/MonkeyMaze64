@@ -2,6 +2,7 @@
 #define _MESH_TREE_H_
 
 #include "mesh.h"
+#include "utils/util.h"
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/vec3.hpp>
@@ -10,11 +11,11 @@ DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <vector>
 
-
-
 class MeshTree {
 public:
+    MeshTree(GPUMesh* msh, ObjectTransform objectTransform);
     MeshTree(GPUMesh* msh, glm::vec3 off, glm::vec3 rots, glm::vec3 rotp, glm::vec3 scl);
+
     int addChild(MeshTree* child);
     MeshTree();
     // void addMesh(std::filesystem::path filePath);
@@ -29,10 +30,7 @@ public:
 
 public:
     GPUMesh* mesh;
-    glm::vec3 offset;
-    glm::vec3 selfRotate;
-    glm::vec3 rotateParent;
-    glm::vec3 scale;
+    ObjectTransform objectTransform;
     std::vector<MeshTree*> children;
 };
 

@@ -46,9 +46,7 @@ static int latestKey = 0;
 int Scene::addMesh(std::filesystem::path filePath, bool allowCollision) {
     if (!std::filesystem::exists(filePath))
         throw MeshLoadingException(fmt::format("File {} does not exist", filePath.string().c_str()));
-    
-    
-    // Defined in <framework/mesh.h>
+
     Mesh cpuMesh = mergeMeshes(loadMesh(filePath));
     
     int key = latestKey++;
@@ -59,7 +57,7 @@ int Scene::addMesh(std::filesystem::path filePath, bool allowCollision) {
     if(root == nullptr){
         root = new MeshTree();
     }
-    root->addChild(new MeshTree(gp, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
+    root->addChild(new MeshTree(gp, {glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f)}));
     return key;
 }
 
@@ -96,7 +94,7 @@ void Scene::removeMesh(size_t idx) {
 
 glm::mat4 Scene::modelMatrix(size_t idx) {
     // const MeshTransform& meshTransform = transformParams[idx];
-    const ObjectTransform& meshTransform = {root->children[idx]->scale, root->children[idx]->selfRotate, root->children[idx]->rotateParent, root->children[idx]->offset};
+    const ObjectTransform& meshTransform = root->children[idx]->objectTransform;
     // Translate
     glm::mat4 finalTransform = glm::mat4(1.f);
     // Rotate

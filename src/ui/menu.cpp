@@ -105,9 +105,9 @@ void Menu::drawMeshControls() {
 
         // Selected mesh controls
         if (m_scene.m_meshes.contains(selectedMesh)) {
-            ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.root->children[selectedMesh]->scale), 0.05f);
-            ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.root->children[selectedMesh]->selfRotate), 1.0f, 0.0f, 360.0f);
-            ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.root->children[selectedMesh]->offset), 0.05f);
+            ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.root->children[selectedMesh]->objectTransform.scale), 0.05f);
+            ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.root->children[selectedMesh]->objectTransform.selfRotate), 1.0f, 0.0f, 360.0f);
+            ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.root->children[selectedMesh]->objectTransform.translate), 0.05f);
         }
 
         ImGui::EndTabItem();

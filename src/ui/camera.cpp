@@ -150,6 +150,7 @@ void Camera::updateInput(Scene& scene, int idx) {
             // rotate
             rotateY(delta.x);
             //TODO: FIX THIS
+
             // scene.m_transformParams[idx].rotate.y += glm::degrees(delta.x);
 
             // if (!m_renderConfig.constrainVertical) {
