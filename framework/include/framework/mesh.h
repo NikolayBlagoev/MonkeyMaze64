@@ -9,12 +9,15 @@ DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <optional>
 #include <span>
+#include <utility>
 #include <vector>
 
 struct Vertex {
 	glm::vec3 position;
 	glm::vec3 normal;
-	glm::vec2 texCoord; // Texture coordinate
+	glm::vec2 texCoord;		// Texture coordinate
+	glm::vec3 tangent;		// Tangent and bitangent for normal map transformation(s)
+	glm::vec3 bitangent;	
 
 	[[nodiscard]] constexpr bool operator==(const Vertex&) const noexcept = default;
 };
@@ -42,5 +45,6 @@ struct Mesh {
 	Material material;
 };
 
+[[nodiscard]] void computeTangents(Vertex& v0, Vertex& v1, Vertex& v2);
 [[nodiscard]] std::vector<Mesh> loadMesh(const std::filesystem::path& file, bool normalize = false);
 [[nodiscard]] Mesh mergeMeshes(std::span<const Mesh> meshes);

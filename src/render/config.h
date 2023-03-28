@@ -41,7 +41,7 @@ struct RenderConfig {
     // HDR tonemapping and gamma correction
     bool enableHdr  { true };
     float exposure  { 1.0f };
-    float gamma     { 1.0f };
+    float gamma     { 2.2f };
 
     // Bloom
     bool enableBloom            { true };
