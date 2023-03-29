@@ -12,8 +12,8 @@ DISABLE_WARNINGS_POP()
 
 struct MeshTransform {
     glm::vec3 scale;
-    glm::vec3 selfRotate; // Angles in degrees
-    glm::vec3 rotateParent;
+    glm::vec4 selfRotate; // ROTATE AROUND AXIS
+    glm::vec4 rotateParent;
     glm::vec3 translate;
 };
 
@@ -28,6 +28,7 @@ public:
 
 
     glm::mat4 modelMatrix(size_t idx);
+    static glm::mat4 modelMatrix(MeshTree* mt, const glm::mat4& currTransform);
     MeshTree* root;
     std::vector<MeshTransform> transformParams;
 

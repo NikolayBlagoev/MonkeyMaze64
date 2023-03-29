@@ -5,6 +5,7 @@
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 DISABLE_WARNINGS_POP()
 #include <filesystem>
@@ -14,9 +15,10 @@ DISABLE_WARNINGS_POP()
 
 class MeshTree {
 public:
-    MeshTree(GPUMesh* msh, glm::vec3 off, glm::vec3 rots, glm::vec3 rotp, glm::vec3 scl);
+    MeshTree(GPUMesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl);
     int addChild(MeshTree* child);
     MeshTree();
+    MeshTree(GPUMesh* msh);
     // void addMesh(std::filesystem::path filePath);
     // void removeMesh(size_t idx);
 
@@ -30,8 +32,8 @@ public:
 public:
     GPUMesh* mesh;
     glm::vec3 offset;
-    glm::vec3 selfRotate;
-    glm::vec3 rotateParent;
+    glm::vec4 selfRotate;
+    glm::vec4 rotateParent;
     glm::vec3 scale;
     std::vector<MeshTree*> children;
 };

@@ -202,20 +202,8 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh) const {
 }
 void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const{
     if(mt == nullptr) return;
-    const MeshTransform& meshTransform = {mt->scale, mt->selfRotate, mt->rotateParent, mt->offset};
    
-    glm::mat4 finalTransform = glm::rotate(currTransform, glm::radians(meshTransform.rotateParent.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.z), glm::vec3(0.0f, 0.0f, 1.0f));
-
-
-    finalTransform = glm::translate(finalTransform, meshTransform.translate);
-
-    // Rotate
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    const glm::mat4& modelMatrix = glm::scale(finalTransform, meshTransform.scale);
+    const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
     if(mt->mesh != nullptr){
         const GPUMesh& mesh                         = *(mt->mesh);
         // std::cout<<"DRAWING"<<std::endl;
