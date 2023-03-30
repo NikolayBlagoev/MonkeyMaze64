@@ -28,10 +28,12 @@ layout(location = 16) uniform float defaultAO;
 layout(location = 17) uniform sampler2D displacementTex;
 layout(location = 18) uniform bool hasDisplacement;
 layout(location = 19) uniform bool displacementIsHeight;
-layout(location = 20) uniform float heightScale; // Controls strength of parallax effect
+layout(location = 20) uniform float heightScale;    // Controls strength of parallax effect
+layout(location = 21) uniform float minDepthLayers; // Min number of samples to use to approximate depth at intersection point
+layout(location = 22) uniform float maxDepthLayers; // Max number of samples to use to approximate depth at intersection point
 
 // Camera position
-layout(location = 21) uniform vec3 cameraPos;
+layout(location = 23) uniform vec3 cameraPos;
 
 // Input from vertex shader
 layout(location = 0) in vec3 fragPos;
@@ -46,10 +48,28 @@ layout(location = 2) out vec4 gAlbedo;      // Albedo buffer
 layout(location = 3) out vec3 gMaterial;    // Red channel is metallic, green channel is roughness, blue channel is AO
 
 vec2 parallaxMapping() {
-    vec3 fragToCamera       = normalize(tbn * (cameraPos - fragPos));  // This vector is in tangent space
-    float height            = displacementIsHeight ? 1.0 - texture(displacementTex, fragTexCoord).r : texture(displacementTex, fragTexCoord).r;    
-    vec2 surfaceToIncident  = (fragToCamera.xy / fragToCamera.z) * height * heightScale;
-    return fragTexCoord - surfaceToIncident;    
+    vec3 fragToCamera       = normalize(tbn * (cameraPos - fragPos));                                                   // This vector is in tangent space
+    float numDepthLayers    = mix(maxDepthLayers, minDepthLayers, max(dot(vec3(0.0, 0.0, 1.0), fragToCamera), 0.0));    // Scale number of samples based on how sharp the view angle on the surface is (sharper angle => closer to maxLayers)
+    float layerDepth        = 1.0 / numDepthLayers;
+    float currentLayerDepth = 0.0;
+    vec2 surfaceToIncident  = fragToCamera.xy * heightScale;
+    vec2 deltaTexCoords     = surfaceToIncident / numDepthLayers;
+
+    // Continually sample until we find a depth (in the depth map) below the theoretical real depth we are currently testing
+    vec2 currentTexCoords       = fragTexCoord;
+    float currentDepthMapValue  = displacementIsHeight ? 1.0 - texture(displacementTex, currentTexCoords).r : texture(displacementTex, currentTexCoords).r;    
+    while (currentLayerDepth < currentDepthMapValue) {
+        currentTexCoords        -= deltaTexCoords;                             // Shift texture coordinates along opposite direction of P
+        currentDepthMapValue    = displacementIsHeight ? 1.0 - texture(displacementTex, currentTexCoords).r : texture(displacementTex, currentTexCoords).r; // Get depthmap value at current texture coordinates
+        currentLayerDepth       += layerDepth;                                // Get depth of next layer
+    }
+
+    // Linearly interpolate between post hit depth and the depth value of the previous sample
+    vec2 prevTexCoords  = currentTexCoords -= deltaTexCoords;
+    float beforeDepth   = (displacementIsHeight ? 1.0 - texture(displacementTex, currentTexCoords).r : texture(displacementTex, currentTexCoords).r) - currentLayerDepth + layerDepth;
+    float afterDepth    = currentDepthMapValue - currentLayerDepth;
+    float weight        = afterDepth / (afterDepth - beforeDepth);
+    return (prevTexCoords * weight) + (currentTexCoords * (1.0 - weight));
 } 
 
 void main() {

@@ -111,8 +111,18 @@ int main(int argc, char* argv[]) {
     std::weak_ptr<const Texture> brickAlbedo        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "bricks2.jpg");
     std::weak_ptr<const Texture> brickNormal        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "bricks2_normal.jpg");
     std::weak_ptr<const Texture> brickDisplacement  = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "bricks2_disp.jpg");
+    std::weak_ptr<const Texture> glassAlbedo        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Glass_Frosted_001_basecolor.jpg");
+    std::weak_ptr<const Texture> glassNormal        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Glass_Frosted_001_normal.jpg");
+    std::weak_ptr<const Texture> glassRoughness     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Glass_Frosted_001_roughness.jpg");
+    std::weak_ptr<const Texture> glassAO            = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Glass_Frosted_001_ambientOcclusion.jpg");
+    std::weak_ptr<const Texture> glassDisplacement  = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Glass_Frosted_001_height.png");
+    std::weak_ptr<const Texture> furAlbedo          = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stylized_Fur_001_basecolor.jpg");
+    std::weak_ptr<const Texture> furNormal          = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stylized_Fur_001_normal.jpg");
+    std::weak_ptr<const Texture> furRoughness       = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stylized_Fur_001_roughness.jpg");
+    std::weak_ptr<const Texture> furAO              = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stylized_Fur_001_ambientOcclusion.jpg");
+    std::weak_ptr<const Texture> furDisplacement    = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stylized_Fur_001_height.png");
 
-    // Add models and set textures for test cubes
+    // Add models and set textures for test objects
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "cube.obj");
     scene.meshAt(1).setAlbedo(rustAlbedo);
@@ -129,7 +139,18 @@ int main(int argc, char* argv[]) {
     scene.meshAt(3).setAlbedo(brickAlbedo);
     scene.meshAt(3).setNormal(brickNormal);
     scene.meshAt(3).setDisplacement(brickDisplacement, false);
-
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "cube.obj");
+    scene.meshAt(4).setAlbedo(glassAlbedo);
+    scene.meshAt(4).setNormal(glassNormal);
+    scene.meshAt(4).setRoughness(glassRoughness);
+    scene.meshAt(4).setAO(glassAO);
+    scene.meshAt(4).setDisplacement(glassDisplacement, true);
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "plane.obj");
+    scene.meshAt(5).setAlbedo(furAlbedo);
+    scene.meshAt(5).setNormal(furNormal);
+    scene.meshAt(5).setRoughness(furRoughness);
+    scene.meshAt(5).setAO(furAO);
+    scene.meshAt(5).setDisplacement(furDisplacement, true);
 
     // Add test lights
     lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);

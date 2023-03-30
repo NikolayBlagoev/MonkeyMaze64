@@ -55,7 +55,9 @@ struct RenderConfig {
     float sizeDeviation     { 0.001f };
 
     // Parallax mapping
-    float heightScale { 0.1f };
+    float heightScale       { 0.075f };
+    float minDepthLayers    { 8.0f };
+    float maxDepthLayers    { 32.0f };
 
     // Lighting debug
     bool drawLights             { false };

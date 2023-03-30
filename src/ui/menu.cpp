@@ -329,7 +329,9 @@ void Menu::drawBloomControls() {
 }
 
 void Menu::drawParallaxControls() {
-    ImGui::SliderFloat("Parallax strength", &m_renderConfig.heightScale, 0.0f, 0.5f);
+    ImGui::SliderFloat("Parallax strength", &m_renderConfig.heightScale, 0.0f, 0.3f);
+    ImGui::InputFloat("Min depth layers", &m_renderConfig.minDepthLayers, 1.0f, 2.0f, "%.0f");
+    ImGui::InputFloat("Max depth layers", &m_renderConfig.maxDepthLayers, 1.0f, 2.0f, "%.0f");
 }
 
 void Menu::drawRenderTab() {

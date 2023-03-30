@@ -218,9 +218,11 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh, const glm::vec3
     glUniform1i(18, !mesh.getDisplacement().expired());
     glUniform1i(19, mesh.getIsHeight());
     glUniform1f(20, m_renderConfig.heightScale);
+    glUniform1f(21, m_renderConfig.minDepthLayers);
+    glUniform1f(22, m_renderConfig.maxDepthLayers);
     
     // Camera position
-    glUniform3fv(21, 1, glm::value_ptr(cameraPos));
+    glUniform3fv(23, 1, glm::value_ptr(cameraPos));
 }
 
 void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
