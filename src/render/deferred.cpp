@@ -37,12 +37,15 @@ DeferredRenderer::~DeferredRenderer() {
     glDeleteTextures(1, &hdrTex);
 }
 
-void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) {
+void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos, const float enred) {
     glViewport(0, 0, utils::WIDTH, utils::HEIGHT);  // Set correct viewport size
     renderGeometry(viewProjectionMatrix);           // Geometry pass
-    renderLighting(cameraPos);                      // Lighting pass
+
+    renderLighting(cameraPos, enred);                      // Lighting pass
+
     copyGBufferDepth(hdrBuffer);                    // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
     renderForward(viewProjectionMatrix);            // Render transparent objects which require forward rendering
+
     renderPostProcessing();                         // Combine post-processing results; HDR tonemapping and gamma correction
     copyGBufferDepth(0U);                           // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
 }
@@ -264,7 +267,7 @@ void DeferredRenderer::bindGBufferTextures() const {
     glUniform1i(3, utils::G_BUFFER_TEX_START_IDX + 3);
 }
 
-void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
+void DeferredRenderer::renderLighting(const glm::vec3& cameraPos, const float enred) {
     // Bind HDR framebuffer and clear previous values
     glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -274,6 +277,7 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
     bindGBufferTextures();
     glUniform3fv(4, 1, glm::value_ptr(cameraPos));
     glUniform1f(6, m_renderConfig.shadowFarPlane);
+    glUniform1f(9, enred);
     m_lightManager.bind();
 
     // Bind shader-specific uniforms
