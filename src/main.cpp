@@ -99,14 +99,18 @@ int main(int argc, char* argv[]) {
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 
     // Load textures
-    std::weak_ptr<const Texture> rustAlbedo     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
-    std::weak_ptr<const Texture> rustNormal     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_normal.png");
-    std::weak_ptr<const Texture> rustMetallic   = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_metallic.png");
-    std::weak_ptr<const Texture> rustRoughness  = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_roughness.png");
-    std::weak_ptr<const Texture> stoneAlbedo    = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_COLOR.jpg");
-    std::weak_ptr<const Texture> stoneNormal    = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_NORM.jpg");
-    std::weak_ptr<const Texture> stoneRoughness = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_ROUGH.jpg");
-    std::weak_ptr<const Texture> stoneAO        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_OCC.jpg");
+    std::weak_ptr<const Texture> rustAlbedo         = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
+    std::weak_ptr<const Texture> rustNormal         = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_normal.png");
+    std::weak_ptr<const Texture> rustMetallic       = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_metallic.png");
+    std::weak_ptr<const Texture> rustRoughness      = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_roughness.png");
+    std::weak_ptr<const Texture> stoneAlbedo        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_COLOR.jpg");
+    std::weak_ptr<const Texture> stoneNormal        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_NORM.jpg");
+    std::weak_ptr<const Texture> stoneRoughness     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_ROUGH.jpg");
+    std::weak_ptr<const Texture> stoneAO            = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_OCC.jpg");
+    std::weak_ptr<const Texture> stoneDisplacement  = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "Stone_Wall_007_DISP.png");
+    std::weak_ptr<const Texture> brickAlbedo        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "bricks2.jpg");
+    std::weak_ptr<const Texture> brickNormal        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "bricks2_normal.jpg");
+    std::weak_ptr<const Texture> brickDisplacement  = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "bricks2_disp.jpg");
 
     // Add models and set textures for test cubes
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
@@ -120,6 +124,12 @@ int main(int argc, char* argv[]) {
     scene.meshAt(2).setNormal(stoneNormal);
     scene.meshAt(2).setRoughness(stoneRoughness);
     scene.meshAt(2).setAO(stoneAO);
+    scene.meshAt(2).setDisplacement(stoneDisplacement, true);
+    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "plane.obj");
+    scene.meshAt(3).setAlbedo(brickAlbedo);
+    scene.meshAt(3).setNormal(brickNormal);
+    scene.meshAt(3).setDisplacement(brickDisplacement, false);
+
 
     // Add test lights
     lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
