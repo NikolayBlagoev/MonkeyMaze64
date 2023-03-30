@@ -41,9 +41,10 @@ void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::
     glViewport(0, 0, utils::WIDTH, utils::HEIGHT);  // Set correct viewport size
     renderGeometry(viewProjectionMatrix);           // Geometry pass
     renderLighting(cameraPos);                      // Lighting pass
-    copyDepthBuffer();                              // Copy G-buffer depth data to main and HDR framebuffers
-    m_particleEmitterManager.render(hdrBuffer, viewProjectionMatrix);
+    copyGBufferDepth(hdrBuffer);                    // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
+    renderForward(viewProjectionMatrix);            // Render transparent objects which require forward rendering
     renderPostProcessing();                         // Combine post-processing results; HDR tonemapping and gamma correction
+    copyGBufferDepth(0U);                           // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
 }
 
 void DeferredRenderer::initGBuffer() {
@@ -285,13 +286,8 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
     utils::renderQuad();
 }
 
-void DeferredRenderer::copyDepthBuffer() {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);          // Write to default framebuffer
-    glBlitFramebuffer(0, 0, utils::WIDTH, utils::HEIGHT, 0, 0, utils::WIDTH, utils::HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, hdrBuffer);  // Write to HDR framebuffer
-    glBlitFramebuffer(0, 0, utils::WIDTH, utils::HEIGHT, 0, 0, utils::WIDTH, utils::HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+void DeferredRenderer::renderForward(const glm::mat4& viewProjectionMatrix) {
+    m_particleEmitterManager.render(hdrBuffer, viewProjectionMatrix); // Only particles need forward shading for now
 }
 
 void DeferredRenderer::renderPostProcessing() {
@@ -318,4 +314,11 @@ void DeferredRenderer::renderPostProcessing() {
     glUniform1i(5, m_renderConfig.enableBloom);
     
     utils::renderQuad();
+}
+
+void DeferredRenderer::copyGBufferDepth(GLuint destinationBuffer) {
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destinationBuffer);
+    glBlitFramebuffer(0, 0, utils::WIDTH, utils::HEIGHT, 0, 0, utils::WIDTH, utils::HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

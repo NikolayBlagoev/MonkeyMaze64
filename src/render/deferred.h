@@ -34,8 +34,9 @@ private:
     void renderGeometry(const glm::mat4& viewProjectionMatrix) const;
     void bindGBufferTextures() const;
     void renderLighting(const glm::vec3& cameraPos);
-    void copyDepthBuffer();
+    void renderForward(const glm::mat4& viewProjectionMatrix);
     void renderPostProcessing();
+    void copyGBufferDepth(GLuint destinationBuffer);
 
     static constexpr GLuint INVALID = 0xFFFFFFFF;
 

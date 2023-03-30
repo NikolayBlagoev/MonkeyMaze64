@@ -40,12 +40,12 @@ public:
     void update(float velocityDeviation, float colorDeviation, float lifeDeviation, float sizeDeviation);
 
     // Initial values used for initialisation and resurrection of particles
-    glm::vec3 m_baseVelocity    { 0.5f, 0.5f, 0.5f };
+    glm::vec3 m_baseVelocity    { 0.001f, 0.001f, 0.001f };
     glm::vec4 m_baseColor       { 1.0f, 1.0f, 1.0f, 0.01f };
     float m_baseLife            { 200.0f };
-    float m_baseSize            { 2.0f };
+    float m_baseSize            { 0.01f };
 
-    float lifeDelta     { 0.01f };
+    float lifeDelta     { 1.0f };
     glm::vec3 m_position;
 
     std::vector<Particle> particles;
@@ -82,9 +82,9 @@ private:
     static constexpr GLuint INVALID = 0xFFFFFFFF;
     static constexpr std::array<GLfloat, 12UL> vertexBufferData = {
         -0.5f,  0.5f,  0.0f,
-        -0.5f,   -0.5f,  0.0f,
-         0.5f,   0.5f,  0.0f,
-         0.5f,  -0.5f,  0.0f
+        -0.5f, -0.5f,  0.0f,
+         0.5f,  0.5f,  0.0f,
+         0.5f, -0.5f,  0.0f
     };
 
     std::vector<ParticleEmitter> emitters;

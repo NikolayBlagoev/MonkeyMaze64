@@ -48,6 +48,7 @@ void Menu::draw2D() {
 
 void Menu::draw3D(const glm::mat4& cameraMVP) {
     drawLights(cameraMVP);
+    drawParticleEmitters(cameraMVP);
 }
 
 void Menu::drawCameraTab() {
@@ -219,10 +220,12 @@ void Menu::drawShadowTab() {
 }
 
 void Menu::drawParticleParamControls() {
-    ImGui::SliderFloat("Velocity deviation", &m_renderConfig.velocityDeviation, 0.01f, 1.0f);
-    ImGui::SliderFloat("Color deviation", &m_renderConfig.colorDeviation, 0.01f, 0.20f);
-    ImGui::SliderFloat("Life deviation", &m_renderConfig.lifeDeviation, 0.1f, 10.0f);
-    ImGui::SliderFloat("Size deviation", &m_renderConfig.sizeDeviation, 0.1f, 5.0f);
+    ImGui::Checkbox("Draw all emitters", &m_renderConfig.drawParticleEmitters);
+
+    ImGui::SliderFloat("Velocity deviation", &m_renderConfig.velocityDeviation, 0.0001f, 0.01f);
+    ImGui::SliderFloat("Color deviation", &m_renderConfig.colorDeviation, 0.0f, 0.20f);
+    ImGui::SliderFloat("Life deviation", &m_renderConfig.lifeDeviation, 0.0f, 10.0f);
+    ImGui::SliderFloat("Size deviation", &m_renderConfig.sizeDeviation, 0.0f, 0.5f);
 }
 
 void Menu::drawEmitterControls() {
@@ -234,6 +237,7 @@ void Menu::drawEmitterControls() {
             selectedParticleEmitter = 0U;
         }
     }
+    ImGui::Checkbox("Highlight selected##particle", &m_renderConfig.drawSelectedParticleEmitter);
     ImGui::NewLine();
 
     // Selection controls
@@ -250,14 +254,14 @@ void Menu::drawEmitterControls() {
 
         ImGui::NewLine();
         ImGui::Text("New particle parameters");
-        ImGui::DragFloat3("Base velocity", glm::value_ptr(selectedEmitter.m_baseVelocity), 0.05f);
+        ImGui::DragFloat3("Base velocity", glm::value_ptr(selectedEmitter.m_baseVelocity), 0.0001f);
         ImGui::ColorEdit4("Base colour", glm::value_ptr(selectedEmitter.m_baseColor));
-        ImGui::InputFloat("Base life", &selectedEmitter.m_baseLife, 1.0f, 10.0f, "%.0f");
-        ImGui::InputFloat("Base size", &selectedEmitter.m_baseSize, 0.1f, 0.5f, "%.1f");
+        ImGui::InputFloat("Base life", &selectedEmitter.m_baseLife, 1.0f, 10.0f);
+        ImGui::InputFloat("Base size", &selectedEmitter.m_baseSize, 0.001f, 0.1f);
 
         ImGui::NewLine();
         ImGui::Text("Emitter paramaters");
-        ImGui::InputFloat("Life delta (controls decay rate)", &selectedEmitter.lifeDelta, 0.01f, 0.1f, "%.2f");
+        ImGui::InputFloat("Life delta (controls decay rate)", &selectedEmitter.lifeDelta, 0.01f, 1.0f);
         ImGui::DragFloat3("Position##particle", glm::value_ptr(selectedEmitter.m_position), 0.05f);
     }
 }
@@ -379,6 +383,26 @@ void Menu::drawLights(const glm::mat4& cameraMVP) {
     if (m_renderConfig.drawSelectedAreaLight && m_lightManager.numAreaLights() > 0U) {
         const AreaLight& light      = m_lightManager.areaLightAt(selectedAreaLight);
         const glm::vec4 screenPos   = cameraMVP * glm::vec4(light.position.x, light.position.y, light.position.z, 1.0f);
+        drawPoint(40.0f, screenPos, glm::vec3(1.0f, 1.0f, 1.0f));
+    }
+}
+
+void Menu::drawParticleEmitters(const glm::mat4& cameraMVP) {
+    debugShader.bind();
+
+    // Draw all emitters
+    if (m_renderConfig.drawParticleEmitters) {
+        for (size_t emitterIdx = 0U; emitterIdx < m_particleEmitterManager.numEmitters(); emitterIdx++) {
+            const ParticleEmitter& emitter  = m_particleEmitterManager.emitterAt(emitterIdx);
+            const glm::vec4 screenPos       = cameraMVP * glm::vec4(emitter.m_position.x, emitter.m_position.y, emitter.m_position.z, 1.0f);
+            drawPoint(10.0f, screenPos, emitter.m_baseColor);
+        }
+    }
+
+    // Draw selected emitter if it exists
+    if (m_renderConfig.drawSelectedParticleEmitter && m_particleEmitterManager.numEmitters() > 0U) {
+        const ParticleEmitter& emitter  = m_particleEmitterManager.emitterAt(selectedParticleEmitter);
+        const glm::vec4 screenPos       = cameraMVP * glm::vec4(emitter.m_position.x, emitter.m_position.y, emitter.m_position.z, 1.0f);
         drawPoint(40.0f, screenPos, glm::vec3(1.0f, 1.0f, 1.0f));
     }
 }

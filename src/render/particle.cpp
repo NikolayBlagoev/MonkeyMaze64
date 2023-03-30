@@ -39,7 +39,7 @@ glm::vec4 ParticleEmitter::randomColor(float colorDeviation) const {
 
 float ParticleEmitter::randomLife(float lifeDeviation) const { return m_baseLife + utils::randomNumber(-lifeDeviation, lifeDeviation); }
 
-float ParticleEmitter::randomSize(float sizeDeviation) const { return std::max(1.0f, m_baseSize + utils::randomNumber(-sizeDeviation, sizeDeviation)); }
+float ParticleEmitter::randomSize(float sizeDeviation) const { return m_baseSize + utils::randomNumber(-sizeDeviation, sizeDeviation); }
 
 
 void ParticleEmitter::reviveParticle(size_t idx, float velocityDeviation, float colorDeviation, float lifeDeviation, float sizeDeviation) {
@@ -104,8 +104,7 @@ void ParticleEmitterManager::genAttributeBuffers() {
 
     // Create and specify format of VBO containing particle-specific data
     glCreateBuffers(1, &particleVBO);
-    glNamedBufferData(particleVBO, 0, nullptr, GL_STREAM_DRAW);
-    glVertexArrayVertexBuffer(VAO, 1, vertexVBO, 0, sizeof(ParticleShader));
+    glVertexArrayVertexBuffer(VAO, 1, particleVBO, 0, sizeof(ParticleShader));
     glEnableVertexArrayAttrib(VAO, 1);
     glVertexArrayAttribFormat(VAO, 1, 3, GL_FLOAT, GL_FALSE, offsetof(ParticleShader, position));
     glEnableVertexArrayAttrib(VAO, 2);
@@ -123,9 +122,9 @@ void ParticleEmitterManager::genAttributeBuffers() {
     // Instancing attribute divisors (tell OpenGL how frequently to update vertex attributes)
     glVertexArrayBindingDivisor(VAO, 0, 0); // Reuse vertices for each index
     glVertexArrayBindingDivisor(VAO, 1, 1); // Update particle data by one for each instance (i.e. each particles gets ITS OWN data ONLY)
-    glVertexArrayBindingDivisor(VAO, 2, 1); // Update particle data by one for each instance (i.e. each particles gets ITS OWN data ONLY)
-    glVertexArrayBindingDivisor(VAO, 3, 1); // Update particle data by one for each instance (i.e. each particles gets ITS OWN data ONLY)
-    glVertexArrayBindingDivisor(VAO, 4, 1); // Update particle data by one for each instance (i.e. each particles gets ITS OWN data ONLY)
+    glVertexArrayBindingDivisor(VAO, 2, 1); 
+    glVertexArrayBindingDivisor(VAO, 3, 1); 
+    glVertexArrayBindingDivisor(VAO, 4, 1);
 }
 
 std::vector<ParticleShader> ParticleEmitterManager::genSortedParticles(const glm::mat4& viewProjectionMatrix) const {
