@@ -48,6 +48,12 @@ struct RenderConfig {
     float bloomBrightThreshold  { 1.0f };
     uint32_t bloomIterations    { 5U };
 
+    // Particles
+    float velocityDeviation { 0.01f };
+    float colorDeviation    { 0.1f };
+    float lifeDeviation     { 5.0f };
+    float sizeDeviation     { 5.0f };
+
     // Lighting debug
     bool drawLights { false };
     bool drawSelectedPointLight { false };

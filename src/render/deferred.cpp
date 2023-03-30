@@ -39,8 +39,8 @@ void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::
     glViewport(0, 0, utils::WIDTH, utils::HEIGHT);  // Set correct viewport size
     renderGeometry(viewProjectionMatrix);           // Geometry pass
     renderLighting(cameraPos);                      // Lighting pass
-    renderPostProcessing();                         // Combine post-processing results; HDR tonemapping and gamma correction
     copyDepthBuffer();                              // Copy G-buffer depth data to main framebuffer
+    renderPostProcessing();                         // Combine post-processing results; HDR tonemapping and gamma correction
 }
 
 void DeferredRenderer::initGBuffer() {
@@ -276,6 +276,13 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
     utils::renderQuad();
 }
 
+void DeferredRenderer::copyDepthBuffer() {
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Write to default framebuffer
+    glBlitFramebuffer(0, 0, utils::WIDTH, utils::HEIGHT, 0, 0, utils::WIDTH, utils::HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void DeferredRenderer::renderPostProcessing() {
     // Render post-processing effect(s)
     GLuint bloomTex;
@@ -300,11 +307,4 @@ void DeferredRenderer::renderPostProcessing() {
     glUniform1i(5, m_renderConfig.enableBloom);
     
     utils::renderQuad();
-}
-
-void DeferredRenderer::copyDepthBuffer() {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Write to default framebuffer
-    glBlitFramebuffer(0, 0, utils::WIDTH, utils::HEIGHT, 0, 0, utils::WIDTH, utils::HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

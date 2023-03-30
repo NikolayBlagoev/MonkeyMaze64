@@ -6,6 +6,7 @@ target_sources(FinalProject
         "${CMAKE_CURRENT_LIST_DIR}/render/deferred.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/lighting.cpp"
 		"${CMAKE_CURRENT_LIST_DIR}/render/mesh.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/render/particle.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/scene.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/stb_image.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/texture.cpp"
