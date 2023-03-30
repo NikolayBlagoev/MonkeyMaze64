@@ -35,6 +35,7 @@ DISABLE_WARNINGS_POP()
 #include <ctime>
 #include <chrono>
 #include <generator/generator.h>
+
 // Game state
 // TODO: Have a separate struct for this if it becomes too much
 bool cameraZoomed = false;
@@ -115,8 +116,9 @@ void mouseButtonCallback(int button, int action, int mods) {
     if (action == GLFW_PRESS) { onMouseClicked(button, mods); }
     else if (action == GLFW_RELEASE) { onMouseReleased(button, mods); }
 }
+
 void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform, 
-        const PointLight& light, Shader& m_pointShadowShader, const glm::mat4& pointLightShadowMapsProjection, RenderConfig& renderConfig){
+                     const PointLight& light, Shader& m_pointShadowShader, const glm::mat4& pointLightShadowMapsProjection, RenderConfig& renderConfig){
     if(mt == nullptr) return;
 
     const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
@@ -148,7 +150,7 @@ void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform,
 }
 
 void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform, 
-         const glm::mat4& areaLightShadowMapsProjection, const glm::mat4& lightView, RenderConfig& renderConfig){
+                    const glm::mat4& areaLightShadowMapsProjection, const glm::mat4& lightView, RenderConfig& renderConfig){
     if(mt == nullptr) return;
     
     const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
@@ -170,7 +172,7 @@ void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform,
 }
 
 CameraObj* makeCamera(GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMesh* stand1,
-                     glm::vec3 tr, glm::vec4 selfRot, glm::vec4 parRot, glm::vec3 scl){
+                      glm::vec3 tr, glm::vec4 selfRot, glm::vec4 parRot, glm::vec3 scl){
     MeshTree* ret = new MeshTree(stand1, tr, selfRot, parRot,  scl);
     MeshTree* stand2m = new MeshTree(stand2, glm::vec3(0.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(1.f));
     ret->addChild(stand2m);
@@ -181,6 +183,7 @@ CameraObj* makeCamera(GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMe
     CameraObj* cam = new CameraObj(cameram, stand2m, ret);
     return cam;
 }
+
 CameraObj* addObjectsRoom(MeshTree* room, Defined* roomTile, GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMesh* stand1){
     for(int i = 0; i < roomTile->objs.size(); i++){
         if(roomTile->objs.at(i)->type == 0){
@@ -189,9 +192,8 @@ CameraObj* addObjectsRoom(MeshTree* room, Defined* roomTile, GPUMesh* aperture, 
         }
     }
 }
+
 int main() {
-    // std::cout<<BezierCurve4d::qToangl(glm::vec4(10,3,2,1))->w<<std::endl;
-    // return 0;
     // Init core objects
     *ready = false;
     std::thread worker(worker_thread);
@@ -241,27 +243,15 @@ int main() {
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
     MeshTree* drg = new MeshTree(&dragon);
     scene.addMesh(drg);
-
     GPUMesh camera = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "camera.obj");
-    
-
     GPUMesh stand2 = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "stand2.obj");
     GPUMesh stand1 = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "stand1.obj");
     GPUMesh aperture = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "aperture.obj");
-    
-
     GPUMesh crossing = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj");
     GPUMesh room = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj");
     GPUMesh tjunction = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj");
     GPUMesh tunnel = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj");
     GPUMesh turn = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj");
-    // MeshTree* dummyroom = new MeshTree(&room, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f), glm::vec3(0.3f));
-    // scene.root->addChild(dummyroom);
-    // // glm::vec3(-9.9f, 9.f, 0.f)
-    // CameraObj* dummycam = makeCamera(&aperture, &camera, &stand2, &stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec3(0.f), glm::vec3(0.f, 90.f, 0.f), glm::vec3(1.f));
-    // dummyroom->addChild(dummycam->root);
-    
-    // Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
     // Add test lights
     lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
@@ -276,16 +266,12 @@ int main() {
     // Init MeshTree
     MeshTree* boardRoot = new MeshTree();
     boardRoot->offset = offsetBoard;
-    
-    // Main loop
+   
     std::chrono::high_resolution_clock timer; 
-    
     BezierCurve3d b3d = BezierCurve3d(glm::vec3(0.f), glm::vec3(1.f , 1.f, 0.f), glm::vec3(-1.f , 2.f, 0.f), glm::vec3(0.f, 3.f, 0.f), 10.f);
     BezierCurve3d b3d2 = BezierCurve3d(glm::vec3(0.f, 3.f, 0.f), glm::vec3(-1.f , 2.f, 0.f), glm::vec3(1.f , 1.f, 0.f), glm::vec3(0.f), 10.f);
     BezierCurve4d b4d = BezierCurve4d(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
-    
     CompositeBezier3d b3c = CompositeBezier3d({&b3d,&b3d2}, true, 20.f);
-    
     std::chrono::time_point millisec_since_epoch = timer.now();
     BezierCurveRenderer rndrr = BezierCurveRenderer(millisec_since_epoch);
     b3c.start_time = millisec_since_epoch;
@@ -295,12 +281,13 @@ int main() {
     BezierCombo4d combo2 = BezierCombo4d(drg,&b4d, 0);
     rndrr.add4d(&combo2);
     bool flag = true;
+    
+    // Main loop
     while (!m_window.shouldClose()) {
         rndrr.do_moves(timer.now());
         float delta = std::chrono::duration<float>(timer.now() - millisec_since_epoch).count();
         float enred = delta/100.f;
-        // std::cout<< drg->selfRotate.w<< " "<< delta <<" "<< CLOCKS_PER_SEC << std::endl;
-        // // b3d.prev_time = millisec_since_epoch;
+
         // Clear the screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -365,6 +352,7 @@ int main() {
             scene.root->addChild(boardRoot);
 
         }
+        
         // View-projection matrices setup
         const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
         const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();

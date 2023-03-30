@@ -310,10 +310,16 @@ void Menu::drawHdrControls() {
     ImGui::InputFloat("Gamma", &m_renderConfig.gamma, 0.1f, 1.0f, "%.1f");
 }
 
-void Menu::drawBloomControls(){
+void Menu::drawBloomControls() {
     ImGui::Checkbox("Enable bloom", &m_renderConfig.enableBloom);
     ImGui::InputFloat("Brightness threshold", &m_renderConfig.bloomBrightThreshold, 0.1f, 1.0f, "%.1f");
     ImGui::InputInt("Blur iterations", (int*) &m_renderConfig.bloomIterations, 1, 3);
+}
+
+void Menu::drawParallaxControls() {
+    ImGui::SliderFloat("Parallax strength", &m_renderConfig.heightScale, 0.0f, 0.3f);
+    ImGui::InputFloat("Min depth layers", &m_renderConfig.minDepthLayers, 1.0f, 2.0f, "%.0f");
+    ImGui::InputFloat("Max depth layers", &m_renderConfig.maxDepthLayers, 1.0f, 2.0f, "%.0f");
 }
 
 void Menu::drawRenderTab() {
@@ -326,6 +332,12 @@ void Menu::drawRenderTab() {
 
         ImGui::Text("Bloom");
         drawBloomControls();
+
+        ImGui::NewLine();
+        ImGui::Separator();
+
+        ImGui::Text("Parallax");
+        drawParallaxControls();
 
         ImGui::EndTabItem();
     }

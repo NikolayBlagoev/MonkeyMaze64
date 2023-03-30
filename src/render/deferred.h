@@ -30,9 +30,9 @@ private:
     void initHdrBuffer();
     void initBuffers();
     void initShaders();
-    void bindMaterialTextures(const GPUMesh& mesh) const;
+    void bindMaterialTextures(const GPUMesh& mesh, const glm::vec3& cameraPos) const;
     void helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const;
-    void renderGeometry(const glm::mat4& viewProjectionMatrix) const;
+    void renderGeometry(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const;
     void bindGBufferTextures() const;
 
     void renderLighting(const glm::vec3& cameraPos, const float enred);

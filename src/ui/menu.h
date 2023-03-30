@@ -51,6 +51,7 @@ private:
     // Render tab
     void drawHdrControls();
     void drawBloomControls();
+    void drawParallaxControls();
     void drawRenderTab();
     /******************************/ 
 

@@ -37,17 +37,14 @@ DeferredRenderer::~DeferredRenderer() {
     glDeleteTextures(1, &hdrTex);
 }
 
-void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos, const float enred) {
-    glViewport(0, 0, utils::WIDTH, utils::HEIGHT);  // Set correct viewport size
-    renderGeometry(viewProjectionMatrix);           // Geometry pass
-
-    renderLighting(cameraPos, enred);                      // Lighting pass
-
-    copyGBufferDepth(hdrBuffer);                    // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
-    renderForward(viewProjectionMatrix);            // Render transparent objects which require forward rendering
-
-    renderPostProcessing();                         // Combine post-processing results; HDR tonemapping and gamma correction
-    copyGBufferDepth(0U);                           // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
+void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) {
+    glViewport(0, 0, utils::WIDTH, utils::HEIGHT);      // Set correct viewport size
+    renderGeometry(viewProjectionMatrix, cameraPos);    // Geometry pass
+    renderLighting(cameraPos, enred);                   // Lighting pass
+    copyGBufferDepth(hdrBuffer);                        // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
+    renderForward(viewProjectionMatrix);                // Render transparent objects which require forward rendering
+    renderPostProcessing();                             // Combine post-processing results; HDR tonemapping and gamma correction
+    copyGBufferDepth(0U);                               // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
 }
 
 void DeferredRenderer::initGBuffer() {
@@ -173,7 +170,7 @@ void DeferredRenderer::initShaders() {
     initLightingShader();
 }
 
-void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh) const {
+void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh, const glm::vec3& cameraPos) const {
     // Albedo
     if (!mesh.getAlbedo().expired()) {
         mesh.getAlbedo().lock()->bind(GL_TEXTURE0);
@@ -208,19 +205,33 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh) const {
     // AO
     if (!mesh.getAO().expired()) {
         mesh.getAO().lock()->bind(GL_TEXTURE0 + 4);
-        glUniform1i(14, 3);
+        glUniform1i(14, 4);
     }
     glUniform1i(15, !mesh.getAO().expired());
     glUniform1f(16, m_renderConfig.defaultAO);
+
+    // Displacement
+    if (!mesh.getDisplacement().expired()) {
+        mesh.getDisplacement().lock()->bind(GL_TEXTURE0 + 5);
+        glUniform1i(17, 5);
+    }
+    glUniform1i(18, !mesh.getDisplacement().expired());
+    glUniform1i(19, mesh.getIsHeight());
+    glUniform1f(20, m_renderConfig.heightScale);
+    glUniform1f(21, m_renderConfig.minDepthLayers);
+    glUniform1f(22, m_renderConfig.maxDepthLayers);
+    
+    // Camera position
+    glUniform3fv(23, 1, glm::value_ptr(cameraPos));
 }
+
 void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const{
-    if(mt == nullptr) return;
+    if (mt == nullptr) return;
    
     const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
-    if(mt->mesh != nullptr){
-        const GPUMesh& mesh                         = *(mt->mesh);
-        // std::cout<<"DRAWING"<<std::endl;
-
+    if (mt->mesh != nullptr) {
+        const GPUMesh& mesh = *(mt->mesh);
+        
         // Normals should be transformed differently than positions (ignoring translations + dealing with scaling)
         // https://paroj.github.io/gltut/Illumination/Tut09%20Normal%20Transformation.html
         const glm::mat4 mvpMatrix           = viewProjectionMatrix * modelMatrix;
@@ -231,15 +242,16 @@ void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform, cons
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvpMatrix));
         glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
         glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(normalModelMatrix));
-        bindMaterialTextures(mesh);
+        bindMaterialTextures(mesh, cameraPos);
 
-        mesh.draw();
-        
+        mesh.draw();   
     }
-    for(MeshTree* child : mt->children){
+    
+    for (MeshTree* child : mt->children) {
         helper(child, modelMatrix, viewProjectionMatrix);
     }
 }
+
 void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) const {
     // Bind the G-buffer and clear its previously held values
     glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
