@@ -5,11 +5,13 @@
 #include <render/deferred.h>
 #include <render/config.h>
 #include <render/lighting.h>
+#include <render/particle.h>
 #include <render/scene.h>
 
 class Menu {
 public:
-    Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager, DeferredRenderer& deferredRenderer);
+    Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager,
+         ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer);
 
     void draw(const glm::mat4& cameraMVP);
 
@@ -29,6 +31,9 @@ private:
     void drawAreaLightControls();
     void drawLightTab();
     void drawShadowTab();
+    void drawParticleParamControls();
+    void drawEmitterControls();
+    void drawParticleTab();
     void drawShaderLoader();
     void drawToonShadingControls();
     void drawShadingTab();
@@ -44,6 +49,7 @@ private:
     RenderConfig& m_renderConfig;
     Scene& m_scene;
     LightManager& m_lightManager;
+    ParticleEmitterManager& m_particleEmitterManager;
     DeferredRenderer& m_deferredRenderer;
 
     Shader debugShader;
@@ -51,6 +57,7 @@ private:
     size_t selectedMesh                 { 0U };
     size_t selectedPointLight           { 0U };
     size_t selectedAreaLight            { 0U };
+    size_t selectedParticleEmitter      { 0U };
     LightingModel selectedLightingModel { LightingModel::PBR };
 };
 

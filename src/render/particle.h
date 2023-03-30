@@ -35,59 +35,64 @@ struct ParticleShader {
 
 class ParticleEmitter {
 public:
-    ParticleEmitter(const RenderConfig& renderConfig, glm::vec3 position);
+    ParticleEmitter(glm::vec3 position, float velocityDeviation, float colorDeviation, float lifeDeviation, float sizeDeviation);
 
-    void update();
+    void update(float velocityDeviation, float colorDeviation, float lifeDeviation, float sizeDeviation);
 
     // Initial values used for initialisation and resurrection of particles
-    glm::vec3 m_baseVelocity    { 0.01f, 0.01f, 0.01f };
-    glm::vec4 m_baseColor       { 1.0f, 1.0f, 1.0f, 0.5f };
-    float m_baseLife            { 10.0f };
-    float m_baseSize            { 10.0f };
+    glm::vec3 m_baseVelocity    { 0.5f, 0.5f, 0.5f };
+    glm::vec4 m_baseColor       { 1.0f, 1.0f, 1.0f, 0.01f };
+    float m_baseLife            { 200.0f };
+    float m_baseSize            { 2.0f };
 
     float lifeDelta     { 0.01f };
-    float particleSize  { 5.0f };
     glm::vec3 m_position;
-
-    const RenderConfig& m_renderConfig;
 
     std::vector<Particle> particles;
     std::vector<ParticleShader> particlesShader;
 
 private:
-    glm::vec3 randomVelocity() const;
-    glm::vec4 randomColor() const;
-    float randomLife() const;
-    float randomSize() const;
-    void reviveParticle(size_t idx);
+    glm::vec3 randomVelocity(float velocityDeviation) const;
+    glm::vec4 randomColor(float colorDeviation) const;
+    float randomLife(float lifeDeviation) const;
+    float randomSize(float sizeDeviation) const;
+    void reviveParticle(size_t idx, float velocityDeviation, float colorDeviation, float lifeDeviation, float sizeDeviation);
 };
 
 class ParticleEmitterManager {
 public:
     ParticleEmitterManager(const RenderConfig& renderConfig);
 
-    void draw(GLuint renderBuffer, const glm::mat4& viewProjectionMatrix) const;
-    void updateEmitters() { for (ParticleEmitter& emitter : emitters) { emitter.update(); } }
+    void render(GLuint renderBuffer, const glm::mat4& viewProjectionMatrix) const;
+    void updateEmitters() { for (ParticleEmitter& emitter : emitters) { emitter.update(
+        m_renderConfig.velocityDeviation, m_renderConfig.colorDeviation, m_renderConfig.lifeDeviation, m_renderConfig.sizeDeviation
+    ); } }
 
-    void addEmitter(glm::vec3 position)     { emitters.emplace_back(m_renderConfig, position); }
+    void addEmitter(glm::vec3 position)     { emitters.emplace_back(position,
+                                                                    m_renderConfig.velocityDeviation,
+                                                                    m_renderConfig.colorDeviation,
+                                                                    m_renderConfig.lifeDeviation,
+                                                                    m_renderConfig.sizeDeviation); }
     void removeEmitter(size_t idx)          { emitters.erase(emitters.begin() + idx); }
     ParticleEmitter& emitterAt(size_t idx)  { return emitters[idx]; }
     size_t numEmitters()                    { return emitters.size(); }
 
 
 private:
+    static constexpr GLuint INVALID = 0xFFFFFFFF;
     static constexpr std::array<GLfloat, 12UL> vertexBufferData = {
         -0.5f,  -0.5f,  0.0f,
-         0.5f,  -0.5f,  0.0f,
         -0.5f,   0.5f,  0.0f,
-         0.5f,   0.5f,  0.0f
+         0.5f,   0.5f,  0.0f,
+         0.5f,  -0.5f,  0.0f
     };
 
     std::vector<ParticleEmitter> emitters;
 
     // OpenGL rendering
-    GLuint vertexVBO;
-    GLuint particlesVBO;
+    GLuint VAO          { INVALID };
+    GLuint vertexVBO    { INVALID };
+    GLuint particleVBO  { INVALID };
     Shader particleShader;
 
     const RenderConfig& m_renderConfig;

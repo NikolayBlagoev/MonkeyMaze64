@@ -9,15 +9,14 @@ DISABLE_WARNINGS_POP()
 #include <utils/misc_utils.hpp>
 #include <iostream>
 
-ParticleEmitter::ParticleEmitter(const RenderConfig& renderConfig, glm::vec3 position)
-    : m_position(position)
-    , m_renderConfig(renderConfig) {
+ParticleEmitter::ParticleEmitter(glm::vec3 position, float velocityDeviation, float colorDeviation, float lifeDeviation, float sizeDeviation)
+    : m_position(position) {
     for (size_t particleNum = 0UL; particleNum < utils::MAX_PARTICLES_PER_EMITTER; particleNum++) {
         // Generate particle data with minor random variation
-        glm::vec3 velocity  = randomVelocity();
-        glm::vec4 color     = randomColor();
-        float life          = randomLife();
-        float size          = randomSize();
+        glm::vec3 velocity  = randomVelocity(velocityDeviation);
+        glm::vec4 color     = randomColor(colorDeviation);
+        float life          = randomLife(lifeDeviation);
+        float size          = randomSize(sizeDeviation);
 
         // Create new particle and corresponding shader particle
         particles.emplace_back(m_position, color, size, velocity, life);
@@ -25,39 +24,39 @@ ParticleEmitter::ParticleEmitter(const RenderConfig& renderConfig, glm::vec3 pos
     }
 }
 
-glm::vec3 ParticleEmitter::randomVelocity() const {
-    return glm::vec3(std::max(0.0f, m_baseVelocity.x + utils::randomNumber(-m_renderConfig.velocityDeviation, m_renderConfig.velocityDeviation)),
-                     std::max(0.0f, m_baseVelocity.y + utils::randomNumber(-m_renderConfig.velocityDeviation, m_renderConfig.velocityDeviation)),
-                     std::max(0.0f, m_baseVelocity.z + utils::randomNumber(-m_renderConfig.velocityDeviation, m_renderConfig.velocityDeviation)));
+glm::vec3 ParticleEmitter::randomVelocity(float velocityDeviation) const {
+    return glm::vec3(m_baseVelocity.x + utils::randomNumber(-velocityDeviation, velocityDeviation),
+                     m_baseVelocity.y + utils::randomNumber(-velocityDeviation, velocityDeviation),
+                     m_baseVelocity.z + utils::randomNumber(-velocityDeviation, velocityDeviation));
 }
 
-glm::vec4 ParticleEmitter::randomColor() const {
-    return glm::vec4(std::max(0.0f, m_baseColor.r + utils::randomNumber(-m_renderConfig.colorDeviation, m_renderConfig.colorDeviation)),
-                     std::max(0.0f, m_baseColor.g + utils::randomNumber(-m_renderConfig.colorDeviation, m_renderConfig.colorDeviation)),
-                     std::max(0.0f, m_baseColor.b + utils::randomNumber(-m_renderConfig.colorDeviation, m_renderConfig.colorDeviation)),
-                     std::max(0.0f, m_baseColor.a + utils::randomNumber(-m_renderConfig.colorDeviation, m_renderConfig.colorDeviation)));
+glm::vec4 ParticleEmitter::randomColor(float colorDeviation) const {
+    return glm::vec4(std::clamp(m_baseColor.r + utils::randomNumber(-colorDeviation, colorDeviation), 0.0f, 1.0f),
+                     std::clamp(m_baseColor.g + utils::randomNumber(-colorDeviation, colorDeviation), 0.0f, 1.0f),
+                     std::clamp(m_baseColor.b + utils::randomNumber(-colorDeviation, colorDeviation), 0.0f, 1.0f),
+                     std::clamp(m_baseColor.a + utils::randomNumber(-colorDeviation, colorDeviation), 0.0f, 1.0f));
 }
 
-float ParticleEmitter::randomLife() const { return m_baseLife + utils::randomNumber(-m_renderConfig.lifeDeviation, m_renderConfig.lifeDeviation); }
+float ParticleEmitter::randomLife(float lifeDeviation) const { return m_baseLife + utils::randomNumber(-lifeDeviation, lifeDeviation); }
 
-float ParticleEmitter::randomSize() const { return m_baseSize + utils::randomNumber(-m_renderConfig.sizeDeviation, m_renderConfig.sizeDeviation); }
+float ParticleEmitter::randomSize(float sizeDeviation) const { return std::max(1.0f, m_baseSize + utils::randomNumber(-sizeDeviation, sizeDeviation)); }
 
 
-void ParticleEmitter::reviveParticle(size_t idx) {
+void ParticleEmitter::reviveParticle(size_t idx, float velocityDeviation, float colorDeviation, float lifeDeviation, float sizeDeviation) {
     Particle& particle              = particles[idx];
     ParticleShader& particleShader  = particlesShader[idx];
 
     particle.position   = m_position;
-    particle.color      = randomColor();
-    particle.velocity   = randomVelocity();
-    particle.life       = randomLife();
-    particle.size       = randomSize();
+    particle.color      = randomColor(colorDeviation);
+    particle.velocity   = randomVelocity(velocityDeviation);
+    particle.life       = randomLife(lifeDeviation);
+    particle.size       = randomSize(sizeDeviation);
     particleShader.position = particle.position;
     particleShader.color    = particle.color;
     particleShader.size     = particle.size;
 }
 
-void ParticleEmitter::update() {
+void ParticleEmitter::update(float velocityDeviation, float colorDeviation, float lifeDeviation, float sizeDeviation) {
     for (size_t particleIdx = 0UL; particleIdx < particles.size(); particleIdx++) {
         Particle& particle              = particles[particleIdx];
         ParticleShader& particleShader  = particlesShader[particleIdx];
@@ -66,7 +65,7 @@ void ParticleEmitter::update() {
             particle.position   += particle.velocity;
             particle.life       -= lifeDelta;
             particleShader.position = particle.position;
-        } else { reviveParticle(particleIdx); }
+        } else { reviveParticle(particleIdx, velocityDeviation, colorDeviation, lifeDeviation, sizeDeviation); }
     }
 }
 
@@ -80,24 +79,53 @@ ParticleEmitterManager::ParticleEmitterManager(const RenderConfig& renderConfig)
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 }
 
-void ParticleEmitterManager::draw(GLuint renderBuffer, const glm::mat4& viewProjectionMatrix) const {
+void ParticleEmitterManager::render(GLuint renderBuffer, const glm::mat4& viewProjectionMatrix) const {
     glBindFramebuffer(GL_FRAMEBUFFER, renderBuffer);
     particleShader.bind();
+    glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     updateAndBindAttributeBuffers(viewProjectionMatrix);
     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(viewProjectionMatrix));
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, static_cast<GLsizei>(emitters.size() * utils::MAX_PARTICLES_PER_EMITTER));
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_BLEND);
 }
 
 void ParticleEmitterManager::genAttributeBuffers() {
-    // VBO containing vertex data
-    glCreateBuffers(1, &vertexVBO);
-    glNamedBufferStorage(vertexVBO, sizeof(vertexBufferData), vertexBufferData.data(), GL_STATIC_DRAW);
+    // VAO holding all particle data
+    glCreateVertexArrays(1, &VAO);
 
-    // VBO containing particle data
-    glCreateBuffers(1, &particlesVBO);
-    glNamedBufferData(particlesVBO, 0, nullptr, GL_STREAM_DRAW); // No elements at objection creation as there are no emitters
+    // Create and specify format of VBO containing vertex data
+    glCreateBuffers(1, &vertexVBO);
+    glNamedBufferStorage(vertexVBO, sizeof(vertexBufferData), vertexBufferData.data(), 0);
+    glVertexArrayVertexBuffer(VAO, 0, vertexVBO, 0, sizeof(GLfloat));
+    glEnableVertexArrayAttrib(VAO, 0);
+    glVertexArrayAttribFormat(VAO, 0, 3, GL_FLOAT, false, sizeof(GLfloat));
+
+    // Create and specify format of VBO containing particle-specific data
+    glCreateBuffers(1, &particleVBO);
+    glNamedBufferData(particleVBO, 0, nullptr, GL_STREAM_DRAW);
+    glVertexArrayVertexBuffer(VAO, 1, vertexVBO, 0, sizeof(ParticleShader));
+    glEnableVertexArrayAttrib(VAO, 1);
+    glVertexArrayAttribFormat(VAO, 1, 3, GL_FLOAT, false, offsetof(ParticleShader, position));
+    glEnableVertexArrayAttrib(VAO, 2);
+    glVertexArrayAttribFormat(VAO, 2, 4, GL_FLOAT, false, offsetof(ParticleShader, color));
+    glEnableVertexArrayAttrib(VAO, 3);
+    glVertexArrayAttribFormat(VAO, 3, 1, GL_FLOAT, false, offsetof(ParticleShader, size));
+
+    // Tell OpenGL which VBO to get data at each location from
+    glVertexArrayAttribBinding(VAO, 0, 0);
+    glVertexArrayAttribBinding(VAO, 1, 1);
+    glVertexArrayAttribBinding(VAO, 2, 1);
+    glVertexArrayAttribBinding(VAO, 3, 1);
+    glVertexArrayAttribBinding(VAO, 4, 1);
+
+    // Instancing attribute divisors (tell OpenGL how frequently to update vertex attributes)
+    glVertexArrayBindingDivisor(VAO, 0, 0); // Reuse vertices for each index
+    glVertexArrayBindingDivisor(VAO, 1, 1); // Update particle data by one for each instance (i.e. each particles gets ITS OWN data ONLY)
+    glVertexArrayBindingDivisor(VAO, 2, 1); // Update particle data by one for each instance (i.e. each particles gets ITS OWN data ONLY)
+    glVertexArrayBindingDivisor(VAO, 3, 1); // Update particle data by one for each instance (i.e. each particles gets ITS OWN data ONLY)
+    glVertexArrayBindingDivisor(VAO, 4, 1); // Update particle data by one for each instance (i.e. each particles gets ITS OWN data ONLY)
 }
 
 std::vector<ParticleShader> ParticleEmitterManager::genSortedParticles(const glm::mat4& viewProjectionMatrix) const {
@@ -118,21 +146,8 @@ std::vector<ParticleShader> ParticleEmitterManager::genSortedParticles(const glm
 }
 
 void ParticleEmitterManager::updateAndBindAttributeBuffers(const glm::mat4& viewProjectionMatrix) const {
+    // Copy sorted particle data and bind VAO
     std::vector<ParticleShader> sortedParticles = genSortedParticles(viewProjectionMatrix);
-
-    // Copy particle data
-    glNamedBufferData(particlesVBO, sortedParticles.size() * sizeof(ParticleShader), nullptr, GL_STREAM_DRAW);
-    glNamedBufferSubData(particlesVBO, 0, sortedParticles.size() * sizeof(ParticleShader), sortedParticles.data());
-
-    // Define inputs to vertex shader
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, particlesVBO);
-    glVertexAttribPointer(1, sizeof(ParticleShader) / sizeof(GLfloat), GL_FLOAT, GL_FALSE, 0, nullptr);
-
-    // Instancing attribute divisors
-    glVertexAttribDivisor(0, 0);    // Always reuse the same 4 vertices
-    glVertexAttribDivisor(1, 1);    // One piece of particle data per particle
+    glNamedBufferData(particleVBO, sortedParticles.size() * sizeof(ParticleShader), sortedParticles.data(), GL_STREAM_DRAW);
+    glBindVertexArray(VAO);
 }

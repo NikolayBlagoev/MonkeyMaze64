@@ -1,19 +1,15 @@
 #version 460
 
-struct Particle {
-    vec3 position;
-    vec4 color;
-    float size;
-};
-
 layout(location = 0) uniform mat4 viewProjection;
 
 layout(location = 0) in vec3 vertexPos;
-layout(location = 1) in Particle particleData;
+layout(location = 1) in vec3 particlePosition;
+layout(location = 2) in vec4 particleColor;
+layout(location = 3) in float particleSize;
 
-layout(location = 0) out vec4 particleColor;
+layout(location = 0) out vec4 fragParticleColor;
 
 void main() {
-    particleColor   = particleData.color;
-    gl_Position     = viewProjection * vec4((particleData.position * particleData.size) + vertexPos, 1.0);
+    fragParticleColor   = particleColor;
+    gl_Position         = viewProjection * vec4(particlePosition + (particleSize * vertexPos), 1.0);
 }
