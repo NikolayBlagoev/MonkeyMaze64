@@ -100,27 +100,15 @@ void Menu::drawMeshControls() {
         [](const auto& str) { return str.c_str(); });
     ImGui::Combo("Selected mesh", (int*) &selectedMesh, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
 
-    // Selected mesh controls
-    if (m_scene.numMeshes() > 0U) {
-        ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.transformParams[selectedMesh].scale), 0.05f);
-        ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.transformParams[selectedMesh].rotate), 1.0f, 0.0f, 360.0f);
-        ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.transformParams[selectedMesh].translate), 0.05f);
-    }
-}
-
-void Menu::drawMeshTab() {
-    if (ImGui::BeginTabItem("Meshes")) {
-        ImGui::Text("Default materials (for objects lacking textures)");
-        drawMaterialControls();
-
-        ImGui::NewLine();
-        ImGui::Separator();
-
-        ImGui::Text("Mesh controls");
-        drawMeshControls();
+        // Selected mesh controls
+        if (m_scene.numMeshes() > 0U) {
+            ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.root->children[selectedMesh]->scale), 0.05f);
+            ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.root->children[selectedMesh]->selfRotate), 1.0f, 0.0f, 360.0f);
+            ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.root->children[selectedMesh]->offset), 0.05f);
+        }
 
         ImGui::EndTabItem();
-    }
+    
 }
 
 void Menu::drawGeneralLightControls() {
@@ -342,7 +330,21 @@ void Menu::drawRenderTab() {
         ImGui::EndTabItem();
     }
 }
+void Menu::drawMeshTab() {
+    if (ImGui::BeginTabItem("Meshes")) {
+        ImGui::Text("Default materials (for objects lacking textures)");
+        drawMaterialControls();
 
+        ImGui::NewLine();
+        ImGui::Separator();
+
+        ImGui::Text("Mesh controls");
+        drawMeshControls();
+
+
+        ImGui::EndTabItem();
+    }
+}
 void Menu::drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& color) {
     glPointSize(radius);
     glUniform4fv(0, 1, glm::value_ptr(screenPos));

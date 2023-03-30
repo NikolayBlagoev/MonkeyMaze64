@@ -210,17 +210,13 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh) const {
     glUniform1i(15, !mesh.getAO().expired());
     glUniform1f(16, m_renderConfig.defaultAO);
 }
-
-void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) const {
-    // Bind the G-buffer and clear its previously held values
-    glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Render each model
-    for (size_t modelNum = 0U; modelNum < m_scene.numMeshes(); modelNum++) {
-        const GPUMesh& mesh         = m_scene.meshAt(modelNum);
-        const glm::mat4 modelMatrix = m_scene.modelMatrix(modelNum);
+void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const{
+    if(mt == nullptr) return;
+   
+    const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
+    if(mt->mesh != nullptr){
+        const GPUMesh& mesh                         = *(mt->mesh);
+        // std::cout<<"DRAWING"<<std::endl;
 
         // Normals should be transformed differently than positions (ignoring translations + dealing with scaling)
         // https://paroj.github.io/gltut/Illumination/Tut09%20Normal%20Transformation.html
@@ -235,7 +231,20 @@ void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) con
         bindMaterialTextures(mesh);
 
         mesh.draw();
+        
     }
+    for(MeshTree* child : mt->children){
+        helper(child, modelMatrix, viewProjectionMatrix);
+    }
+}
+void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) const {
+    // Bind the G-buffer and clear its previously held values
+    glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Render each model
+    helper(m_scene.root, glm::mat4(1.f), viewProjectionMatrix);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
