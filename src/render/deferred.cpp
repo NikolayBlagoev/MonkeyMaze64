@@ -11,10 +11,12 @@ DISABLE_WARNINGS_POP()
 #include <utils/constants.h>
 #include <utils/render_utils.hpp>
 
-DeferredRenderer::DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager, std::weak_ptr<const Texture> xToonTex)
+DeferredRenderer::DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager,
+                                   ParticleEmitterManager& particleEmitterManager, std::weak_ptr<const Texture> xToonTex)
     : m_renderConfig(renderConfig)
     , m_scene(scene)
     , m_lightManager(lightManager)
+    , m_particleEmitterManager(particleEmitterManager)
     , m_xToonTex(xToonTex)
     , bloomFilter(renderConfig) {
     initBuffers();
@@ -28,7 +30,7 @@ DeferredRenderer::~DeferredRenderer() {
     glDeleteTextures(1, &normalTex);
     glDeleteTextures(1, &albedoTex);
     glDeleteTextures(1, &materialTex);
-    glDeleteRenderbuffers(1, &rboDepth);
+    glDeleteRenderbuffers(1, &rboDepthG);
 
     // HDR buffer
     glDeleteBuffers(1, &hdrBuffer);
@@ -39,8 +41,10 @@ void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::
     glViewport(0, 0, utils::WIDTH, utils::HEIGHT);  // Set correct viewport size
     renderGeometry(viewProjectionMatrix);           // Geometry pass
     renderLighting(cameraPos);                      // Lighting pass
+    copyGBufferDepth(hdrBuffer);                    // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
+    renderForward(viewProjectionMatrix);            // Render transparent objects which require forward rendering
     renderPostProcessing();                         // Combine post-processing results; HDR tonemapping and gamma correction
-    copyDepthBuffer();                              // Copy G-buffer depth data to main framebuffer
+    copyGBufferDepth(0U);                           // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
 }
 
 void DeferredRenderer::initGBuffer() {
@@ -78,10 +82,10 @@ void DeferredRenderer::initGBuffer() {
     glDrawBuffers(4, attachments.data());
 
     // Create and attach depth buffer
-    glCreateRenderbuffers(1, &rboDepth);
-    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+    glCreateRenderbuffers(1, &rboDepthG);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepthG);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, utils::WIDTH, utils::HEIGHT);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthG);
 
     // Check if framebuffer is complete
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) { std::cerr << "Failed to initialise deferred rendering framebuffer" << std::endl; }
@@ -102,6 +106,12 @@ void DeferredRenderer::initHdrBuffer() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdrTex, 0);
+
+    // Create and attach depth buffer
+    glCreateRenderbuffers(1, &rboDepthHDR);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepthHDR);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, utils::WIDTH, utils::HEIGHT);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthHDR);
 
     // Check if framebuffer is complete
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) { std::cerr << "Failed to initialise HDR intermediate framebuffer" << std::endl; }
@@ -285,6 +295,10 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
     utils::renderQuad();
 }
 
+void DeferredRenderer::renderForward(const glm::mat4& viewProjectionMatrix) {
+    m_particleEmitterManager.render(hdrBuffer, viewProjectionMatrix); // Only particles need forward shading for now
+}
+
 void DeferredRenderer::renderPostProcessing() {
     // Render post-processing effect(s)
     GLuint bloomTex;
@@ -311,9 +325,9 @@ void DeferredRenderer::renderPostProcessing() {
     utils::renderQuad();
 }
 
-void DeferredRenderer::copyDepthBuffer() {
+void DeferredRenderer::copyGBufferDepth(GLuint destinationBuffer) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Write to default framebuffer
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destinationBuffer);
     glBlitFramebuffer(0, 0, utils::WIDTH, utils::HEIGHT, 0, 0, utils::WIDTH, utils::HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

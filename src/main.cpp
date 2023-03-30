@@ -2,6 +2,7 @@
 #include <render/deferred.h>
 #include <render/lighting.h>
 #include <render/mesh.h>
+#include <render/particle.h>
 #include <render/scene.h>
 #include <render/texture.h>
 #include <ui/camera.h>
@@ -189,9 +190,10 @@ int main() {
     TextureManager textureManager;
     Scene scene;
     LightManager lightManager(renderConfig);
+    ParticleEmitterManager particleEmitterManager(renderConfig);
     std::weak_ptr<const Texture> xToonTex = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "toon_map.png");
-    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager, xToonTex);
-    Menu menu(scene, renderConfig, lightManager, deferredRenderer);
+    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
+    Menu menu(scene, renderConfig, lightManager, particleEmitterManager, deferredRenderer);
 
     // Register UI callbacks
     m_window.registerKeyCallback(keyCallback);
@@ -250,12 +252,19 @@ int main() {
     // Texture m_texture(utils::RESOURCES_DIR_PATH / "textures" / "checkerboard.png");
 
     // Add test lights
-    lightManager.addPointLight(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
-    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f));
+    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
+    lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 3.0f);
+    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 3.0f);
+    lightManager.addAreaLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
+    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
+
+    // Add particle emitter(s)
+    particleEmitterManager.addEmitter({ 1.0f, 1.0f, 1.0f });
+
+    // Init MeshTree
     MeshTree* boardRoot = new MeshTree();
     boardRoot->offset = offsetBoard;
+    
     // Main loop
     std::chrono::high_resolution_clock timer; 
     
@@ -340,6 +349,9 @@ int main() {
         ImGuiIO io = ImGui::GetIO();
         m_window.updateInput();
         if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
+
+        // Particle simulation
+        particleEmitterManager.updateEmitters();
 
         // Render point lights shadow maps
         const glm::mat4 pointLightShadowMapsProjection = renderConfig.pointShadowMapsProjectionMatrix();

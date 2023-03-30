@@ -21,6 +21,9 @@ namespace utils {
     constexpr float SHADOW_ASPECT_RATIO = static_cast<float>(SHADOWTEX_WIDTH) / static_cast<float>(SHADOWTEX_HEIGHT);
     constexpr int32_t SHADOW_START_IDX  = 64;
     constexpr float CUBE_SHADOW_FOV     = 90.0f; // Must be 90 degrees so that the cameras on the six sides of the cube touch each other
+
+    // Particles parameters
+    constexpr size_t MAX_PARTICLES_PER_EMITTER = 512UL;
     
     const std::filesystem::path RESOURCES_DIR_PATH  = RESOURCES_DIR;
     const std::filesystem::path SHADERS_DIR_PATH    = SHADERS_DIR;
