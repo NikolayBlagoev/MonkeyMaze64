@@ -81,8 +81,8 @@ public:
 private:
     static constexpr GLuint INVALID = 0xFFFFFFFF;
     static constexpr std::array<GLfloat, 12UL> vertexBufferData = {
-        -0.5f,  -0.5f,  0.0f,
-        -0.5f,   0.5f,  0.0f,
+        -0.5f,  0.5f,  0.0f,
+        -0.5f,   -0.5f,  0.0f,
          0.5f,   0.5f,  0.0f,
          0.5f,  -0.5f,  0.0f
     };

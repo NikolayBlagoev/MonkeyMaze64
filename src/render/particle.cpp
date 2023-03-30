@@ -98,20 +98,20 @@ void ParticleEmitterManager::genAttributeBuffers() {
     // Create and specify format of VBO containing vertex data
     glCreateBuffers(1, &vertexVBO);
     glNamedBufferStorage(vertexVBO, sizeof(vertexBufferData), vertexBufferData.data(), 0);
-    glVertexArrayVertexBuffer(VAO, 0, vertexVBO, 0, sizeof(GLfloat));
+    glVertexArrayVertexBuffer(VAO, 0, vertexVBO, 0, 3 * sizeof(GLfloat));
     glEnableVertexArrayAttrib(VAO, 0);
-    glVertexArrayAttribFormat(VAO, 0, 3, GL_FLOAT, false, sizeof(GLfloat));
+    glVertexArrayAttribFormat(VAO, 0, 3, GL_FLOAT, GL_FALSE, 0);
 
     // Create and specify format of VBO containing particle-specific data
     glCreateBuffers(1, &particleVBO);
     glNamedBufferData(particleVBO, 0, nullptr, GL_STREAM_DRAW);
     glVertexArrayVertexBuffer(VAO, 1, vertexVBO, 0, sizeof(ParticleShader));
     glEnableVertexArrayAttrib(VAO, 1);
-    glVertexArrayAttribFormat(VAO, 1, 3, GL_FLOAT, false, offsetof(ParticleShader, position));
+    glVertexArrayAttribFormat(VAO, 1, 3, GL_FLOAT, GL_FALSE, offsetof(ParticleShader, position));
     glEnableVertexArrayAttrib(VAO, 2);
-    glVertexArrayAttribFormat(VAO, 2, 4, GL_FLOAT, false, offsetof(ParticleShader, color));
+    glVertexArrayAttribFormat(VAO, 2, 4, GL_FLOAT, GL_FALSE, offsetof(ParticleShader, color));
     glEnableVertexArrayAttrib(VAO, 3);
-    glVertexArrayAttribFormat(VAO, 3, 1, GL_FLOAT, false, offsetof(ParticleShader, size));
+    glVertexArrayAttribFormat(VAO, 3, 1, GL_FLOAT, GL_FALSE, offsetof(ParticleShader, size));
 
     // Tell OpenGL which VBO to get data at each location from
     glVertexArrayAttribBinding(VAO, 0, 0);
