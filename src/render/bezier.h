@@ -80,7 +80,7 @@ class CompositeBezier3d : public BezierCurve3dGeneral{
             
             for(int i = 0; i < curves.size(); i++){
                 if(t-curves.at(i)->total_time<0.f){
-                    std::cout<<i<<" "<<curves.at(i)->pos_t(t).y<<std::endl;
+                   
                     return curves.at(i)->pos_t(t);
                 }
                 t = t - curves.at(i)->total_time;
@@ -200,7 +200,7 @@ class BezierCurveRenderer{
         };
         void do_moves(std::chrono::time_point<std::chrono::high_resolution_clock> curr_time){
             float delta = std::chrono::duration<float>(curr_time - start_time).count();
-            std::cout<<delta<<std::endl;
+            
             for(int i = 0; i < curves3d.size(); i++){
                 curves3d.at(i)->move(delta);
             }
@@ -208,7 +208,7 @@ class BezierCurveRenderer{
                 curves4d.at(i)->move(delta);
             }
             for(int i = 0; i < compcurves3d.size(); i++){
-                std::cout<<"MOVE"<<std::endl;
+                
                 compcurves3d.at(i)->move(delta);
             }
             for(int i = 0; i < compcurves4d.size(); i++){
