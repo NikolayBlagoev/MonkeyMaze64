@@ -93,6 +93,11 @@ vec3 blinnPhongSpecular(vec3 fragPos, vec3 fragNormal, vec3 fragAlbedo,
            vec3(0.0, 0.0, 0.0);
 }
 
+
+vec3 ambient(vec3 lightColor) {
+
+    return 0.1 * lightColor;
+}
 /*****************************************************************************************************/
 
 void main() {
@@ -129,4 +134,5 @@ void main() {
             fragColor.rgb += successFraction * blinnPhongSpecular(fragPos, fragNormal, fragAlbedo, lightColor, lightPosition);
         }
     }
+    fragColor.rgb+=ambient(vec3(1.0,1.0,1.0));
 }

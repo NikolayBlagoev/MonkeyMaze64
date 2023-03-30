@@ -193,5 +193,5 @@ void main() {
     }
     
     // Ambient lighting
-    fragColor.rgb += vec3(0.03) * fragAlbedo * ao;
+    fragColor.rgb += vec3(0.2) * fragAlbedo * ao;
 }
