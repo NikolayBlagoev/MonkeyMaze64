@@ -20,7 +20,7 @@ public:
     DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager, std::weak_ptr<const Texture> xToonTex);
     ~DeferredRenderer();
 
-    void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos);
+    void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos, const float enred);
     void initLightingShader();
 
 private:
@@ -31,7 +31,7 @@ private:
     void bindMaterialTextures(const GPUMesh& mesh) const;
     void renderGeometry(const glm::mat4& viewProjectionMatrix) const;
     void bindGBufferTextures() const;
-    void renderLighting(const glm::vec3& cameraPos);
+    void renderLighting(const glm::vec3& cameraPos, const float enred);
     void renderPostProcessing();
     void copyDepthBuffer();
     void helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const; 

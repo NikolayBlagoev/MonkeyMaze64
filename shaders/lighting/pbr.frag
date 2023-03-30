@@ -34,6 +34,8 @@ layout(location = 6) uniform float shadowFarPlane;
 layout(location = 7) uniform samplerCubeArrayShadow pointShadowTexArr;
 layout(location = 8) uniform sampler2DArrayShadow areaShadowTexArr;
 
+//ennred
+layout(location = 9) uniform float enred = 0.0f;
 // Quad texture to use with G-buffer
 layout(location = 0) in vec2 bufferCoords;
 
@@ -154,6 +156,8 @@ vec3 computeReflectance(vec3 fragPos, vec3 fragNormal,
 /*****************************************************************************************************/
 
 void main() {
+    
+    
     // Extract values from G-buffer
     vec3 fragPos        = texture(gPosition, bufferCoords).xyz;
     vec3 fragNormal     = texture(gNormal, bufferCoords).xyz;
@@ -193,5 +197,6 @@ void main() {
     }
     
     // Ambient lighting
-    fragColor.rgb += vec3(0.2) * fragAlbedo * ao;
+    fragColor.rgb += vec3(0.1) * fragAlbedo * ao;
+    fragColor.r += enred;
 }

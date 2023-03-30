@@ -281,6 +281,8 @@ int main() {
     bool flag = true;
     while (!m_window.shouldClose()) {
         rndrr.do_moves(timer.now());
+        float delta = std::chrono::duration<float>(timer.now() - millisec_since_epoch).count();
+        float enred = delta/100.f;
         // std::cout<< drg->selfRotate.w<< " "<< delta <<" "<< CLOCKS_PER_SEC << std::endl;
         // // b3d.prev_time = millisec_since_epoch;
         // Clear the screen
@@ -381,7 +383,7 @@ int main() {
         }
 
         // Render scene
-        deferredRenderer.render(m_viewProjectionMatrix, mainCamera.cameraPos());
+        deferredRenderer.render(m_viewProjectionMatrix, mainCamera.cameraPos(), enred);
 
         // Draw UI
         glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
