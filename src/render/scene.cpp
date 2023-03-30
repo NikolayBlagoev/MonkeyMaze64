@@ -43,6 +43,10 @@ static HitBox makeHitBox(Mesh& cpuMesh, bool allowCollision) {
 
 static int latestKey = 0;
 
+Scene::Scene() {
+    root = new MeshTree();
+}
+
 int Scene::addMesh(std::filesystem::path filePath, bool allowCollision) {
     if (!std::filesystem::exists(filePath))
         throw MeshLoadingException(fmt::format("File {} does not exist", filePath.string().c_str()));

@@ -28,6 +28,8 @@ struct HitBox {
 
 class Scene {
 public:
+    Scene();
+
     int addMesh(std::filesystem::path filePath, bool allowCollision = true);
     void addMesh(MeshTree* nd);
     void removeMesh(size_t idx);
