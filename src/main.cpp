@@ -29,7 +29,7 @@ DISABLE_WARNINGS_POP()
 #include <functional>
 #include <iostream>
 #include <vector>
-#include <movements/bezier.h>
+#include <render/bezier.h>
 #include <sys/time.h>
 #include <ctime>
 #include <chrono>
@@ -58,6 +58,7 @@ void signalChange(){
         cv.notify_all();
     }
 }
+
 void worker_thread()
 {
     
@@ -268,17 +269,18 @@ int main() {
     BezierCurve4d b4d = BezierCurve4d(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
     
     CompositeBezier3d b3c = CompositeBezier3d({&b3d,&b3d2}, true, 20.f);
+    
     std::chrono::time_point millisec_since_epoch = timer.now();
+    BezierCurveRenderer rndrr = BezierCurveRenderer(millisec_since_epoch);
     b3c.start_time = millisec_since_epoch;
     b4d.prev_time = millisec_since_epoch;
-    // b3d.total_time = 10.f; // in seconds
+    BezierCombo3dcomp combo1 = BezierCombo3dcomp(drg,&b3c, 0);
+    rndrr.add3dcomp(&combo1);
+    BezierCombo4d combo2 = BezierCombo4d(drg,&b4d, 0);
+    rndrr.add4d(&combo2);
     bool flag = true;
     while (!m_window.shouldClose()) {
-        millisec_since_epoch = timer.now();
-        float delta = std::chrono::duration<float>(millisec_since_epoch - b3c.start_time).count();
-        drg->offset=b3c.pos_t(delta);
-        glm::vec4 res = b4d.pos_t(delta/b4d.total_time);
-        drg->selfRotate = *(BezierCurve4d::qToangl(res));
+        rndrr.do_moves(timer.now());
         // std::cout<< drg->selfRotate.w<< " "<< delta <<" "<< CLOCKS_PER_SEC << std::endl;
         // // b3d.prev_time = millisec_since_epoch;
         // Clear the screen
