@@ -48,10 +48,20 @@ struct RenderConfig {
     float bloomBrightThreshold  { 1.0f };
     uint32_t bloomIterations    { 5U };
 
+    // Particles
+    float velocityDeviation { 0.001f };
+    float colorDeviation    { 0.1f };
+    float lifeDeviation     { 25.0f };
+    float sizeDeviation     { 0.001f };
+
     // Lighting debug
-    bool drawLights { false };
+    bool drawLights             { false };
     bool drawSelectedPointLight { false };
-    bool drawSelectedAreaLight { false };
+    bool drawSelectedAreaLight  { false };
+
+    // Particles debug
+    bool drawParticleEmitters           { false };
+    bool drawSelectedParticleEmitter    { false };
 
     // Shadow maps
     float areaShadowFovY    { 60.0f }; // Degrees

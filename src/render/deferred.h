@@ -11,13 +11,15 @@ DISABLE_WARNINGS_POP()
 #include <render/bloom.h>
 #include <render/config.h>
 #include <render/lighting.h>
+#include <render/particle.h>
 #include <render/scene.h>
 #include <render/texture.h>
 
 // TODO: Adapt to resize framebuffer sizes when window size changes
 class DeferredRenderer {
 public:
-    DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager, std::weak_ptr<const Texture> xToonTex);
+    DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager,
+                     ParticleEmitterManager& particleEmitterManager, std::weak_ptr<const Texture> xToonTex);
     ~DeferredRenderer();
 
     void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos, const float enred);
@@ -29,16 +31,21 @@ private:
     void initBuffers();
     void initShaders();
     void bindMaterialTextures(const GPUMesh& mesh) const;
+    void helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const;
     void renderGeometry(const glm::mat4& viewProjectionMatrix) const;
     void bindGBufferTextures() const;
+
     void renderLighting(const glm::vec3& cameraPos, const float enred);
+
+    void renderForward(const glm::mat4& viewProjectionMatrix);
+
     void renderPostProcessing();
-    void copyDepthBuffer();
-    void helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const; 
+    void copyGBufferDepth(GLuint destinationBuffer);
+
     static constexpr GLuint INVALID = 0xFFFFFFFF;
 
     GLuint gBuffer;     // Framebuffer ID for the G-buffer
-    GLuint rboDepth;    // Depth buffer
+    GLuint rboDepthG;    // G-buffer depth buffer
 
     // Textures for storing G-buffer attributes
     // Must match attributes used by fragment shader(s)
@@ -50,6 +57,7 @@ private:
     // Intermediate HDR framebuffer to render to before tonemapping and gamma correction
     GLuint hdrBuffer;
     GLuint hdrTex;
+    GLuint rboDepthHDR;
 
     // Shaders and shader-specific info
     Shader geometryPass;
@@ -60,6 +68,7 @@ private:
     RenderConfig& m_renderConfig;
     Scene& m_scene;
     LightManager& m_lightManager;
+    ParticleEmitterManager& m_particleEmitterManager;
 
     // Objects managing other rendering bits
     BloomFilter bloomFilter;

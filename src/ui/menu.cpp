@@ -12,10 +12,12 @@ DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <iostream>
 
-Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager, DeferredRenderer& deferredRenderer)
+Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager,
+           ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer)
     : m_scene(scene)
     , m_renderConfig(renderConfig)
     , m_lightManager(lightManager)
+    , m_particleEmitterManager(particleEmitterManager)
     , m_deferredRenderer(deferredRenderer) {
     ShaderBuilder debugShaderBuilder;
     debugShaderBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "debug" / "light_debug.vert");
@@ -36,6 +38,7 @@ void Menu::draw2D() {
     drawMeshTab();
     drawLightTab();
     drawShadowTab();
+    drawParticleTab();
     drawShadingTab();
     drawRenderTab();
 
@@ -45,6 +48,7 @@ void Menu::draw2D() {
 
 void Menu::draw3D(const glm::mat4& cameraMVP) {
     drawLights(cameraMVP);
+    drawParticleEmitters(cameraMVP);
 }
 
 void Menu::drawCameraTab() {
@@ -203,6 +207,68 @@ void Menu::drawShadowTab() {
     }
 }
 
+void Menu::drawParticleParamControls() {
+    ImGui::Checkbox("Draw all emitters", &m_renderConfig.drawParticleEmitters);
+
+    ImGui::SliderFloat("Velocity deviation", &m_renderConfig.velocityDeviation, 0.0001f, 0.01f);
+    ImGui::SliderFloat("Color deviation", &m_renderConfig.colorDeviation, 0.0f, 0.20f);
+    ImGui::SliderFloat("Life deviation", &m_renderConfig.lifeDeviation, 0.0f, 10.0f);
+    ImGui::SliderFloat("Size deviation", &m_renderConfig.sizeDeviation, 0.0f, 0.5f);
+}
+
+void Menu::drawEmitterControls() {
+    // Add / remove / draw controls
+    if (ImGui::Button("Add##particle")) { m_particleEmitterManager.addEmitter(glm::vec3(0.0f, 0.0f, 0.0f)); }
+    if (ImGui::Button("Remove selected##particle")) {
+        if (selectedParticleEmitter < m_particleEmitterManager.numEmitters()) {
+            m_particleEmitterManager.removeEmitter(selectedParticleEmitter);
+            selectedParticleEmitter = 0U;
+        }
+    }
+    ImGui::Checkbox("Highlight selected##particle", &m_renderConfig.drawSelectedParticleEmitter);
+    ImGui::NewLine();
+
+    // Selection controls
+    std::vector<std::string> options;
+    for (size_t particleEmitterIdx = 0U; particleEmitterIdx < m_particleEmitterManager.numEmitters(); particleEmitterIdx++) { options.push_back("Emitter " + std::to_string(particleEmitterIdx + 1)); }
+    std::vector<const char*> optionsPointers;
+    std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
+        [](const auto& str) { return str.c_str(); });
+    ImGui::Combo("Selected emitter", (int*) &selectedParticleEmitter, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
+
+    // Selected area light controls (hashes prevent ID conflicts https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-windows-with-the-same-label)
+    if (m_particleEmitterManager.numEmitters() > 0U) {
+        ParticleEmitter& selectedEmitter = m_particleEmitterManager.emitterAt(selectedParticleEmitter);
+
+        ImGui::NewLine();
+        ImGui::Text("New particle parameters");
+        ImGui::DragFloat3("Base velocity", glm::value_ptr(selectedEmitter.m_baseVelocity), 0.0001f);
+        ImGui::ColorEdit4("Base colour", glm::value_ptr(selectedEmitter.m_baseColor));
+        ImGui::InputFloat("Base life", &selectedEmitter.m_baseLife, 1.0f, 10.0f);
+        ImGui::InputFloat("Base size", &selectedEmitter.m_baseSize, 0.001f, 0.1f);
+
+        ImGui::NewLine();
+        ImGui::Text("Emitter paramaters");
+        ImGui::InputFloat("Life delta (controls decay rate)", &selectedEmitter.lifeDelta, 0.01f, 1.0f);
+        ImGui::DragFloat3("Position##particle", glm::value_ptr(selectedEmitter.m_position), 0.05f);
+    }
+}
+
+void Menu::drawParticleTab() {
+    if (ImGui::BeginTabItem("Particles")) {
+        ImGui::Text("Parameter controls");
+        drawParticleParamControls();
+
+        ImGui::NewLine();
+        ImGui::Separator();
+
+        ImGui::Text("Emitter controls");
+        drawEmitterControls();
+
+        ImGui::EndTabItem();
+    }
+}
+
 void Menu::drawShaderLoader() {
     // Shader selection controls
     constexpr auto optionsDiffuse = magic_enum::enum_names<LightingModel>();
@@ -319,6 +385,26 @@ void Menu::drawLights(const glm::mat4& cameraMVP) {
     if (m_renderConfig.drawSelectedAreaLight && m_lightManager.numAreaLights() > 0U) {
         const AreaLight& light      = m_lightManager.areaLightAt(selectedAreaLight);
         const glm::vec4 screenPos   = cameraMVP * glm::vec4(light.position.x, light.position.y, light.position.z, 1.0f);
+        drawPoint(40.0f, screenPos, glm::vec3(1.0f, 1.0f, 1.0f));
+    }
+}
+
+void Menu::drawParticleEmitters(const glm::mat4& cameraMVP) {
+    debugShader.bind();
+
+    // Draw all emitters
+    if (m_renderConfig.drawParticleEmitters) {
+        for (size_t emitterIdx = 0U; emitterIdx < m_particleEmitterManager.numEmitters(); emitterIdx++) {
+            const ParticleEmitter& emitter  = m_particleEmitterManager.emitterAt(emitterIdx);
+            const glm::vec4 screenPos       = cameraMVP * glm::vec4(emitter.m_position.x, emitter.m_position.y, emitter.m_position.z, 1.0f);
+            drawPoint(10.0f, screenPos, emitter.m_baseColor);
+        }
+    }
+
+    // Draw selected emitter if it exists
+    if (m_renderConfig.drawSelectedParticleEmitter && m_particleEmitterManager.numEmitters() > 0U) {
+        const ParticleEmitter& emitter  = m_particleEmitterManager.emitterAt(selectedParticleEmitter);
+        const glm::vec4 screenPos       = cameraMVP * glm::vec4(emitter.m_position.x, emitter.m_position.y, emitter.m_position.z, 1.0f);
         drawPoint(40.0f, screenPos, glm::vec3(1.0f, 1.0f, 1.0f));
     }
 }
