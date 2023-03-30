@@ -40,7 +40,7 @@ DeferredRenderer::~DeferredRenderer() {
 void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) {
     glViewport(0, 0, utils::WIDTH, utils::HEIGHT);      // Set correct viewport size
     renderGeometry(viewProjectionMatrix, cameraPos);    // Geometry pass
-    renderLighting(cameraPos);                          // Lighting pass
+    renderLighting(cameraPos, enred);                   // Lighting pass
     copyGBufferDepth(hdrBuffer);                        // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
     renderForward(viewProjectionMatrix);                // Render transparent objects which require forward rendering
     renderPostProcessing();                             // Combine post-processing results; HDR tonemapping and gamma correction
@@ -225,17 +225,13 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh, const glm::vec3
     glUniform3fv(23, 1, glm::value_ptr(cameraPos));
 }
 
-void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
-    // Bind the G-buffer and clear its previously held values
-    glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Render each model
-    for (size_t modelNum = 0U; modelNum < m_scene.numMeshes(); modelNum++) {
-        const GPUMesh& mesh         = m_scene.meshAt(modelNum);
-        const glm::mat4 modelMatrix = m_scene.modelMatrix(modelNum);
-
+void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const{
+    if (mt == nullptr) return;
+   
+    const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
+    if (mt->mesh != nullptr) {
+        const GPUMesh& mesh = *(mt->mesh);
+        
         // Normals should be transformed differently than positions (ignoring translations + dealing with scaling)
         // https://paroj.github.io/gltut/Illumination/Tut09%20Normal%20Transformation.html
         const glm::mat4 mvpMatrix           = viewProjectionMatrix * modelMatrix;
@@ -248,8 +244,22 @@ void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix, con
         glUniformMatrix3fv(2, 1, GL_FALSE, glm::value_ptr(normalModelMatrix));
         bindMaterialTextures(mesh, cameraPos);
 
-        mesh.draw();
+        mesh.draw();   
     }
+    
+    for (MeshTree* child : mt->children) {
+        helper(child, modelMatrix, viewProjectionMatrix);
+    }
+}
+
+void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) const {
+    // Bind the G-buffer and clear its previously held values
+    glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Render each model
+    helper(m_scene.root, glm::mat4(1.f), viewProjectionMatrix);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -269,7 +279,7 @@ void DeferredRenderer::bindGBufferTextures() const {
     glUniform1i(3, utils::G_BUFFER_TEX_START_IDX + 3);
 }
 
-void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
+void DeferredRenderer::renderLighting(const glm::vec3& cameraPos, const float enred) {
     // Bind HDR framebuffer and clear previous values
     glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -279,6 +289,7 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
     bindGBufferTextures();
     glUniform3fv(4, 1, glm::value_ptr(cameraPos));
     glUniform1f(6, m_renderConfig.shadowFarPlane);
+    glUniform1f(9, enred);
     m_lightManager.bind();
 
     // Bind shader-specific uniforms

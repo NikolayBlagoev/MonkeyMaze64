@@ -22,7 +22,7 @@ public:
                      ParticleEmitterManager& particleEmitterManager, std::weak_ptr<const Texture> xToonTex);
     ~DeferredRenderer();
 
-    void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos);
+    void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos, const float enred);
     void initLightingShader();
 
 private:
@@ -31,10 +31,14 @@ private:
     void initBuffers();
     void initShaders();
     void bindMaterialTextures(const GPUMesh& mesh, const glm::vec3& cameraPos) const;
+    void helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const;
     void renderGeometry(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const;
     void bindGBufferTextures() const;
-    void renderLighting(const glm::vec3& cameraPos);
+
+    void renderLighting(const glm::vec3& cameraPos, const float enred);
+
     void renderForward(const glm::mat4& viewProjectionMatrix);
+
     void renderPostProcessing();
     void copyGBufferDepth(GLuint destinationBuffer);
 
