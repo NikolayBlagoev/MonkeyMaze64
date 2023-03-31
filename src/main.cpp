@@ -31,7 +31,6 @@ DISABLE_WARNINGS_POP()
 #include <iostream>
 #include <vector>
 #include <render/bezier.h>
-#include <sys/time.h>
 #include <ctime>
 #include <chrono>
 #include <generator/generator.h>
@@ -184,7 +183,7 @@ CameraObj* makeCamera(GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMe
     return cam;
 }
 
-CameraObj* addObjectsRoom(MeshTree* room, Defined* roomTile, GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMesh* stand1){
+void addObjectsRoom(MeshTree* room, Defined* roomTile, GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMesh* stand1){
     for(int i = 0; i < roomTile->objs.size(); i++){
         if(roomTile->objs.at(i)->type == 0){
             CameraObj* cam = makeCamera(aperture, camera, stand2, stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec3(1.f));
@@ -243,10 +242,6 @@ int main() {
     scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
     MeshTree* drg = new MeshTree(&dragon);
     scene.addMesh(drg);
-    GPUMesh camera = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "camera.obj");
-    GPUMesh stand2 = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "stand2.obj");
-    GPUMesh stand1 = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "stand1.obj");
-    GPUMesh aperture = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "aperture.obj");
     GPUMesh crossing = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj");
     GPUMesh room = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj");
     GPUMesh tjunction = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj");
@@ -307,19 +302,19 @@ int main() {
                     }else if(boardCopy[i][j]->tileType == 2 ){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 270.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1);
+                        // addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1);
                     }else if(boardCopy[i][j]->tileType == 3){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1);
+                        // addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1);
                     }else if(boardCopy[i][j]->tileType == 4){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1);
+                        // addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1);
                     }else if(boardCopy[i][j]->tileType == 5){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 180.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1);
+                        // addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1);
                     }else if(boardCopy[i][j]->tileType == 6){
                         boardRoot->addChild(new MeshTree(&crossing, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 7){

@@ -1,11 +1,13 @@
-#pragma once
+#ifndef _BEZIER_H_
+#define _BEZIER_H_
+
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <cmath>
-#include <sys/time.h>
 #include <ctime>
 #include <vector>
 #include <chrono>
+#include <time.h>
 #include "mesh_tree.h"
 
 class BezierCurve3dGeneral{
@@ -99,7 +101,7 @@ class CompositeBezier4d : public BezierCurve4dGeneral{
         };
         glm::vec4 pos_t(float t){
             if(loop){
-                int rem = floor(t/total);
+                int rem = static_cast<int>(floor(t / total));
                 t = total - t*rem;
             }
             if(t<0) curves.at(0)->p1;
@@ -215,17 +217,19 @@ class BezierCurveRenderer{
                 compcurves4d.at(i)->move(delta);
             }
         };
-        int add3d(BezierCombo3d* curve3d){
+        size_t add3d(BezierCombo3d* curve3d){
             curves3d.push_back(curve3d);
-            return curves3d.size()-1;
+            return curves3d.size() - 1UL;
         }
-        int add3dcomp(BezierCombo3dcomp* curve3d){
+        size_t add3dcomp(BezierCombo3dcomp* curve3d){
             compcurves3d.push_back(curve3d);
-            return compcurves3d.size()-1;
+            return compcurves3d.size() - 1UL;
         }
-        int add4d(BezierCombo4d* curve4d){
+        size_t add4d(BezierCombo4d* curve4d){
             curves4d.push_back(curve4d);
-            return curves4d.size()-1;
+            return curves4d.size() - 1UL;
         }
     
 };
+
+#endif

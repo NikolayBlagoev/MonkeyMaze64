@@ -12,7 +12,7 @@ uniform float weights[3] = float[](0.2270270270, 0.3162162162, 0.0702702703);  /
 
 layout(location = 0) in vec2 bufferCoords;
 
-layout(location = 0) out vec4 fragColor;
+layout(location = 0) out vec3 fragColor;
 
 // More efficient Gaussian sampling relying on bilinear sampling (https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/)
 void main() {             
@@ -30,5 +30,5 @@ void main() {
             result += texture(image, bufferCoords - vec2(0.0, texOffset.y * offsets[iteration])).rgb * weights[iteration];
         }
     }
-    fragColor = vec4(result, 1.0);
+    fragColor = result;
 }

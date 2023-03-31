@@ -37,7 +37,7 @@ DeferredRenderer::~DeferredRenderer() {
     glDeleteTextures(1, &hdrTex);
 }
 
-void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) {
+void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos, const float enred) {
     glViewport(0, 0, utils::WIDTH, utils::HEIGHT);      // Set correct viewport size
     renderGeometry(viewProjectionMatrix, cameraPos);    // Geometry pass
     renderLighting(cameraPos, enred);                   // Lighting pass
@@ -225,7 +225,8 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh, const glm::vec3
     glUniform3fv(23, 1, glm::value_ptr(cameraPos));
 }
 
-void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix) const{
+void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform,
+                              const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
     if (mt == nullptr) return;
    
     const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
@@ -248,18 +249,18 @@ void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform, cons
     }
     
     for (MeshTree* child : mt->children) {
-        helper(child, modelMatrix, viewProjectionMatrix);
+        helper(child, modelMatrix, viewProjectionMatrix, cameraPos);
     }
 }
 
-void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix) const {
+void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
     // Bind the G-buffer and clear its previously held values
     glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Render each model
-    helper(m_scene.root, glm::mat4(1.f), viewProjectionMatrix);
+    helper(m_scene.root, glm::mat4(1.f), viewProjectionMatrix, cameraPos);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

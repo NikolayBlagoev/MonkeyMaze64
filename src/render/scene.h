@@ -29,7 +29,7 @@ public:
 
     glm::mat4 modelMatrix(size_t idx);
     static glm::mat4 modelMatrix(MeshTree* mt, const glm::mat4& currTransform);
-    MeshTree* root;
+    MeshTree* root { nullptr };
     std::vector<MeshTransform> transformParams;
 
 private:

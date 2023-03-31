@@ -31,7 +31,7 @@ void BloomFilter::initBrightBuffer() {
     // Create texture to render to
     glCreateTextures(GL_TEXTURE_2D, 1, &brightTex);
     glBindTexture(GL_TEXTURE_2D, brightTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGB, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brightTex, 0);
@@ -50,7 +50,7 @@ void BloomFilter::initBlurBuffers() {
     for (size_t blurIdx = 0UL; blurIdx < 2UL; blurIdx++) {
         glBindFramebuffer(GL_FRAMEBUFFER, blurBuffers[blurIdx]);
         glBindTexture(GL_TEXTURE_2D, blurTextures[blurIdx]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGB, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -95,8 +95,8 @@ GLuint BloomFilter::computeBlur() {
         glUniform1i(1, horizontal);
         utils::renderQuad();
 
-        horizontal = !horizontal;
-        if (firstIteration) { firstIteration = false; }
+        horizontal      = !horizontal;
+        firstIteration  = false;
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
