@@ -195,10 +195,14 @@ int main() {
     // Init core objects
     *ready = false;
     std::thread worker(worker_thread);
-    
+
+    glm::vec3 playerPos = glm::vec3(0.0f, 1.0f, 1.0f);
+    glm::vec3 playerCameraPos = playerPos + glm::vec3(0.0f, 1.0f, 1.0f);
+
     RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
-    Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
+    Camera mainCamera(&m_window, renderConfig, glm::vec3(2.0f, 3.0f, 0.0f), -glm::vec3(1.0f, 1.1f, 0.0f));
+    Camera playerCamera(&m_window, renderConfig, playerCameraPos, playerPos - playerCameraPos);
     TextureManager textureManager;
     Scene scene;
     LightManager lightManager(renderConfig);
@@ -237,10 +241,25 @@ int main() {
     std::weak_ptr<const Texture> stoneAO        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
 
     // Add models
-    Mesh dragon = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj"));
-    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
-    MeshTree* drg = new MeshTree(&dragon);
-    scene.addMesh(drg);
+    Mesh dragonMesh = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj"));
+    // scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
+
+    MeshTree* bezierDragon = new MeshTree(&dragonMesh);
+    scene.addMesh(bezierDragon);
+
+    MeshTree* playerDragon = new MeshTree(&dragonMesh, playerPos,
+                                          glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                                          glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                                          glm::vec3(1.0f),
+                                          true);
+    scene.addMesh(playerDragon);
+
+    scene.addMesh(new MeshTree(&dragonMesh, playerPos + glm::vec3(1.0f, 0.0f, 0.0f),
+                                   glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                                   glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                                   glm::vec3(1.0f),
+                                   false));
+
     Mesh crossing = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj"));
     Mesh room = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj"));
     Mesh tjunction = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj"));
@@ -270,14 +289,16 @@ int main() {
     BezierCurveRenderer rndrr = BezierCurveRenderer(millisec_since_epoch);
     b3c.start_time = millisec_since_epoch;
     b4d.prev_time = millisec_since_epoch;
-    BezierCombo3dcomp combo1 = BezierCombo3dcomp(drg,&b3c, 0);
+    BezierCombo3dcomp combo1 = BezierCombo3dcomp(bezierDragon, &b3c, 0);
     rndrr.add3dcomp(&combo1);
-    BezierCombo4d combo2 = BezierCombo4d(drg,&b4d, 0);
+    BezierCombo4d combo2 = BezierCombo4d(bezierDragon, &b4d, 0);
     rndrr.add4d(&combo2);
     bool flag = true;
     
     // Main loop
     while (!m_window.shouldClose()) {
+        Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
+
         rndrr.do_moves(timer.now());
         float delta = std::chrono::duration<float>(timer.now() - millisec_since_epoch).count();
         float enred = delta/100.f;
@@ -346,15 +367,20 @@ int main() {
             scene.root->addChild(boardRoot);
 
         }
-        
-        // View-projection matrices setup
-        const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
 
         // Controls
         ImGuiIO io = ImGui::GetIO();
         m_window.updateInput();
-        if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
+        if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
+            if (renderConfig.controlPlayer)
+                currentCamera.updateInput(playerDragon);
+            else
+                currentCamera.updateInput();
+        }
+
+        // View-projection matrices setup
+        const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * currentCamera.viewMatrix();
 
         // Particle simulation
         particleEmitterManager.updateEmitters();
@@ -392,7 +418,7 @@ int main() {
         }
 
         // Render scene
-        deferredRenderer.render(m_viewProjectionMatrix, mainCamera.cameraPos(), 0.f);
+        deferredRenderer.render(m_viewProjectionMatrix, currentCamera.cameraPos(), 0.f);
 
         // Draw UI
         glViewport(0, 0, utils::WIDTH, utils::HEIGHT);

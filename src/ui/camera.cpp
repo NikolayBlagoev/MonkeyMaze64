@@ -5,6 +5,8 @@ DISABLE_WARNINGS_PUSH()
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <iostream>
+
 DISABLE_WARNINGS_POP()
 
 Camera::Camera(Window* pWindow, const RenderConfig& renderConfig)
@@ -74,8 +76,11 @@ void Camera::updateInput() {
 
         // Mouse movement
         const glm::dvec2 cursorPos  = m_pWindow->getCursorPos();
-        const glm::vec2 delta       = m_renderConfig.lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
+        glm::vec2 delta             = m_renderConfig.lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
         m_prevCursorPos             = cursorPos;
+        if (m_renderConfig.invertControls)
+            delta *= -1;
+
         if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
             if (delta.x != 0.0f) { rotateY(delta.x); }
             if (!m_renderConfig.constrainVertical && delta.y != 0.0f) { rotateX(delta.y); }
@@ -133,6 +138,8 @@ void Camera::updateInput(MeshTree *mesh) {
         m_prevCursorPos = cursorPos;
         if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
 
+            std::cout << delta.x << " " << delta.y  << std::endl;
+
             glm::vec3 objectPos = mesh->modelMatrix() * glm::vec4(glm::vec3(0.0f), 1.0f);
             glm::vec3 vecToObject = objectPos - m_position;
             // move to object
@@ -144,8 +151,8 @@ void Camera::updateInput(MeshTree *mesh) {
             mesh->transform.selfRotate.y += glm::degrees(delta.x);
 
             if (!m_renderConfig.constrainVertical) {
-                rotateX(delta.y);
-                mesh->transform.selfRotate.x -= glm::degrees(delta.y);
+                rotateX(-delta.y);
+                mesh->transform.selfRotate.x -= glm::degrees(-delta.y);
             }
 
             // move back

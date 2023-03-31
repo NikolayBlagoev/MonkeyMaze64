@@ -36,10 +36,10 @@ static HitBox makeHitBox(Mesh& cpuMesh, bool allowCollision) {
     return {allowCollision, points};
 }
 
-MeshTree::MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl) {
+MeshTree::MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision) {
     this->mesh = new GPUMesh(*msh);
     this->transform = {off, rots, rotp, scl};
-    this->hitBox = makeHitBox(*msh, true);
+    this->hitBox = makeHitBox(*msh, allowCollision);
 }
 
 MeshTree::MeshTree(){
@@ -50,13 +50,13 @@ MeshTree::MeshTree(){
     this->mesh = nullptr;
 }
 
-MeshTree::MeshTree(Mesh* msh){
+MeshTree::MeshTree(Mesh* msh, bool allowCollision) {
     this->transform = {glm::vec3(0.f),
                        glm::vec4(0.f,1.f,0.f,0.f),
                        glm::vec4(0.f,1.f,0.f,0.f),
                        glm::vec3(1.f)};
     this->mesh = new GPUMesh(*msh);
-    this->hitBox = makeHitBox(*msh, true);
+    this->hitBox = makeHitBox(*msh, allowCollision);
 }
 
 void MeshTree::addChild(MeshTree* child){
@@ -109,7 +109,7 @@ glm::vec3 MeshTree::getTransformedHitBoxMiddle() {
 }
 
 bool MeshTree::collide(MeshTree *other) {
-    return !this->hitBox.allowCollision && !other->hitBox.allowCollision
+    return (!this->hitBox.allowCollision || !other->hitBox.allowCollision)
             && this->getTransformedHitBox().collides(other->getTransformedHitBox());
 }
 
