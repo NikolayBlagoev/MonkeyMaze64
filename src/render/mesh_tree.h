@@ -2,6 +2,7 @@
 #define _MESH_TREE_H_
 
 #include "mesh.h"
+#include "utils/hitBox.h"
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/vec3.hpp>
@@ -11,14 +12,31 @@ DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <vector>
 
-
+struct MeshTransform {
+    glm::vec3 translate;
+    glm::vec4 selfRotate; // ROTATE AROUND AXIS
+    glm::vec4 rotateParent;
+    glm::vec3 scale;
+};
 
 class MeshTree {
 public:
-    MeshTree(GPUMesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl);
-    int addChild(MeshTree* child);
+    MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl);
+    void addChild(MeshTree* child);
     MeshTree();
-    MeshTree(GPUMesh* msh);
+    MeshTree(Mesh* msh);
+
+    glm::mat4 getCurrentTransform();
+
+    glm::mat4 modelMatrix();
+
+    HitBox getTransformedHitBox();
+    glm::vec3 getTransformedHitBoxMiddle();
+
+    bool collide(MeshTree* other);
+
+    bool tryTranslation(glm::vec3 translation);
+
     // void addMesh(std::filesystem::path filePath);
     // void removeMesh(size_t idx);
 
@@ -31,10 +49,9 @@ public:
 
 public:
     GPUMesh* mesh;
-    glm::vec3 offset;
-    glm::vec4 selfRotate;
-    glm::vec4 rotateParent;
-    glm::vec3 scale;
+    MeshTransform transform;
+    HitBox hitBox;
+    MeshTree* parent { nullptr };
     std::vector<MeshTree*> children;
 };
 

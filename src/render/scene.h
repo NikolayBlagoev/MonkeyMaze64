@@ -10,12 +10,7 @@ DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <vector>
 
-struct MeshTransform {
-    glm::vec3 scale;
-    glm::vec4 selfRotate; // ROTATE AROUND AXIS
-    glm::vec4 rotateParent;
-    glm::vec3 translate;
-};
+
 
 class Scene {
 public:

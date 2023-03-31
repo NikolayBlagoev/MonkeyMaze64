@@ -29,7 +29,7 @@ void Scene::removeMesh(size_t idx) {
 
 glm::mat4 Scene::modelMatrix(size_t idx) {
     // const MeshTransform& meshTransform = transformParams[idx];
-    const MeshTransform& meshTransform = {root->children[idx]->scale, root->children[idx]->selfRotate, root->children[idx]->rotateParent, root->children[idx]->offset};
+    const MeshTransform& meshTransform = root->children[idx]->transform;
     // Translate
     glm::mat4 finalTransform = glm::mat4(1.f);
     // Rotate
@@ -50,25 +50,4 @@ glm::mat4 Scene::modelMatrix(size_t idx) {
     return glm::scale(finalTransform, meshTransform.scale);
 }
 
-glm::mat4 Scene::modelMatrix(MeshTree* mt, const glm::mat4& currTransform) {
-    // const MeshTransform& meshTransform = transformParams[idx];
-    const MeshTransform& meshTransform = {mt->scale, mt->selfRotate, mt->rotateParent, mt->offset};
-    // Translate
-     
-    // Rotate
-    glm::vec3 axis = glm::normalize(glm::vec3(meshTransform.rotateParent.x, meshTransform.rotateParent.y, meshTransform.rotateParent.z));
-    glm::mat4 finalTransform = glm::rotate(currTransform, glm::radians(meshTransform.rotateParent.w), axis);
-    // finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    // finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
-
-    finalTransform = glm::translate(finalTransform, meshTransform.translate);
-    axis = glm::normalize(glm::vec3(meshTransform.selfRotate.x, meshTransform.selfRotate.y, meshTransform.selfRotate.z));
-    // Rotate
-    finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.w), axis);
-    // finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    // finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    // Scale
-    return glm::scale(finalTransform, meshTransform.scale);
-}
