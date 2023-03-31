@@ -72,26 +72,21 @@ glm::mat4 MeshTree::modelMatrix() {
     else
         currTransform = parent->modelMatrix();
 
-    // const MeshTransform& meshTransform = transformParams[idx];
-    // const MeshTransform& meshTransform = {mt->scale, mt->selfRotate, mt->rotateParent, mt->offset};
     // Translate
+    currTransform = glm::translate(currTransform, transform.translate);
 
     // Rotate
-    glm::vec3 axis = glm::normalize(glm::vec3(transform.rotateParent.x, transform.rotateParent.y, transform.rotateParent.z));
-    glm::mat4 finalTransform = glm::rotate(currTransform, glm::radians(transform.rotateParent.w), axis);
-    // finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    // finalTransform = glm::rotate(finalTransform, glm::radians(transform.rotateParent.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    // glm::vec3 axis = glm::normalize(glm::vec3(transform.rotateParent.x, transform.rotateParent.y, transform.rotateParent.z));
+    currTransform = glm::rotate(currTransform, glm::radians(transform.rotateParent.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    currTransform = glm::rotate(currTransform, glm::radians(transform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    currTransform = glm::rotate(currTransform, glm::radians(transform.rotateParent.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
-
-    finalTransform = glm::translate(finalTransform, transform.translate);
-    axis = glm::normalize(glm::vec3(transform.selfRotate.x, transform.selfRotate.y, transform.selfRotate.z));
-    // Rotate
-    finalTransform = glm::rotate(finalTransform, glm::radians(transform.selfRotate.w), axis);
-    // finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    // finalTransform = glm::rotate(finalTransform, glm::radians(meshTransform.selfRotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // Scale
-    return glm::scale(finalTransform, transform.scale);
+    return glm::scale(currTransform, transform.scale);
 }
 
 HitBox MeshTree::getTransformedHitBox() {
