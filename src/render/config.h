@@ -26,6 +26,7 @@ struct RenderConfig {
     float verticalFOV       { 60.0f };
     float zoomedVerticalFOV { 35.0f };
     bool constrainVertical  { false };
+    bool invertControls     { false };
 
     // Lighting
     LightingModel lightingModel     { LightingModel::PBR };

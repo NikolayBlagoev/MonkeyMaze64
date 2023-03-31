@@ -26,8 +26,6 @@ public:
     MeshTree();
     MeshTree(Mesh* msh);
 
-    glm::mat4 getCurrentTransform();
-
     glm::mat4 modelMatrix();
 
     HitBox getTransformedHitBox();
@@ -53,6 +51,9 @@ public:
     HitBox hitBox;
     MeshTree* parent { nullptr };
     std::vector<MeshTree*> children;
+
+private:
+    glm::mat4 getCurrentTransform();
 };
 
 #endif

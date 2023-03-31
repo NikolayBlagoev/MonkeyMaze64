@@ -23,7 +23,7 @@ struct HitBox {
 
     bool collides(HitBox other) {
 
-        for (glm::vec3 newPoint : this.points) {
+        for (glm::vec3 newPoint : this->points) {
 
             glm::vec3 smallerOrEqual(0);
             glm::vec3 bigger(0);

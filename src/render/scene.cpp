@@ -1,17 +1,19 @@
 #include "scene.h"
 #include "mesh_tree.h"
+#include "mesh.h"
+#include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtx/transform.hpp>
 DISABLE_WARNINGS_POP()
 
 void Scene::addMesh(std::filesystem::path filePath) { 
-    GPUMesh* gp = new GPUMesh(filePath);
+    Mesh cpuMesh = mergeMeshes(loadMesh(filePath));
     // meshes.push_back(GPUMesh(filePath));
     // transformParams.push_back({glm::vec3(1.0f), glm::vec3(0.0f), glm::vec3(0.0f)});
     if(root == nullptr){
         root = new MeshTree();
     }
-    root->addChild(new MeshTree(gp));
+    root->addChild(new MeshTree(&cpuMesh));
 }
 
 void Scene::addMesh(MeshTree* nd){
