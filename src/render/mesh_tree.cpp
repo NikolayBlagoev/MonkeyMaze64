@@ -64,15 +64,13 @@ void MeshTree::addChild(MeshTree* child){
     this->children.push_back(child);
 }
 
-glm::mat4 MeshTree::getCurrentTransform() {
-    if (parent == nullptr)
-        return glm::identity<glm::mat4>();
-    else
-        return parent->getCurrentTransform() * modelMatrix();
-}
-
 glm::mat4 MeshTree::modelMatrix() {
-    glm::mat4 currTransform = getCurrentTransform();
+    glm::mat4 currTransform;
+
+    if (parent == nullptr)
+        currTransform = glm::identity<glm::mat4>();
+    else
+        currTransform = parent->modelMatrix();
 
     // const MeshTransform& meshTransform = transformParams[idx];
     // const MeshTransform& meshTransform = {mt->scale, mt->selfRotate, mt->rotateParent, mt->offset};
