@@ -24,6 +24,9 @@ public:
     glm::vec3 cameraPos() const;
     glm::mat4 viewMatrix() const;
 
+    bool canSeePoint(glm::vec3 point);
+    bool canSeePoint(glm::vec3 point, float maxDist);
+
 private:
     void rotateX(float angle);
     void rotateY(float angle);

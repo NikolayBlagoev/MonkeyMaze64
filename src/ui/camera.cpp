@@ -82,3 +82,15 @@ void Camera::updateInput() {
         }
     } else { m_prevCursorPos = m_pWindow->getCursorPos(); }
 }
+
+bool Camera::canSeePoint(glm::vec3 point) {
+    float angle = glm::acos(glm::dot(glm::normalize(point - m_position), glm::normalize(m_forward)));
+
+    return glm::degrees(angle) <= m_renderConfig.verticalFOV;
+}
+
+bool Camera::canSeePoint(glm::vec3 point, float maxDist) {
+    float dist = glm::length(point - m_position);
+
+    return dist <= maxDist && canSeePoint(point);
+}
