@@ -145,30 +145,4 @@ bool MeshTree::tryTranslation(glm::vec3 translation) {
     }
 
     return false;
-
-    // m_transformParams[idx].translate += translation;
-    //
-    // for (auto& [key, other] : m_hitBoxes) {
-    //     if (key == idx)
-    //         continue;
-    //
-    //     bool collidesWith = collide(idx, key);
-    //
-    //     if (collidesWith) {
-    //         if (m_hitBoxes[idx].allowCollision && other.allowCollision)
-    //             continue;
-    //
-    //         float newDist = glm::distance(getTransformedHitBoxMiddle(idx), getTransformedHitBoxMiddle(key));
-    //
-    //         m_transformParams[idx].translate -= translation;
-    //         float oldDist = glm::distance(getTransformedHitBoxMiddle(idx), getTransformedHitBoxMiddle(key));
-    //
-    //         if (newDist < oldDist)
-    //             return false;
-    //         else
-    //             m_transformParams[idx].translate += translation;
-    //     }
-    // }
-    //
-    // return true;
 }

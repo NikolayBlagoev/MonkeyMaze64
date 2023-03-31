@@ -40,16 +40,6 @@ public:
 
     bool tryTranslation(glm::vec3 translation);
 
-    // void addMesh(std::filesystem::path filePath);
-    // void removeMesh(size_t idx);
-
-    // size_t numMeshes() { return meshes.size(); }
-    // const GPUMesh& meshAt(size_t idx) { return meshes[idx]; }
-
-    // glm::mat4 modelMatrix(size_t idx);
-
-    // std::vector<MeshTransform> transformParams;
-
 public:
     GPUMesh* mesh;
     MeshTransform transform;

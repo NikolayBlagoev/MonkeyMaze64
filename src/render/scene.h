@@ -19,18 +19,11 @@ public:
     void addMesh(MeshTree* nd);
     size_t numMeshes() { return meshes.size(); }
 
-    const GPUMesh& meshAt(size_t idx) { return *(root->children[idx]->mesh); }
-
-    glm::mat4 modelMatrix(size_t idx);
-
-    // static glm::mat4 modelMatrix(MeshTree* mt, const glm::mat4& currTransform);
     MeshTree* root { nullptr };
     std::vector<MeshTransform> transformParams;
 
 private:
     std::vector<GPUMesh> meshes;
-    
-    
 };
 
 #endif
