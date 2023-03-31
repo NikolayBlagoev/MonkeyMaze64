@@ -30,22 +30,23 @@ private:
     void initHdrBuffer();
     void initBuffers();
     void initShaders();
+
     void bindMaterialTextures(const GPUMesh& mesh, const glm::vec3& cameraPos) const;
     void helper(MeshTree* mt, const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const;
     void renderGeometry(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const;
+    
     void bindGBufferTextures() const;
-
     void renderLighting(const glm::vec3& cameraPos, const float enred);
 
     void renderForward(const glm::mat4& viewProjectionMatrix);
-
     void renderPostProcessing();
     void copyGBufferDepth(GLuint destinationBuffer);
 
-    static constexpr GLuint INVALID = 0xFFFFFFFF;
+    static constexpr GLuint INVALID     = 0xFFFFFFFF;
+    static constexpr float clearDepth   = 1.0f;
 
     GLuint gBuffer;     // Framebuffer ID for the G-buffer
-    GLuint rboDepthG;    // G-buffer depth buffer
+    GLuint rboDepthG;   // G-buffer depth buffer
 
     // Textures for storing G-buffer attributes
     // Must match attributes used by fragment shader(s)
