@@ -11,12 +11,8 @@ DISABLE_WARNINGS_POP()
 #include <iostream>
 
 void PointLight::wipeFramebuffers() const {
-    for (size_t face = 0UL; face < 6UL; face++) { 
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[face]);
-        glClearDepth(1.0f);
-        glClear(GL_DEPTH_BUFFER_BIT);
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    constexpr float clearValue = 1.0f; 
+    for (size_t face = 0UL; face < 6UL; face++) { glClearNamedFramebufferfv(framebuffers[face], GL_DEPTH, 0, &clearValue); }
 }
 
 std::array<glm::mat4, 6UL> PointLight::viewMatrices() const {
@@ -56,7 +52,6 @@ LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(re
 
     // Cubemap texture array for point light shadow maps
     glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &pointShadowTexArr);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
     glTextureParameteri(pointShadowTexArr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTextureParameteri(pointShadowTexArr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTextureParameteri(pointShadowTexArr, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -67,7 +62,6 @@ LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(re
 
     // 2D texture array for area light shadow maps
     glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &areaShadowTexArr);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
     glTextureParameteri(areaShadowTexArr, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); // Coordinates outside of [0, 1] range clamp to -MAX_FLOAT, so they always fail the depth test
     glTextureParameteri(areaShadowTexArr, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTextureParameterfv(areaShadowTexArr, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(glm::vec4(-std::numeric_limits<float>::max())));
