@@ -311,13 +311,26 @@ void Generator::constrain(Defined* nd, int opts){
                     }
                     if((i >= 1 && i <= 4) || i>=14){
                         float res = exp(-0.2f*(rand()%10));
-                        if( res > acc_cam ){
+                        if( true || res > acc_cam ){
                             std::cout<<"ADDING CAMERA "<<res << " "<<acc_cam<<std::endl;
                             nd->objs.push_back(new ProcObj(0));
                             acc_cam = 1.f;
                         }else{
                             std::cout<<"NOT ADDING CAMERA "<<res << " "<<acc_cam<<std::endl;
                             acc_cam -= 0.1f;
+                        }
+                    }
+
+
+                    if((i >= 1 && i <= 4) || i == 0){
+                        float res = exp(-0.2f*(rand()%20));
+                        if( true || res > acc_head ){
+                            std::cout<<"ADDING HEAD "<<res << " "<<acc_head<<std::endl;
+                            nd->objs.push_back(new ProcObj(1));
+                            acc_head = 1.f;
+                        }else{
+                            std::cout<<"NOT ADDING HEAD "<<res << " "<<acc_head<<std::endl;
+                            acc_head -= 0.05f;
                         }
                     }
                     nd->empt = false;

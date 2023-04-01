@@ -122,71 +122,75 @@ class CompositeBezier4d : public BezierCurve4dGeneral{
 };
 class BezierCombo3d {
     public:
-        MeshTree* prnt;
-        int choice = 0;
+        std::weak_ptr<glm::vec3> to_move;
+        
         BezierCurve3d* curve;
-        BezierCombo3d(MeshTree* prnt, BezierCurve3d* curve, int choice = 0) : prnt(prnt), curve(curve), choice(choice){
+        BezierCombo3d(BezierCurve3d* curve, std::weak_ptr<glm::vec3> to_move) : curve(curve), to_move(to_move){
 
         };
-        void move(float t){
-            glm::vec3 ret = curve->pos_t(t);
-            if(choice == 0){
-                prnt->transform.translate = ret;
-            }else{
-                prnt->transform.scale = ret;
+        bool move(float t){
+            if(to_move.expired()){
+                free(curve);
+                return false;
             }
+            glm::vec3 ret = curve->pos_t(t);
+            *(to_move.lock().get()) = ret;
+            return true;
         };
 };
 class BezierCombo3dcomp {
     public:
-        MeshTree* prnt;
-        int choice = 0;
+        
+        
         CompositeBezier3d* curve;
-        BezierCombo3dcomp(MeshTree* prnt, CompositeBezier3d* curve, int choice = 0) : prnt(prnt), curve(curve), choice(choice){
+        std::weak_ptr<glm::vec3> to_move;
+        BezierCombo3dcomp(CompositeBezier3d* curve, std::weak_ptr<glm::vec3> to_move) : curve(curve), to_move(to_move) {
 
         };
-        void move(float t){
-            glm::vec3 ret = curve->pos_t(t);
-            if(choice == 0){
-                prnt->transform.translate = ret;
-            }else{
-                prnt->transform.scale = ret;
+        bool move(float t){
+            if(to_move.expired()){
+                free(curve);
+                return false;
             }
+            glm::vec3 ret = curve->pos_t(t);
+            *(to_move.lock().get()) = ret;
+            return true;
         };
 };
 class BezierCombo4d {
     public:
-        MeshTree* prnt;
+        std::weak_ptr<glm::vec4> to_move;
         int choice = 0;
         BezierCurve4d* curve;
-        BezierCombo4d(MeshTree* prnt, BezierCurve4d* curve, int choice = 0) : prnt(prnt), curve(curve), choice(choice){
+        BezierCombo4d(BezierCurve4d* curve, std::weak_ptr<glm::vec4> to_move) : curve(curve), to_move(to_move){
 
         };
-        void move(float t){
-            glm::vec4 ret = curve->pos_t(t);
-            if(choice == 0){
-                prnt->transform.selfRotate = *BezierCurve4d::qToangl(ret);
-            }else{
-                prnt->transform.rotateParent = *BezierCurve4d::qToangl(ret);
+        bool move(float t){
+            if(to_move.expired()){
+                free(curve);
+                return false;
             }
+            glm::vec4 ret = curve->pos_t(t);
+            *(to_move.lock().get()) = ret;
+            return true;
         };
 };
 
 class BezierCombo4dcomp {
     public:
-        MeshTree* prnt;
-        int choice = 0;
+        std::weak_ptr<glm::vec4> to_move;
         CompositeBezier4d* curve;
-        BezierCombo4dcomp(MeshTree* prnt, CompositeBezier4d* curve, int choice = 0) : prnt(prnt), curve(curve), choice(choice){
+        BezierCombo4dcomp(CompositeBezier4d* curve, std::weak_ptr<glm::vec4> to_move) : curve(curve), to_move(to_move){
 
         };
-        void move(float t){
-            glm::vec4 ret = curve->pos_t(t);
-            if(choice == 0){
-                prnt->transform.selfRotate = *BezierCurve4d::qToangl(ret);
-            }else{
-                prnt->transform.rotateParent = *BezierCurve4d::qToangl(ret);
+        bool move(float t){
+            if(to_move.expired()){
+                free(curve);
+                return false;
             }
+            glm::vec4 ret = curve->pos_t(t);
+            *(to_move.lock().get()) = ret;
+            return true;
         };
 };
 class BezierCurveRenderer{
@@ -202,18 +206,34 @@ class BezierCurveRenderer{
         void do_moves(std::chrono::time_point<std::chrono::high_resolution_clock> curr_time){
             float delta = std::chrono::duration<float>(curr_time - start_time).count();
             
-            for(int i = 0; i < curves3d.size(); i++){
-                curves3d.at(i)->move(delta);
+            for(size_t i = 0; i < curves3d.size(); i++){
+                if(!curves3d.at(i)->move(delta)){
+                    BezierCombo3d* tmp = curves3d.at(i);
+                    free(tmp);
+                    curves3d.erase(curves3d.begin() + i);
+                }
             }
-            for(int i = 0; i < curves4d.size(); i++){
-                curves4d.at(i)->move(delta);
+            for(size_t i = 0; i < curves4d.size(); i++){
+                if(!curves4d.at(i)->move(delta)){
+                    BezierCombo4d* tmp = curves4d.at(i);
+                    free(tmp);
+                    curves4d.erase(curves4d.begin() + i);
+                }
             }
-            for(int i = 0; i < compcurves3d.size(); i++){
+            for(size_t i = 0; i < compcurves3d.size(); i++){
                 
-                compcurves3d.at(i)->move(delta);
+                if(!compcurves3d.at(i)->move(delta)){
+                    BezierCombo3dcomp* tmp = compcurves3d.at(i);
+                    free(tmp);
+                    compcurves3d.erase(compcurves3d.begin() + i);
+                }
             }
-            for(int i = 0; i < compcurves4d.size(); i++){
-                compcurves4d.at(i)->move(delta);
+            for(size_t i = 0; i < compcurves4d.size(); i++){
+                if(!compcurves4d.at(i)->move(delta)){
+                    BezierCombo4dcomp* tmp = compcurves4d.at(i);
+                    free(tmp);
+                    compcurves4d.erase(compcurves4d.begin() + i);
+                }
             }
         };
         size_t add3d(BezierCombo3d* curve3d){

@@ -39,6 +39,10 @@ static HitBox makeHitBox(Mesh& cpuMesh, bool allowCollision) {
 MeshTree::MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision) {
     this->mesh = new GPUMesh(*msh);
     this->transform = {off, rots, rotp, scl};
+    this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
+    this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
+    this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
+    this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->hitBox = makeHitBox(*msh, allowCollision);
 }
 
@@ -47,6 +51,10 @@ MeshTree::MeshTree(){
                        glm::vec4(0.f,1.f,0.f,0.f),
                        glm::vec4(0.f,1.f,0.f,0.f),
                        glm::vec3(1.f)};
+    this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
+    this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
+    this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
+    this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->mesh = nullptr;
 }
 
@@ -56,6 +64,10 @@ MeshTree::MeshTree(Mesh* msh, bool allowCollision) {
                        glm::vec4(0.f,1.f,0.f,0.f),
                        glm::vec3(1.f)};
     this->mesh = new GPUMesh(*msh);
+    this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
+    this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
+    this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
+    this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->hitBox = makeHitBox(*msh, allowCollision);
 }
 
