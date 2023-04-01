@@ -374,7 +374,7 @@ int main() {
         
         // View-projection matrices setup
         const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
+        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * currentCamera.viewMatrix();
         const glm::mat4 td_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * minimap.viewMatrix();
 
 
@@ -389,8 +389,6 @@ int main() {
         }
 
         // View-projection matrices setup
-        const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * currentCamera.viewMatrix();
 
         // Particle simulation
         particleEmitterManager.updateEmitters();
@@ -432,7 +430,7 @@ int main() {
         
         deferredRenderer.render(m_viewProjectionMatrix, currentCamera.cameraPos(), 0.f, 1.f);
         // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        minimap.m_position = {mainCamera.cameraPos().x, 10.f, mainCamera.cameraPos().z};
+        minimap.m_position = {currentCamera.cameraPos().x, 10.f, currentCamera.cameraPos().z};
         deferredRenderer.render(td_viewProjectionMatrix, minimap.cameraPos(), 0.f, 0.25f);
 
         // Draw UI
