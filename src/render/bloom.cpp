@@ -18,9 +18,9 @@ BloomFilter::~BloomFilter() {
     glDeleteTextures(2, blurTextures.data());
 }
 
-GLuint BloomFilter::render(GLuint hdrTex) {
-    extractBrightRegions(hdrTex);
-    return computeBlur();
+GLuint BloomFilter::render(GLuint hdrTex, const float ensmall) {
+    extractBrightRegions(hdrTex, ensmall);
+    return computeBlur(ensmall);
 }
 
 void BloomFilter::initBrightBuffer() {
@@ -73,17 +73,17 @@ void BloomFilter::initShaders() {
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 }
 
-void BloomFilter::extractBrightRegions(GLuint hdrTex) {
+void BloomFilter::extractBrightRegions(GLuint hdrTex, const float ensmall) {
     extractBright.bind();
     glBindFramebuffer(GL_FRAMEBUFFER, brightBuffer);
     glActiveTexture(GL_TEXTURE0 + utils::POST_PROCESSING_TEX_START_IDX);
     glBindTexture(GL_TEXTURE_2D, hdrTex);
     glUniform1i(0, utils::POST_PROCESSING_TEX_START_IDX);
     glUniform1f(1, m_renderConfig.bloomBrightThreshold);
-    utils::renderQuad();
+    utils::renderQuad(ensmall);
 }
 
-GLuint BloomFilter::computeBlur() {
+GLuint BloomFilter::computeBlur(const float ensmall) {
     bool horizontal = true, firstIteration = true;
     gaussianBlur.bind();
 
@@ -93,7 +93,7 @@ GLuint BloomFilter::computeBlur() {
         glBindTexture(GL_TEXTURE_2D, firstIteration ? brightTex : blurTextures[!horizontal]);
         glUniform1i(0, utils::POST_PROCESSING_TEX_START_IDX);
         glUniform1i(1, horizontal);
-        utils::renderQuad();
+        utils::renderQuad(ensmall);
 
         horizontal      = !horizontal;
         firstIteration  = false;

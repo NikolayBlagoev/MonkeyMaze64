@@ -199,7 +199,8 @@ int main() {
     
     RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
-    Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
+    Camera mainCamera(&m_window, renderConfig, glm::vec3(1.0f, 3.0f, 1.0f), -glm::vec3(1.f, 1.1f, 1.f));
+    Camera minimap(&m_window, renderConfig, glm::vec3(1.0f, 10.0f, 1.0f), -glm::vec3(0.05f, 1.1f, 0.05f));
     TextureManager textureManager;
     Scene scene;
     LightManager lightManager(renderConfig);
@@ -351,6 +352,7 @@ int main() {
         // View-projection matrices setup
         const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
         const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
+        const glm::mat4 td_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * minimap.viewMatrix();
 
         // Controls
         ImGuiIO io = ImGui::GetIO();
@@ -393,8 +395,11 @@ int main() {
         }
 
         // Render scene
-        deferredRenderer.render(m_viewProjectionMatrix, mainCamera.cameraPos(), 0.f);
-
+        
+        deferredRenderer.render(m_viewProjectionMatrix, mainCamera.cameraPos(), 0.f, 1.f);
+        // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        minimap.m_position = {mainCamera.cameraPos().x, 10.f, mainCamera.cameraPos().z};
+        deferredRenderer.render(td_viewProjectionMatrix, minimap.cameraPos(), 0.f, 0.25f);
         // Draw UI
         glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

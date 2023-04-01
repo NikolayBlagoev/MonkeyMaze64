@@ -37,13 +37,13 @@ DeferredRenderer::~DeferredRenderer() {
     glDeleteTextures(1, &hdrTex);
 }
 
-void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos, const float enred) {
-    glViewport(0, 0, utils::WIDTH, utils::HEIGHT);      // Set correct viewport size
+void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos, const float enred, const float ensmall) {
+    glViewport(0, utils::HEIGHT - utils::HEIGHT*ensmall, utils::WIDTH*ensmall, utils::HEIGHT*ensmall);      // Set correct viewport size
     renderGeometry(viewProjectionMatrix, cameraPos);    // Geometry pass
-    renderLighting(cameraPos, enred);                   // Lighting pass
+    renderLighting(cameraPos, enred, ensmall);                   // Lighting pass
     copyGBufferDepth(hdrBuffer);                        // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
     renderForward(viewProjectionMatrix);                // Render transparent objects which require forward rendering
-    renderPostProcessing();                             // Combine post-processing results; HDR tonemapping and gamma correction
+    renderPostProcessing(ensmall);                             // Combine post-processing results; HDR tonemapping and gamma correction
     copyGBufferDepth(0U);                               // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
 }
 
@@ -280,7 +280,7 @@ void DeferredRenderer::bindGBufferTextures() const {
     glUniform1i(3, utils::G_BUFFER_TEX_START_IDX + 3);
 }
 
-void DeferredRenderer::renderLighting(const glm::vec3& cameraPos, const float enred) {
+void DeferredRenderer::renderLighting(const glm::vec3& cameraPos, const float enred, const float ensmall) {
     // Bind HDR framebuffer and clear previous values
     glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -309,17 +309,17 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos, const float en
             break;
     }
 
-    utils::renderQuad();
+    utils::renderQuad(ensmall);
 }
 
 void DeferredRenderer::renderForward(const glm::mat4& viewProjectionMatrix) {
     m_particleEmitterManager.render(hdrBuffer, viewProjectionMatrix); // Only particles need forward shading for now
 }
 
-void DeferredRenderer::renderPostProcessing() {
+void DeferredRenderer::renderPostProcessing(const float ensmall) {
     // Render post-processing effect(s)
     GLuint bloomTex;
-    if (m_renderConfig.enableBloom) { bloomTex = bloomFilter.render(hdrTex); }
+    if (m_renderConfig.enableBloom) { bloomTex = bloomFilter.render(hdrTex, ensmall); }
     
     // Bind core HDR and tonemapping data
     hdrRender.bind();
@@ -339,7 +339,7 @@ void DeferredRenderer::renderPostProcessing() {
     }
     glUniform1i(5, m_renderConfig.enableBloom);
     
-    utils::renderQuad();
+    utils::renderQuad(ensmall);
 }
 
 void DeferredRenderer::copyGBufferDepth(GLuint destinationBuffer) {

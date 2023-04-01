@@ -15,14 +15,14 @@ public:
     BloomFilter(RenderConfig& renderConfig);
     ~BloomFilter();
 
-    GLuint render(GLuint hdrTex);
+    GLuint render(GLuint hdrTex, const float ensmall);
 
 private:
     void initBrightBuffer();
     void initBlurBuffers();
     void initShaders();
-    void extractBrightRegions(GLuint hdrTex);
-    GLuint computeBlur();
+    void extractBrightRegions(GLuint hdrTex, const float ensmall);
+    GLuint computeBlur(const float ensmall);
 
     // Framebuffer (and corresponding texture) for extracting bright regions of rendered image
     GLuint brightBuffer;

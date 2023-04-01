@@ -11,16 +11,28 @@ namespace utils {
     static GLuint quadVAO = 0U;
     static GLuint quadVBO;
 
-    static void renderQuad() {
-        if (quadVAO == 0U) {
+    static void renderQuad(const float ensmall) {
+        if (quadVAO == 0U || true) {
+            const float arithmeticStuff = (1.f-ensmall);
+
+            
             std::array<float, 20UL> quadVertices = {
                 // Positions        // Texture coords
+                
+                // -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+                // -1.0f, -1.f, 0.0f, 0.0f, 0.0f,
+                // 1.f,  1.0f, 0.0f, 1.0f, 1.0f,
+                // 1.f, -1.f, 0.0f, 1.0f, 0.0f,
+                
                 -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-                1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-                1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f + arithmeticStuff,
+                1.0f ,  1.0f, 0.0f, 1.0f - arithmeticStuff, 1.0f,
+                1.0f, -1.0f, 0.0f, 1.0f - arithmeticStuff, 0.0f + arithmeticStuff,
             };
-
+//                  -1.0f,  1.0f, 0.0f, 0.0f + arithmeticStuff, 1.0f - arithmeticStuff,
+//                 -1.0f, 1.0f - 2.f*ensmall, 0.0f, 0.0f + arithmeticStuff, 0.0f + arithmeticStuff,
+//                 -1.0f + 2.f*ensmall,  1.0f, 0.0f, 1.0f - arithmeticStuff, 1.0f - arithmeticStuff,
+//                 -1.0f + 2.f*ensmall, 1.0f - 2.f*ensmall, 0.0f, 1.0f - arithmeticStuff, 0.0f + arithmeticStuff,
             // Set up plane VAO
             glCreateVertexArrays(1, &quadVAO);
             glCreateBuffers(1, &quadVBO);
