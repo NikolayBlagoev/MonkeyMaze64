@@ -267,11 +267,12 @@ void DeferredRenderer::bindGBufferTextures() const {
 }
 
 void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
-    // Bind HDR framebuffer and clear previous values
+    // Clear previous HDR texture values
+    glClearTexImage(hdrTex, 0, GL_RGBA, GL_HALF_FLOAT, 0);
+    glClearNamedFramebufferfv(hdrBuffer, GL_DEPTH, 0, &clearDepth);
+    
+    // Bind HDR framebuffer, lighting shader, G-buffer textures, and set general usage uniforms
     glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Bind shader, G-buffer textures, and general usage uniforms
     lightingPass.bind();
     bindGBufferTextures();
     glUniform3fv(4, 1, glm::value_ptr(cameraPos));
