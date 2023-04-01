@@ -116,11 +116,11 @@ void mouseButtonCallback(int button, int action, int mods) {
     else if (action == GLFW_RELEASE) { onMouseReleased(button, mods); }
 }
 
-void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform, 
-                     const PointLight& light, Shader& m_pointShadowShader, const glm::mat4& pointLightShadowMapsProjection, RenderConfig& renderConfig){
+void drawMeshTreePtL(MeshTree* mt, const PointLight& light, Shader& m_pointShadowShader,
+                     const glm::mat4& pointLightShadowMapsProjection, RenderConfig& renderConfig){
     if(mt == nullptr) return;
 
-    const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
+    const glm::mat4& modelMatrix = mt->modelMatrix();
     if(mt->mesh != nullptr){
         const GPUMesh& mesh                         = *(mt->mesh);
         // std::cout<<"DRAWING"<<std::endl;
@@ -144,15 +144,14 @@ void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform,
         }
     }
     for(MeshTree* child : mt->children){
-        drawMeshTreePtL(child,modelMatrix, light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
+        drawMeshTreePtL(child, light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
     }
 }
 
-void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform, 
-                    const glm::mat4& areaLightShadowMapsProjection, const glm::mat4& lightView, RenderConfig& renderConfig){
+void drawMeshTreeAL(MeshTree* mt, const glm::mat4& areaLightShadowMapsProjection, const glm::mat4& lightView, RenderConfig& renderConfig){
     if(mt == nullptr) return;
     
-    const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
+    const glm::mat4& modelMatrix = mt->modelMatrix();
     if(mt->mesh != nullptr){
         const GPUMesh& mesh                         = *(mt->mesh);
     
@@ -166,11 +165,11 @@ void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform,
         mesh.draw();
     }
     for(MeshTree* child : mt->children){
-        drawMeshTreeAL(child,modelMatrix, areaLightShadowMapsProjection, lightView, renderConfig);
+        drawMeshTreeAL(child, areaLightShadowMapsProjection, lightView, renderConfig);
     }
 }
 
-CameraObj* makeCamera(GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMesh* stand1,
+CameraObj* makeCamera(Mesh* aperture, Mesh* camera, Mesh* stand2, Mesh* stand1,
                       glm::vec3 tr, glm::vec4 selfRot, glm::vec4 parRot, glm::vec3 scl){
     MeshTree* ret = new MeshTree(stand1, tr, selfRot, parRot,  scl);
     MeshTree* stand2m = new MeshTree(stand2, glm::vec3(0.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(1.f));
@@ -183,7 +182,7 @@ CameraObj* makeCamera(GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMe
     return cam;
 }
 
-void addObjectsRoom(MeshTree* room, Defined* roomTile, GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMesh* stand1){
+void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* camera, Mesh* stand2, Mesh* stand1){
     for(int i = 0; i < roomTile->objs.size(); i++){
         if(roomTile->objs.at(i)->type == 0){
             CameraObj* cam = makeCamera(aperture, camera, stand2, stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec3(1.f));
@@ -196,11 +195,17 @@ int main() {
     // Init core objects
     *ready = false;
     std::thread worker(worker_thread);
-    
+
+    glm::vec3 playerPos = glm::vec3(0.0f, 1.0f, 1.0f);
+    glm::vec3 playerCameraPos = playerPos + glm::vec3(0.0f, 1.0f, 1.0f);
+
     RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
+
     Camera mainCamera(&m_window, renderConfig, glm::vec3(1.0f, 3.0f, 1.0f), -glm::vec3(1.f, 1.1f, 1.f));
     Camera minimap(&m_window, renderConfig, glm::vec3(1.0f, 10.0f, 1.0f), -glm::vec3(0.05f, 1.1f, 0.05f));
+    Camera playerCamera(&m_window, renderConfig, playerCameraPos, playerPos - playerCameraPos);
+
     TextureManager textureManager;
     Scene scene;
     LightManager lightManager(renderConfig);
@@ -239,15 +244,30 @@ int main() {
     std::weak_ptr<const Texture> stoneAO        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
 
     // Add models
-    GPUMesh dragon = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj");
-    scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
-    MeshTree* drg = new MeshTree(&dragon);
-    scene.addMesh(drg);
-    GPUMesh crossing = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj");
-    GPUMesh room = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj");
-    GPUMesh tjunction = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj");
-    GPUMesh tunnel = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj");
-    GPUMesh turn = GPUMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj");
+    Mesh dragonMesh = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj"));
+    // scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
+
+    MeshTree* bezierDragon = new MeshTree(&dragonMesh);
+    scene.addMesh(bezierDragon);
+
+    MeshTree* playerDragon = new MeshTree(&dragonMesh, playerPos,
+                                          glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                                          glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                                          glm::vec3(1.0f),
+                                          true);
+    scene.addMesh(playerDragon);
+
+    scene.addMesh(new MeshTree(&dragonMesh, playerPos + glm::vec3(1.0f, 0.0f, 0.0f),
+                                   glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                                   glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                                   glm::vec3(1.0f),
+                                   false));
+
+    Mesh crossing = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj"));
+    Mesh room = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj"));
+    Mesh tjunction = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj"));
+    Mesh tunnel = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj"));
+    Mesh turn = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj"));
 
     // Add test lights
     lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
@@ -261,7 +281,7 @@ int main() {
 
     // Init MeshTree
     MeshTree* boardRoot = new MeshTree();
-    boardRoot->offset = offsetBoard;
+    boardRoot->transform.translate = offsetBoard;
    
     std::chrono::high_resolution_clock timer; 
     BezierCurve3d b3d = BezierCurve3d(glm::vec3(0.f), glm::vec3(1.f , 1.f, 0.f), glm::vec3(-1.f , 2.f, 0.f), glm::vec3(0.f, 3.f, 0.f), 10.f);
@@ -272,14 +292,16 @@ int main() {
     BezierCurveRenderer rndrr = BezierCurveRenderer(millisec_since_epoch);
     b3c.start_time = millisec_since_epoch;
     b4d.prev_time = millisec_since_epoch;
-    BezierCombo3dcomp combo1 = BezierCombo3dcomp(drg,&b3c, 0);
+    BezierCombo3dcomp combo1 = BezierCombo3dcomp(bezierDragon, &b3c, 0);
     rndrr.add3dcomp(&combo1);
-    BezierCombo4d combo2 = BezierCombo4d(drg,&b4d, 0);
+    BezierCombo4d combo2 = BezierCombo4d(bezierDragon, &b4d, 0);
     rndrr.add4d(&combo2);
     bool flag = true;
     
     // Main loop
     while (!m_window.shouldClose()) {
+        Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
+
         rndrr.do_moves(timer.now());
         float delta = std::chrono::duration<float>(timer.now() - millisec_since_epoch).count();
         float enred = delta/100.f;
@@ -293,7 +315,7 @@ int main() {
             free(boardRoot);
             
             boardRoot = new MeshTree();
-            boardRoot->offset = offsetBoard;
+            boardRoot->transform.translate = offsetBoard;
             for(int i = 0; i < 7; i ++){
                 // glm::vec3 offset(0.f,10.f*i,0.f);
                 for(int j = 0; j < 7; j++){
@@ -348,16 +370,27 @@ int main() {
             scene.root->addChild(boardRoot);
 
         }
+
         
         // View-projection matrices setup
         const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
         const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
         const glm::mat4 td_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * minimap.viewMatrix();
 
+
         // Controls
         ImGuiIO io = ImGui::GetIO();
         m_window.updateInput();
-        if (!io.WantCaptureMouse) { mainCamera.updateInput(); } // Prevent camera movement when accessing UI elements
+        if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
+            if (renderConfig.controlPlayer)
+                currentCamera.updateInput(playerDragon);
+            else
+                currentCamera.updateInput();
+        }
+
+        // View-projection matrices setup
+        const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * currentCamera.viewMatrix();
 
         // Particle simulation
         particleEmitterManager.updateEmitters();
@@ -370,7 +403,7 @@ int main() {
             const PointLight& light = lightManager.pointLightAt(pointLightNum);
             light.wipeFramebuffers();
 
-            drawMeshTreePtL(scene.root,glm::mat4(1),light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
+            drawMeshTreePtL(scene.root, light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
         }
 
         // Render area lights shadow maps
@@ -390,16 +423,18 @@ int main() {
             glEnable(GL_DEPTH_TEST);
 
             // Render each model in the scene
-            drawMeshTreeAL(scene.root,glm::mat4(1),areaLightShadowMapsProjection, lightView, renderConfig);
+            drawMeshTreeAL(scene.root, areaLightShadowMapsProjection, lightView, renderConfig);
        
         }
 
         // Render scene
+
         
-        deferredRenderer.render(m_viewProjectionMatrix, mainCamera.cameraPos(), 0.f, 1.f);
+        deferredRenderer.render(m_viewProjectionMatrix, currentCamera.cameraPos(), 0.f, 1.f);
         // glBindFramebuffer(GL_FRAMEBUFFER, 0);
         minimap.m_position = {mainCamera.cameraPos().x, 10.f, mainCamera.cameraPos().z};
         deferredRenderer.render(td_viewProjectionMatrix, minimap.cameraPos(), 0.f, 0.25f);
+
         // Draw UI
         glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

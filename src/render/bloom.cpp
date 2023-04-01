@@ -6,8 +6,8 @@
 
 BloomFilter::BloomFilter(RenderConfig& renderConfig)
     : m_renderConfig(renderConfig) {
-        initBrightBuffer();
-        initBlurBuffers();
+        initBuffers();
+        initTextures();
         initShaders();
 }
 
@@ -23,39 +23,32 @@ GLuint BloomFilter::render(GLuint hdrTex, const float ensmall) {
     return computeBlur(ensmall);
 }
 
-void BloomFilter::initBrightBuffer() {
-    // Create bright regions buffer
-    glCreateFramebuffers(1, &brightBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, brightBuffer);
-
-    // Create texture to render to
-    glCreateTextures(GL_TEXTURE_2D, 1, &brightTex);
-    glBindTexture(GL_TEXTURE_2D, brightTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGB, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brightTex, 0);
-
-    // Check if framebuffer is complete
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) { std::cerr << "Failed to initialise bloom bright regions framebuffer" << std::endl; }
-    else { std::cout << "Initialized bloom bright regions framebuffer" << std::endl; }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+void BloomFilter::initBuffers() {
+    glCreateFramebuffers(1, &brightBuffer);         // Bright regions
+    glCreateFramebuffers(2, blurBuffers.data());    // Blur
 }
 
-void BloomFilter::initBlurBuffers() {
-    glCreateFramebuffers(2, blurBuffers.data());
-    glCreateTextures(GL_TEXTURE_2D, 2, blurTextures.data());
+void BloomFilter::initTextures() {
+    // Bright regions
+    glCreateTextures(GL_TEXTURE_2D, 1, &brightTex);
+    glTextureStorage2D(brightTex, 1, GL_RGB16F, utils::WIDTH , utils::HEIGHT);
+    glTextureParameteri(brightTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(brightTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(brightTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(brightTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glNamedFramebufferTexture(brightBuffer, GL_COLOR_ATTACHMENT0, brightTex, 0);
+    if (glCheckNamedFramebufferStatus(brightBuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) { std::cerr << "Failed to initialise bloom bright regions framebuffer" << std::endl; }
 
+    // Blur
+    glCreateTextures(GL_TEXTURE_2D, 2, blurTextures.data());
     for (size_t blurIdx = 0UL; blurIdx < 2UL; blurIdx++) {
-        glBindFramebuffer(GL_FRAMEBUFFER, blurBuffers[blurIdx]);
-        glBindTexture(GL_TEXTURE_2D, blurTextures[blurIdx]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGB, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blurTextures[blurIdx], 0);
+        glTextureStorage2D(blurTextures[blurIdx], 1, GL_RGB16F, utils::WIDTH , utils::HEIGHT);
+        glTextureParameteri(blurTextures[blurIdx], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(blurTextures[blurIdx], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(blurTextures[blurIdx], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(blurTextures[blurIdx], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glNamedFramebufferTexture(blurBuffers[blurIdx], GL_COLOR_ATTACHMENT0, blurTextures[blurIdx], 0);
+        if (glCheckNamedFramebufferStatus(blurBuffers[blurIdx], GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) { std::cerr << "Failed to initialise bloom blur framebuffer " << blurIdx << std::endl; }
     }
 }
 
@@ -73,11 +66,17 @@ void BloomFilter::initShaders() {
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 }
 
+
 void BloomFilter::extractBrightRegions(GLuint hdrTex, const float ensmall) {
+
     extractBright.bind();
     glBindFramebuffer(GL_FRAMEBUFFER, brightBuffer);
+
+    // Bind HDR texture
     glActiveTexture(GL_TEXTURE0 + utils::POST_PROCESSING_TEX_START_IDX);
     glBindTexture(GL_TEXTURE_2D, hdrTex);
+
+    // Set uniforms and render
     glUniform1i(0, utils::POST_PROCESSING_TEX_START_IDX);
     glUniform1f(1, m_renderConfig.bloomBrightThreshold);
     utils::renderQuad(ensmall);

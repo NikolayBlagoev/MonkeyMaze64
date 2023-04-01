@@ -18,8 +18,8 @@ public:
     GLuint render(GLuint hdrTex, const float ensmall);
 
 private:
-    void initBrightBuffer();
-    void initBlurBuffers();
+    void initBuffers();
+    void initTextures();
     void initShaders();
     void extractBrightRegions(GLuint hdrTex, const float ensmall);
     GLuint computeBlur(const float ensmall);

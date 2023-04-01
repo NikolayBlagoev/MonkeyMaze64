@@ -5,6 +5,8 @@ DISABLE_WARNINGS_PUSH()
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <iostream>
+
 DISABLE_WARNINGS_POP()
 
 Camera::Camera(Window* pWindow, const RenderConfig& renderConfig)
@@ -74,11 +76,102 @@ void Camera::updateInput() {
 
         // Mouse movement
         const glm::dvec2 cursorPos  = m_pWindow->getCursorPos();
-        const glm::vec2 delta       = m_renderConfig.lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
+        glm::vec2 delta             = m_renderConfig.lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
         m_prevCursorPos             = cursorPos;
+        if (m_renderConfig.invertControls)
+            delta *= -1;
+
         if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
             if (delta.x != 0.0f) { rotateY(delta.x); }
             if (!m_renderConfig.constrainVertical && delta.y != 0.0f) { rotateX(delta.y); }
         }
     } else { m_prevCursorPos = m_pWindow->getCursorPos(); }
+}
+
+void Camera::updateInput(MeshTree *mesh) {
+    if (m_userInteraction) {
+        glm::vec3 right = glm::normalize(glm::cross(m_forward, m_up)) * m_renderConfig.moveSpeed;
+        glm::vec3 forward = m_forward * m_renderConfig.moveSpeed;
+        glm::vec3 up = m_up * m_renderConfig.moveSpeed;
+
+        // Eliminate y for forwards and backwards
+        right.y = 0.0f;
+        forward.y = 0.0f;
+
+        // Forward, backward and strafe
+        if (m_pWindow->isKeyPressed(GLFW_KEY_A)) {
+            if (mesh->tryTranslation(-right))
+                m_position -= right;
+        }
+        if (m_pWindow->isKeyPressed(GLFW_KEY_D)) {
+            if (mesh->tryTranslation(right))
+                m_position += right;
+        }
+        if (m_pWindow->isKeyPressed(GLFW_KEY_W)) {
+            if (mesh->tryTranslation(forward))
+                m_position += forward;
+        }
+        if (m_pWindow->isKeyPressed(GLFW_KEY_S)) {
+            if (mesh->tryTranslation(-forward))
+                m_position -= forward;
+        }
+
+        // Up and down
+        if (!m_renderConfig.constrainVertical) {
+            if (m_pWindow->isKeyPressed(GLFW_KEY_SPACE)) {
+                if (mesh->tryTranslation(up))
+                    m_position += up;
+            }
+            if (m_pWindow->isKeyPressed(GLFW_KEY_C)) {
+                if (mesh->tryTranslation(-up))
+                    m_position -= up;
+            }
+        }
+
+        // Mouse movement
+        const glm::dvec2 cursorPos = m_pWindow->getCursorPos();
+        glm::vec2 delta = m_renderConfig.lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
+        // Invert controls
+        if (m_renderConfig.invertControls)
+            delta *= -1;
+
+        m_prevCursorPos = cursorPos;
+        if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
+
+            std::cout << delta.x << " " << delta.y  << std::endl;
+
+            glm::vec3 objectPos = mesh->modelMatrix() * glm::vec4(glm::vec3(0.0f), 1.0f);
+            glm::vec3 vecToObject = objectPos - m_position;
+            // move to object
+            m_position = objectPos;
+
+            // rotate
+            rotateY(delta.x);
+
+            mesh->transform.selfRotate.y += glm::degrees(delta.x);
+
+            if (!m_renderConfig.constrainVertical) {
+                rotateX(-delta.y);
+                mesh->transform.selfRotate.x -= glm::degrees(-delta.y);
+            }
+
+            // move back
+            m_position -= glm::normalize(m_forward) * glm::length(vecToObject);
+        }
+    }
+    else {
+        m_prevCursorPos = m_pWindow->getCursorPos();
+    }
+}
+
+bool Camera::canSeePoint(glm::vec3 point) {
+    float angle = glm::acos(glm::dot(glm::normalize(point - m_position), glm::normalize(m_forward)));
+
+    return glm::degrees(angle) <= m_renderConfig.verticalFOV;
+}
+
+bool Camera::canSeePoint(glm::vec3 point, float maxDist) {
+    float dist = glm::length(point - m_position);
+
+    return dist <= maxDist && canSeePoint(point);
 }

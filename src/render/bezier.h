@@ -132,9 +132,9 @@ class BezierCombo3d {
         void move(float t){
             glm::vec3 ret = curve->pos_t(t);
             if(choice == 0){
-                prnt->offset = ret;
+                prnt->transform.translate = ret;
             }else{
-                prnt->scale = ret;
+                prnt->transform.scale = ret;
             }
         };
 };
@@ -149,9 +149,9 @@ class BezierCombo3dcomp {
         void move(float t){
             glm::vec3 ret = curve->pos_t(t);
             if(choice == 0){
-                prnt->offset = ret;
+                prnt->transform.translate = ret;
             }else{
-                prnt->scale = ret;
+                prnt->transform.scale = ret;
             }
         };
 };
@@ -166,9 +166,9 @@ class BezierCombo4d {
         void move(float t){
             glm::vec4 ret = curve->pos_t(t);
             if(choice == 0){
-                prnt->selfRotate = *BezierCurve4d::qToangl(ret);
+                prnt->transform.selfRotate = *BezierCurve4d::qToangl(ret);
             }else{
-                prnt->rotateParent = *BezierCurve4d::qToangl(ret);
+                prnt->transform.rotateParent = *BezierCurve4d::qToangl(ret);
             }
         };
 };
@@ -184,9 +184,9 @@ class BezierCombo4dcomp {
         void move(float t){
             glm::vec4 ret = curve->pos_t(t);
             if(choice == 0){
-                prnt->selfRotate = *BezierCurve4d::qToangl(ret);
+                prnt->transform.selfRotate = *BezierCurve4d::qToangl(ret);
             }else{
-                prnt->rotateParent = *BezierCurve4d::qToangl(ret);
+                prnt->transform.rotateParent = *BezierCurve4d::qToangl(ret);
             }
         };
 };

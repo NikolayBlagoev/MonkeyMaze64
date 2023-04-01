@@ -58,6 +58,8 @@ void Menu::drawCameraTab() {
         ImGui::DragFloat("FOV (Vertical)", &m_renderConfig.verticalFOV, 1.0f, 30.0f, 180.0f);
         ImGui::DragFloat("Zoomed FOV (Vertical)", &m_renderConfig.zoomedVerticalFOV, 1.0f, 20.0f, 120.0f);
         ImGui::Checkbox("Constrain Vertical Movement", &m_renderConfig.constrainVertical);
+        ImGui::Checkbox("Invert controls", &m_renderConfig.invertControls);
+        ImGui::Checkbox("Control player", &m_renderConfig.controlPlayer);
         ImGui::EndTabItem();
     }
 }
@@ -102,9 +104,9 @@ void Menu::drawMeshControls() {
 
         // Selected mesh controls
         if (m_scene.numMeshes() > 0U) {
-            ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.root->children[selectedMesh]->scale), 0.05f);
-            ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.root->children[selectedMesh]->selfRotate), 1.0f, 0.0f, 360.0f);
-            ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.root->children[selectedMesh]->offset), 0.05f);
+            ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.root->children[selectedMesh]->transform.translate), 0.05f);
+            ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.root->children[selectedMesh]->transform.selfRotate), 1.0f, 0.0f, 360.0f);
+            ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.root->children[selectedMesh]->transform.scale), 0.05f);
         }
 
         ImGui::EndTabItem();

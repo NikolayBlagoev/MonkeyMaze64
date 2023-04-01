@@ -50,74 +50,59 @@ void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::
 void DeferredRenderer::initGBuffer() {
     // Init G-Buffer
     glCreateFramebuffers(1, &gBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
 
     // Init attribute textures (keep textures at 4 values, e.g. RGBA, to avoid alignment issues)
     // and assign them as render targets
     glCreateTextures(GL_TEXTURE_2D, 1, &positionTex);
-    glBindTexture(GL_TEXTURE_2D, positionTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, positionTex, 0);
+    glTextureStorage2D(positionTex, 1, GL_RGBA16F, utils::WIDTH , utils::HEIGHT);
+    glTextureParameteri(positionTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(positionTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glNamedFramebufferTexture(gBuffer, GL_COLOR_ATTACHMENT0, positionTex, 0);
     glCreateTextures(GL_TEXTURE_2D, 1, &normalTex);
-    glBindTexture(GL_TEXTURE_2D, normalTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, normalTex, 0);
+    glTextureStorage2D(normalTex, 1, GL_RGBA16F, utils::WIDTH , utils::HEIGHT);
+    glTextureParameteri(normalTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(normalTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glNamedFramebufferTexture(gBuffer, GL_COLOR_ATTACHMENT1, normalTex, 0);
     glCreateTextures(GL_TEXTURE_2D, 1, &albedoTex);
-    glBindTexture(GL_TEXTURE_2D, albedoTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, albedoTex, 0);
+    glTextureStorage2D(albedoTex, 1, GL_RGBA8, utils::WIDTH, utils::HEIGHT);
+    glTextureParameteri(albedoTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(albedoTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glNamedFramebufferTexture(gBuffer, GL_COLOR_ATTACHMENT2, albedoTex, 0);
     glCreateTextures(GL_TEXTURE_2D, 1, &materialTex);
-    glBindTexture(GL_TEXTURE_2D, materialTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, materialTex, 0);
+    glTextureStorage2D(materialTex, 1, GL_RGBA8, utils::WIDTH, utils::HEIGHT);
+    glTextureParameteri(materialTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(materialTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glNamedFramebufferTexture(gBuffer, GL_COLOR_ATTACHMENT3, materialTex, 0);
     std::array<GLuint, 4UL> attachments { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-    glDrawBuffers(4, attachments.data());
+    glNamedFramebufferDrawBuffers(gBuffer, 4, attachments.data());
 
     // Create and attach depth buffer
     glCreateRenderbuffers(1, &rboDepthG);
-    glBindRenderbuffer(GL_RENDERBUFFER, rboDepthG);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, utils::WIDTH, utils::HEIGHT);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthG);
+    glNamedRenderbufferStorage(rboDepthG, GL_DEPTH_COMPONENT, utils::WIDTH, utils::HEIGHT);
+    glNamedFramebufferRenderbuffer(gBuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthG);
 
     // Check if framebuffer is complete
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) { std::cerr << "Failed to initialise deferred rendering framebuffer" << std::endl; }
-    else { std::cout << "Initialized deferred rendering framebuffer" << std::endl; }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (glCheckNamedFramebufferStatus(gBuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) { std::cerr << "Failed to initialise deferred rendering framebuffer" << std::endl; }
 }
 
 void DeferredRenderer::initHdrBuffer() {
     // Create HDR buffer
     glCreateFramebuffers(1, &hdrBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
 
     // Create texture to render to
     glCreateTextures(GL_TEXTURE_2D, 1, &hdrTex);
-    glBindTexture(GL_TEXTURE_2D, hdrTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, utils::WIDTH, utils::HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdrTex, 0);
+    glTextureStorage2D(hdrTex, 1, GL_RGBA16F, utils::WIDTH, utils::HEIGHT);
+    glTextureParameteri(hdrTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(hdrTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glNamedFramebufferTexture(hdrBuffer, GL_COLOR_ATTACHMENT0, hdrTex, 0);
 
     // Create and attach depth buffer
     glCreateRenderbuffers(1, &rboDepthHDR);
-    glBindRenderbuffer(GL_RENDERBUFFER, rboDepthHDR);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, utils::WIDTH, utils::HEIGHT);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthHDR);
+    glNamedRenderbufferStorage(rboDepthHDR, GL_DEPTH_COMPONENT, utils::WIDTH, utils::HEIGHT);
+    glNamedFramebufferRenderbuffer(hdrBuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthHDR);
 
     // Check if framebuffer is complete
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) { std::cerr << "Failed to initialise HDR intermediate framebuffer" << std::endl; }
-    else { std::cout << "Initialized HDR intermediate framebuffer" << std::endl; }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (glCheckNamedFramebufferStatus(hdrBuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) { std::cerr << "Failed to initialise HDR intermediate framebuffer" << std::endl; }
 }
 
 void DeferredRenderer::initBuffers() {
@@ -225,11 +210,10 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh, const glm::vec3
     glUniform3fv(23, 1, glm::value_ptr(cameraPos));
 }
 
-void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform,
-                              const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
+void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
     if (mt == nullptr) return;
    
-    const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
+    const glm::mat4& modelMatrix = mt->modelMatrix();
     if (mt->mesh != nullptr) {
         const GPUMesh& mesh = *(mt->mesh);
         
@@ -249,20 +233,21 @@ void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform,
     }
     
     for (MeshTree* child : mt->children) {
-        helper(child, modelMatrix, viewProjectionMatrix, cameraPos);
+        helper(child, viewProjectionMatrix, cameraPos);
     }
 }
 
 void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
-    // Bind the G-buffer and clear its previously held values
+    // Clear color and depth values then render each model
+    glClearTexImage(positionTex,    0, GL_RGBA, GL_HALF_FLOAT, 0);
+    glClearTexImage(normalTex,      0, GL_RGBA, GL_HALF_FLOAT, 0);
+    glClearTexImage(albedoTex,      0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, 0);
+    glClearTexImage(materialTex,    0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, 0);
+    glClearNamedFramebufferfv(gBuffer, GL_DEPTH, 0, &clearDepth);
+
+    // Bind G-Buffer and render each model
     glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Render each model
-    helper(m_scene.root, glm::mat4(1.f), viewProjectionMatrix, cameraPos);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    helper(m_scene.root, viewProjectionMatrix, cameraPos);
 }
 
 void DeferredRenderer::bindGBufferTextures() const {
@@ -343,8 +328,8 @@ void DeferredRenderer::renderPostProcessing(const float ensmall) {
 }
 
 void DeferredRenderer::copyGBufferDepth(GLuint destinationBuffer) {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destinationBuffer);
-    glBlitFramebuffer(0, 0, utils::WIDTH, utils::HEIGHT, 0, 0, utils::WIDTH, utils::HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBlitNamedFramebuffer(gBuffer, destinationBuffer,
+                           0, 0, utils::WIDTH, utils::HEIGHT,
+                           0, 0, utils::WIDTH, utils::HEIGHT,
+                           GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 }
