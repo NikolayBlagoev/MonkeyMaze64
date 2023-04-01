@@ -25,6 +25,7 @@ public:
 
     void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos);
     void initLightingShader();
+    void copyGBufferDepth(GLuint destinationBuffer);
 
 private:
     void initGBuffer();
@@ -41,7 +42,6 @@ private:
 
     void renderForward(const glm::mat4& viewProjectionMatrix);
     void renderPostProcessing();
-    void copyGBufferDepth(GLuint destinationBuffer);
 
     static constexpr GLuint INVALID     = 0xFFFFFFFF;
     static constexpr float clearDepth   = 1.0f;

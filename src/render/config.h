@@ -20,15 +20,17 @@ enum class LightingModel {
 };
 
 struct RenderConfig {
-    // Game mechanics
-    bool drawMinimap    { true };
-
     // Camera (angles in degrees)
     float moveSpeed         { 0.03f };
     float lookSpeed         { 0.0015f };
     float verticalFOV       { 60.0f };
     float zoomedVerticalFOV { 35.0f };
     bool constrainVertical  { false };
+
+    // Minimap
+    bool drawMinimap            { true };
+    float minimapVerticalFOV    { 60.0f };
+    float minimapTopDownOffset  { 10.0f };
 
     // Lighting
     LightingModel lightingModel     { LightingModel::PBR };

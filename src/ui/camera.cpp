@@ -7,25 +7,22 @@ DISABLE_WARNINGS_PUSH()
 #include <glm/gtc/quaternion.hpp>
 DISABLE_WARNINGS_POP()
 
-Camera::Camera(Window* pWindow, const RenderConfig& renderConfig, float topDownOffset)
-    : Camera(pWindow, renderConfig, topDownOffset, glm::vec3(0), glm::vec3(0, 0, -1))
-{
-}
+Camera::Camera(Window* pWindow, const RenderConfig& renderConfig)
+    : Camera(pWindow, renderConfig, glm::vec3(0), glm::vec3(0, 0, -1))
+{}
 
-Camera::Camera(Window* pWindow, const RenderConfig& renderConfig, float topDownOffset,
-               const glm::vec3& pos, const glm::vec3& forward)
+Camera::Camera(Window* pWindow, const RenderConfig& renderConfig, const glm::vec3& pos, const glm::vec3& forward)
     : m_position(pos)
     , m_forward(glm::normalize(forward))
     , m_pWindow(pWindow)
     , m_renderConfig(renderConfig)
-    , TOP_DOWN_OFFSET(topDownOffset)
 {}
 
 void Camera::setUserInteraction(bool enabled) { m_userInteraction = enabled; }
 
 glm::vec3 Camera::cameraPos() const { return m_position; }
 
-glm::vec3 Camera::topDownPos() const { return m_position + (TOP_DOWN_OFFSET * m_up); }
+glm::vec3 Camera::topDownPos() const { return m_position + (m_renderConfig.minimapTopDownOffset * m_up); }
 
 glm::mat4 Camera::viewMatrix() const { return glm::lookAt(m_position, m_position + m_forward, m_up); }
 

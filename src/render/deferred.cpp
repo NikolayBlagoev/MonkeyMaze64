@@ -47,7 +47,6 @@ void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::
     copyGBufferDepth(hdrBuffer);                        // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
     renderForward(viewProjectionMatrix);                // Render transparent objects which require forward rendering
     renderPostProcessing();                             // Combine post-processing results; HDR tonemapping and gamma correction
-    copyGBufferDepth(0U);                               // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
 }
 
 void DeferredRenderer::initGBuffer() {
@@ -216,8 +215,8 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh, const glm::vec3
 void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform,
                               const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
     if (mt == nullptr) return;
-   
     const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
+    
     if (mt->mesh != nullptr) {
         const GPUMesh& mesh = *(mt->mesh);
         

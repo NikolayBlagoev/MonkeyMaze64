@@ -1,7 +1,12 @@
 #ifndef _MENU_H_
 #define _MENU_H_
 
+#include <framework/disable_all_warnings.h>
+DISABLE_WARNINGS_PUSH()
+#include <glad/glad.h>
+DISABLE_WARNINGS_POP()
 #include <framework/shader.h>
+
 #include <render/deferred.h>
 #include <render/config.h>
 #include <render/lighting.h>
@@ -13,14 +18,14 @@ public:
     Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager,
          ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer);
 
-    void draw(const glm::mat4& cameraMVP);
-
-private:
     // Main drawing functions
     void draw2D();
     void draw3D(const glm::mat4& cameraMVP);
 
+private:
     /************ 2D UI ***********/ 
+    void drawGameMechanicsTab();
+
     void drawCameraTab();
 
     // Mesh tab

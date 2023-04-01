@@ -121,9 +121,8 @@ void drawMeshTreePtL(MeshTree* mt, const glm::mat4& currTransform,
     if(mt == nullptr) return;
 
     const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
-    if(mt->mesh != nullptr){
+    if (mt->mesh != nullptr){
         const GPUMesh& mesh                         = *(mt->mesh);
-        // std::cout<<"DRAWING"<<std::endl;
         const std::array<glm::mat4, 6U> lightMvps   = light.genMvpMatrices(modelMatrix, pointLightShadowMapsProjection);
 
          // Render each cubemap face
@@ -154,10 +153,8 @@ void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform,
     
     const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
     if(mt->mesh != nullptr){
-        const GPUMesh& mesh                         = *(mt->mesh);
+        const GPUMesh& mesh = *(mt->mesh);
     
-             
-
         // Bind light camera mvp matrix
         const glm::mat4 lightMvp = areaLightShadowMapsProjection * lightView *  modelMatrix;
         glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvp));
@@ -165,9 +162,7 @@ void drawMeshTreeAL(MeshTree* mt, const glm::mat4& currTransform,
         // Bind model's VAO and draw its elements
         mesh.draw();
     }
-    for(MeshTree* child : mt->children){
-        drawMeshTreeAL(child,modelMatrix, areaLightShadowMapsProjection, lightView, renderConfig);
-    }
+    for (MeshTree* child : mt->children) { drawMeshTreeAL(child,modelMatrix, areaLightShadowMapsProjection, lightView, renderConfig); }
 }
 
 CameraObj* makeCamera(GPUMesh* aperture, GPUMesh* camera, GPUMesh* stand2, GPUMesh* stand1,
@@ -199,7 +194,7 @@ int main() {
     
     RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
-    Camera mainCamera(&m_window, renderConfig, 10.0f, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
+    Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     TextureManager textureManager;
     Scene scene;
     LightManager lightManager(renderConfig);
@@ -207,7 +202,8 @@ int main() {
     std::weak_ptr<const Texture> xToonTex = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "toon_map.png");
     DeferredRenderer mainRenderer(utils::WIDTH, utils::HEIGHT, 
                                   renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
-    DeferredRenderer minimapRenderer(utils::WIDTH / 2, utils::HEIGHT / 2, 
+    DeferredRenderer minimapRenderer(utils::WIDTH   / static_cast<int32_t>(utils::MINIMAP_SIZE_SCALE),
+                                     utils::HEIGHT  / static_cast<int32_t>(utils::MINIMAP_SIZE_SCALE), 
                                      renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
     Menu menu(scene, renderConfig, lightManager, particleEmitterManager, mainRenderer);
 
@@ -265,6 +261,7 @@ int main() {
     MeshTree* boardRoot = new MeshTree();
     boardRoot->offset = offsetBoard;
    
+    // Bezier curve inits
     std::chrono::high_resolution_clock timer; 
     BezierCurve3d b3d = BezierCurve3d(glm::vec3(0.f), glm::vec3(1.f , 1.f, 0.f), glm::vec3(-1.f , 2.f, 0.f), glm::vec3(0.f, 3.f, 0.f), 10.f);
     BezierCurve3d b3d2 = BezierCurve3d(glm::vec3(0.f, 3.f, 0.f), glm::vec3(-1.f , 2.f, 0.f), glm::vec3(1.f , 1.f, 0.f), glm::vec3(0.f), 10.f);
@@ -284,7 +281,6 @@ int main() {
     while (!m_window.shouldClose()) {
         rndrr.do_moves(timer.now());
         float delta = std::chrono::duration<float>(timer.now() - millisec_since_epoch).count();
-        float enred = delta/100.f;
 
         // Clear the screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -297,9 +293,7 @@ int main() {
             boardRoot = new MeshTree();
             boardRoot->offset = offsetBoard;
             for(int i = 0; i < 7; i ++){
-                // glm::vec3 offset(0.f,10.f*i,0.f);
                 for(int j = 0; j < 7; j++){
-              
                     if(boardCopy[i][j]->tileType == 1 ){
                         boardRoot->addChild(new MeshTree(&crossing, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 2 ){
@@ -352,9 +346,8 @@ int main() {
         }
         
         // View-projection matrices setup
-        const float fovRadians                  = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 viewProjectionMain      = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
-        const glm::mat4 viewProjectionMinimap   = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.topDownViewMatrix();
+        const float fovRadiansMain              = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 viewProjectionMain      = glm::perspective(fovRadiansMain, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
 
         // Controls
         ImGuiIO io = ImGui::GetIO();
@@ -393,14 +386,20 @@ int main() {
             drawMeshTreeAL(scene.root,glm::mat4(1),areaLightShadowMapsProjection, lightView, renderConfig);
         }
 
-        // Render scene
+        // Render scene and 3D GUI objects
         mainRenderer.render(viewProjectionMain, mainCamera.cameraPos());
-        if (renderConfig.drawMinimap) { minimapRenderer.render(viewProjectionMinimap, mainCamera.topDownPos()); }
+        mainRenderer.copyGBufferDepth(0); // Copy main renderer G-buffer depth data to main framebuffer so 3D UI elements are depth tested appropriately
+        menu.draw3D(viewProjectionMain);
+        
+        // Draw minimap if desired
+        if (renderConfig.drawMinimap) {
+            const float fovRadiansMinimap           = glm::radians(renderConfig.minimapVerticalFOV);
+            const glm::mat4 viewProjectionMinimap   = glm::perspective(fovRadiansMinimap, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.topDownViewMatrix();
+            minimapRenderer.render(viewProjectionMinimap, mainCamera.topDownPos());
+        }
 
-        // Draw UI
-        glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        menu.draw(viewProjectionMain);
+        // Draw 2D GUI
+        menu.draw2D();
 
         // Process inputs and swap the window buffer
         m_window.swapBuffers();

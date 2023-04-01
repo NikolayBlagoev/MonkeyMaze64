@@ -14,9 +14,8 @@ DISABLE_WARNINGS_POP()
 
 class Camera {
 public:
-    Camera(Window* pWindow, const RenderConfig& m_renderConfig, float topDownOffset);
-    Camera(Window* pWindow, const RenderConfig& m_renderConfig, float topDownOffset,
-           const glm::vec3& position, const glm::vec3& forward);
+    Camera(Window* pWindow, const RenderConfig& m_renderConfig);
+    Camera(Window* pWindow, const RenderConfig& m_renderConfig, const glm::vec3& position, const glm::vec3& forward);
 
     void updateInput();
     void setUserInteraction(bool enabled);
@@ -36,8 +35,6 @@ private:
     glm::vec3 m_position { 0 };
     glm::vec3 m_forward { 0, 0, -1 };
     glm::vec3 m_up { 0, 1, 0 };
-
-    float TOP_DOWN_OFFSET { 1.0f };
 
     const Window* m_pWindow;
     const RenderConfig& m_renderConfig;
