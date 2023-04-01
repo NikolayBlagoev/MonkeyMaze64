@@ -73,17 +73,16 @@ glm::mat4 MeshTree::modelMatrix() {
         currTransform = parent->modelMatrix();
 
     // Translate
-    currTransform = glm::translate(currTransform, transform.translate);
+    
 
     // Rotate
     // glm::vec3 axis = glm::normalize(glm::vec3(transform.rotateParent.x, transform.rotateParent.y, transform.rotateParent.z));
-    currTransform = glm::rotate(currTransform, glm::radians(transform.rotateParent.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    currTransform = glm::rotate(currTransform, glm::radians(transform.rotateParent.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    currTransform = glm::rotate(currTransform, glm::radians(transform.rotateParent.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    currTransform = glm::rotate(currTransform, glm::radians(transform.rotateParent.w), glm::vec3(transform.rotateParent.x, transform.rotateParent.y, transform.rotateParent.z));
 
-    currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    currTransform = glm::translate(currTransform, transform.translate);
+    currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.w), glm::vec3(transform.selfRotate.x, transform.selfRotate.y, transform.selfRotate.z));
+
 
     // Scale
     return glm::scale(currTransform, transform.scale);

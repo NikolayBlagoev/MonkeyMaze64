@@ -22,7 +22,7 @@ public:
     void updateInput();
     void updateInput(MeshTree* mesh);
     void setUserInteraction(bool enabled);
-
+    bool* update;
     glm::vec3 cameraPos() const;
     glm::mat4 viewMatrix() const;
 

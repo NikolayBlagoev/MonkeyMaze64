@@ -21,6 +21,7 @@ struct MeshTransform {
 
 class MeshTree {
 public:
+   
     MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl)
         : MeshTree(msh, off, rots, rotp, scl, true) {}
     MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision);
@@ -28,7 +29,7 @@ public:
     MeshTree(Mesh* msh)
         : MeshTree(msh, true) {}
     MeshTree(Mesh* msh, bool allowCollision);
-
+    
     void addChild(MeshTree* child);
 
     glm::mat4 modelMatrix();
