@@ -100,20 +100,28 @@ void Camera::updateInput(MeshTree *mesh) {
 
         // Forward, backward and strafe
         if (m_pWindow->isKeyPressed(GLFW_KEY_A)) {
-            if (mesh->tryTranslation(-right))
+            if (mesh->tryTranslation(-right)){
                 m_position -= right;
+                *update = true;
+            }
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_D)) {
-            if (mesh->tryTranslation(right))
+            if (mesh->tryTranslation(right)){
                 m_position += right;
+                *update = true;
+            }
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_W)) {
-            if (mesh->tryTranslation(forward))
+            if (mesh->tryTranslation(forward)){
                 m_position += forward;
+                *update = true;
+            }
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_S)) {
-            if (mesh->tryTranslation(-forward))
+            if (mesh->tryTranslation(-forward)){
                 m_position -= forward;
+                *update = true;
+            }
         }
 
         // Up and down
@@ -148,11 +156,11 @@ void Camera::updateInput(MeshTree *mesh) {
             // rotate
             rotateY(delta.x);
 
-            mesh->transform.selfRotate.y += glm::degrees(delta.x);
+            mesh->transform.selfRotate = glm::vec4(0.f, 1.f, 0.f, 180.f + glm::degrees(delta.x));
 
             if (!m_renderConfig.constrainVertical) {
                 rotateX(-delta.y);
-                mesh->transform.selfRotate.x -= glm::degrees(-delta.y);
+                // mesh->transform.selfRotate.x -= glm::degrees(-delta.y);
             }
 
             // move back

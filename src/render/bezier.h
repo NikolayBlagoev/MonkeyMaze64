@@ -73,9 +73,8 @@ class CompositeBezier3d : public BezierCurve3dGeneral{
         };
         glm::vec3 pos_t(float t){
             if(loop){
-                while(t-total > 0){
-                    t-=total;
-                }
+                int rem = static_cast<int>(floor(t / total));
+                t = t - total*rem;
             }
             if(t<0) curves.at(0)->p1;
             if(t>total) curves.at(curves.size()-1)->p4;
@@ -102,7 +101,7 @@ class CompositeBezier4d : public BezierCurve4dGeneral{
         glm::vec4 pos_t(float t){
             if(loop){
                 int rem = static_cast<int>(floor(t / total));
-                t = total - t*rem;
+                t = t - total*rem;
             }
             if(t<0) curves.at(0)->p1;
             if(t>total) curves.at(curves.size()-1)->p4;

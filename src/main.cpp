@@ -45,6 +45,7 @@ Defined*** boardCopy;
 const float factorx = 7.72f;
 const float factory = 7.72f;
 const float board_init_off = -6.2f;
+bool motion = false;
 glm::vec3 offsetBoard ( -3*factorx,0.f,-3*factory);
 
 bool* ready = new bool;
@@ -95,6 +96,7 @@ void onKeyReleased(int key, int) {
         case GLFW_KEY_LEFT_CONTROL:
             cameraZoomed = false;
             break;
+
     }
 }
 
@@ -203,6 +205,7 @@ int main() {
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
     Camera mainCamera(&m_window, renderConfig, glm::vec3(2.0f, 3.0f, 0.0f), -glm::vec3(1.0f, 1.1f, 0.0f));
     Camera playerCamera(&m_window, renderConfig, playerCameraPos, playerPos - playerCameraPos);
+    playerCamera.update = &motion;
     TextureManager textureManager;
     Scene scene;
     LightManager lightManager(renderConfig);
@@ -243,14 +246,36 @@ int main() {
     // Add models
     Mesh dragonMesh = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj"));
     // scene.addMesh(utils::RESOURCES_DIR_PATH / "models" / "dragonWithFloor.obj");
+    Mesh monkeypose0 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose0.obj"));
+    Mesh monkeypose2 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose2.obj"));
+    Mesh monkeypose4 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose4.obj"));
+    Mesh monkeypose6 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose6.obj"));
+    Mesh monkeypose8 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose8.obj"));
+    Mesh monkeypose10 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose10.obj"));
+    Mesh monkeypose12 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose12.obj"));
+    Mesh monkeypose14 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose14.obj"));
+    Mesh monkeypose16 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose16.obj"));
+    Mesh monkeypose18 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose18.obj"));
+    Mesh monkeypose20 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose20.obj"));
+    Mesh monkeypose22 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose22.obj"));
+    Mesh monkeypose24 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose24.obj"));
+    Mesh monkeypose26 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose26.obj"));
+    Mesh monkeypose28 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose28.obj"));
+    Mesh monkeypose30 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose30.obj"));
 
+
+ 
+    GPUMesh monkeyposes[16] = {GPUMesh(monkeypose0), GPUMesh(monkeypose2), GPUMesh(monkeypose4), GPUMesh(monkeypose6),
+                        GPUMesh(monkeypose8), GPUMesh(monkeypose10), GPUMesh(monkeypose12), GPUMesh(monkeypose14),
+                        GPUMesh(monkeypose16), GPUMesh(monkeypose18), GPUMesh(monkeypose20), GPUMesh(monkeypose22),
+                        GPUMesh(monkeypose24), GPUMesh(monkeypose26), GPUMesh(monkeypose28), GPUMesh(monkeypose30)};
     MeshTree* bezierDragon = new MeshTree(&dragonMesh);
     scene.addMesh(bezierDragon);
 
-    MeshTree* playerDragon = new MeshTree(&dragonMesh, playerPos,
+    MeshTree* playerDragon = new MeshTree(&monkeypose0, playerPos,
+                                          glm::vec4(0.0f, 1.0f, 0.0f, 180.0f),
                                           glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
-                                          glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
-                                          glm::vec3(1.0f),
+                                          glm::vec3(0.3f),
                                           true);
     scene.addMesh(playerDragon);
 
@@ -294,15 +319,33 @@ int main() {
     BezierCombo4d combo2 = BezierCombo4d(bezierDragon, &b4d, 0);
     rndrr.add4d(&combo2);
     bool flag = true;
-    
+    bool prev_motion = motion;
+    std::chrono::time_point start_motion = millisec_since_epoch;
+
     // Main loop
     while (!m_window.shouldClose()) {
         Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
-
-        rndrr.do_moves(timer.now());
-        float delta = std::chrono::duration<float>(timer.now() - millisec_since_epoch).count();
-        float enred = delta/100.f;
-
+        std::chrono::time_point curr_frame = timer.now();
+        rndrr.do_moves(curr_frame);
+        float delta = std::chrono::duration<float>(curr_frame - millisec_since_epoch).count();
+        int rem = static_cast<int>(floor(delta / 0.4f));
+        float pos = delta - 0.4f*rem;
+        if(motion){
+            if(!prev_motion) start_motion = curr_frame;
+            if(pos > 0.2f){
+                pos = pos - 0.2f;
+                pos = 15.f*pos/0.2f;
+                playerDragon->mesh = &monkeyposes[15 - static_cast<int>(floor(pos))];
+            }else{
+                pos = 15.f*pos/0.2f;
+                playerDragon->mesh = &monkeyposes[static_cast<int>(floor(pos))];
+                
+            }
+            prev_motion = motion;
+            motion = false;
+        }else{
+            playerDragon->mesh = &monkeyposes[0];
+        }
         // Clear the screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
