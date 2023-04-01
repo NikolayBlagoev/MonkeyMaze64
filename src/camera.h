@@ -1,15 +1,16 @@
 #pragma once
 
 #include <vector>
-#include "render/mesh_tree.h"
+#include <glm/vec4.hpp>
 
 class CameraObj{
     public:
-    CameraObj(MeshTree* cam, MeshTree* stand, MeshTree* stand1 ) : camera(cam), stand2(stand), root(stand1) {
+    CameraObj(glm::vec4* cam, glm::vec4* stand) : camera(cam), stand2(stand) {
 
     }
-    MeshTree* camera;
-    MeshTree* stand2;
-    MeshTree* root;
+    glm::vec4* camera;
+    glm::vec4* stand2;
+    bool motion_left = true;
+    bool motion_up = true;
 
 };

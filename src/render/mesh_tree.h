@@ -11,6 +11,7 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <vector>
+#include <camera.h>
 
 struct MeshTransform {
     glm::vec3 translate;
@@ -31,22 +32,25 @@ public:
     MeshTree(Mesh* msh, bool allowCollision);
     
     void addChild(MeshTree* child);
-
     glm::mat4 modelMatrix();
-
     HitBox getTransformedHitBox();
     glm::vec3 getTransformedHitBoxMiddle();
-
     bool collide(MeshTree* other);
-
+    
     bool tryTranslation(glm::vec3 translation);
 
 public:
     GPUMesh* mesh;
+    
     MeshTransform transform;
     HitBox hitBox;
+    std::shared_ptr<CameraObj> camera;
     MeshTree* parent { nullptr };
     std::vector<MeshTree*> children;
+    std::shared_ptr<glm::vec4> selfRotate;
+    std::shared_ptr<glm::vec4> rotateParent;
+    std::shared_ptr<glm::vec3> translate;
+    std::shared_ptr<glm::vec3> scale;
 };
 
 #endif
