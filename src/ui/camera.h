@@ -11,6 +11,7 @@ DISABLE_WARNINGS_PUSH()
 #include <glm/vec3.hpp>
 DISABLE_WARNINGS_POP()
 #include <framework/window.h>
+#include "render/mesh_tree.h"
 
 class Camera {
 public:
@@ -19,10 +20,14 @@ public:
            const glm::vec3& position, const glm::vec3& forward);
 
     void updateInput();
+    void updateInput(MeshTree* mesh);
     void setUserInteraction(bool enabled);
 
     glm::vec3 cameraPos() const;
     glm::mat4 viewMatrix() const;
+
+    bool canSeePoint(glm::vec3 point);
+    bool canSeePoint(glm::vec3 point, float maxDist);
 
 private:
     void rotateX(float angle);

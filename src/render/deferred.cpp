@@ -210,11 +210,10 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh, const glm::vec3
     glUniform3fv(23, 1, glm::value_ptr(cameraPos));
 }
 
-void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform,
-                              const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
+void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
     if (mt == nullptr) return;
    
-    const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
+    const glm::mat4& modelMatrix = mt->modelMatrix();
     if (mt->mesh != nullptr) {
         const GPUMesh& mesh = *(mt->mesh);
         
@@ -234,7 +233,7 @@ void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform,
     }
     
     for (MeshTree* child : mt->children) {
-        helper(child, modelMatrix, viewProjectionMatrix, cameraPos);
+        helper(child, viewProjectionMatrix, cameraPos);
     }
 }
 
@@ -248,7 +247,7 @@ void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix, con
 
     // Bind G-Buffer and render each model
     glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-    helper(m_scene.root, glm::mat4(1.0f), viewProjectionMatrix, cameraPos);
+    helper(m_scene.root, viewProjectionMatrix, cameraPos);
 }
 
 void DeferredRenderer::bindGBufferTextures() const {
