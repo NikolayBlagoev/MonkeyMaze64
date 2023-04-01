@@ -55,14 +55,14 @@ class BezierCurve4d : public BezierCurve4dGeneral{
             return float(pow(1.f-t,3)) * p1 + 3 * float(pow(1.f-t,2)) * t * p3 + 3 * float(pow(t,2)) * (1.f - t) * p3 + float(pow(t,3))*p4;
         }
 
-        static glm::vec4* qToangl(glm::vec4& inp){
+        static glm::vec4 qToangl(glm::vec4& inp){
             glm::vec4 in = glm::normalize(inp);
             float angle_rad = acos(in.w) * 2.f;
             float angle_deg = angle_rad * 180.f / 3.141592f;
             float x = in.x / sin(angle_rad/2.f);
             float y = in.y / sin(angle_rad/2.f);
             float z = in.z / sin(angle_rad/2.f);
-            return new glm::vec4(x,y,z,angle_deg);
+            return glm::vec4(x,y,z,angle_deg);
         }
 };
 
@@ -130,6 +130,7 @@ class BezierCombo3d {
         };
         bool move(float t){
             if(to_move.expired()){
+                
                 free(curve);
                 return false;
             }
@@ -149,6 +150,10 @@ class BezierCombo3dcomp {
         };
         bool move(float t){
             if(to_move.expired()){
+                for(int i = 0; i < curve->curves.size(); i++){
+                    BezierCurve3d* tmp = curve->curves.at(i);
+                    free(tmp);
+                }
                 free(curve);
                 return false;
             }
@@ -171,7 +176,7 @@ class BezierCombo4d {
                 return false;
             }
             glm::vec4 ret = curve->pos_t(t);
-            *(to_move.lock().get()) = ret;
+            *(to_move.lock().get()) = BezierCurve4d::qToangl(ret);
             return true;
         };
 };
@@ -185,11 +190,15 @@ class BezierCombo4dcomp {
         };
         bool move(float t){
             if(to_move.expired()){
+                for(int i = 0; i < curve->curves.size(); i++){
+                    BezierCurve4d* tmp = curve->curves.at(i);
+                    free(tmp);
+                }
                 free(curve);
                 return false;
             }
             glm::vec4 ret = curve->pos_t(t);
-            *(to_move.lock().get()) = ret;
+            *(to_move.lock().get()) = BezierCurve4d::qToangl(ret);
             return true;
         };
 };
@@ -247,6 +256,10 @@ class BezierCurveRenderer{
         size_t add4d(BezierCombo4d* curve4d){
             curves4d.push_back(curve4d);
             return curves4d.size() - 1UL;
+        }
+        size_t add4dcomp(BezierCombo4dcomp* curve4d){
+            compcurves4d.push_back(curve4d);
+            return compcurves4d.size() - 1UL;
         }
     
 };

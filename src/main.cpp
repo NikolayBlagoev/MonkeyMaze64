@@ -204,7 +204,7 @@ void makeCameraMoves(){
 //     return cam;
 // }
 
-void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* camera, Mesh* stand2, Mesh* stand1, Mesh* suzanne){
+void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* camera, Mesh* stand2, Mesh* stand1, Mesh* suzanne, BezierCurveRenderer& rndrr){
     for(int i = 0; i < roomTile->objs.size(); i++){
         if(roomTile->objs.at(i)->type == 0){
             // CameraObj* cam = makeCamera(aperture, camera, stand2, stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec3(1.f));
@@ -224,7 +224,18 @@ void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* cam
             // CameraObj* cam = makeCamera(aperture, camera, stand2, stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec3(1.f));
             MeshTree* ret = new MeshTree(suzanne, glm::vec3(-3.f, 2.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(1.f));
             room->addChild(ret);
-            
+            BezierCurve3d* b3d = new BezierCurve3d(glm::vec3(-3.f, 2.f, 0.f), glm::vec3(-3.3f , 3.f, 0.f), glm::vec3(-2.7f , 4.f, 0.f), glm::vec3(-3.f, 5.f, 0.f), 10.f);
+            BezierCurve3d* b3d2 = new BezierCurve3d(glm::vec3(-3.f, 5.f, 0.f), glm::vec3(-2.7f , 4.f, 0.f), glm::vec3(-3.3f , 3.f, 0.f), glm::vec3(-3.f, 2.f, 0.f), 10.f);
+            CompositeBezier3d* b3c = new CompositeBezier3d({b3d,b3d2}, true, 20.f);
+            BezierCombo3dcomp* combo = new BezierCombo3dcomp(b3c,ret->translate);
+            rndrr.add3dcomp(combo);
+
+            BezierCurve4d* b4d = new BezierCurve4d(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
+            BezierCurve4d* b4d2 = new BezierCurve4d(glm::vec4(0.f , 1.f, 0.f, 0.f) , glm::vec4(0.f , -0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , -0.3826834f, 0.f, 0.9238795f),  glm::vec4(0.f, -0.0005f, 0.f, 0.9999999f), 10.f);
+            CompositeBezier4d* b4c = new CompositeBezier4d({b4d, b4d2}, true, 20.f);
+            BezierCombo4dcomp* combo2 = new BezierCombo4dcomp(b4c,ret->selfRotate);
+            rndrr.add4dcomp(combo2);
+
             
         }
     }
@@ -409,19 +420,19 @@ int main() {
                     }else if(boardCopy[i][j]->tileType == 2 ){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 270.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne);
+                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr);
                     }else if(boardCopy[i][j]->tileType == 3){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne);
+                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr);
                     }else if(boardCopy[i][j]->tileType == 4){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne);
+                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr);
                     }else if(boardCopy[i][j]->tileType == 5){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 180.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne);
+                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr);
                     }else if(boardCopy[i][j]->tileType == 6){
                         boardRoot->addChild(new MeshTree(&crossing, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f)));
                     }else if(boardCopy[i][j]->tileType == 7){
