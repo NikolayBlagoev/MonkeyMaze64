@@ -12,7 +12,7 @@ DISABLE_WARNINGS_POP()
 
 class BloomFilter {
 public:
-    BloomFilter(RenderConfig& renderConfig);
+    BloomFilter(int32_t renderWidth, int32_t renderHeight, RenderConfig& renderConfig);
     ~BloomFilter();
 
     GLuint render(GLuint hdrTex);
@@ -23,6 +23,10 @@ private:
     void initShaders();
     void extractBrightRegions(GLuint hdrTex);
     GLuint computeBlur();
+
+    // Render resolution
+    const int32_t RENDER_WIDTH  { utils::WIDTH };
+    const int32_t RENDER_HEIGHT { utils::HEIGHT };
 
     // Framebuffer (and corresponding texture) for extracting bright regions of rendered image
     GLuint brightBuffer;

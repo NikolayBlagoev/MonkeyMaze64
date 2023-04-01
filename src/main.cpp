@@ -199,14 +199,17 @@ int main() {
     
     RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
-    Camera mainCamera(&m_window, renderConfig, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
+    Camera mainCamera(&m_window, renderConfig, 10.0f, glm::vec3(3.0f, 3.0f, 3.0f), -glm::vec3(1.2f, 1.1f, 0.9f));
     TextureManager textureManager;
     Scene scene;
     LightManager lightManager(renderConfig);
     ParticleEmitterManager particleEmitterManager(renderConfig);
     std::weak_ptr<const Texture> xToonTex = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "toon_map.png");
-    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
-    Menu menu(scene, renderConfig, lightManager, particleEmitterManager, deferredRenderer);
+    DeferredRenderer mainRenderer(utils::WIDTH, utils::HEIGHT, 
+                                  renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
+    DeferredRenderer minimapRenderer(utils::WIDTH / 2, utils::HEIGHT / 2, 
+                                     renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
+    Menu menu(scene, renderConfig, lightManager, particleEmitterManager, mainRenderer);
 
     // Register UI callbacks
     m_window.registerKeyCallback(keyCallback);
@@ -349,8 +352,9 @@ int main() {
         }
         
         // View-projection matrices setup
-        const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
+        const float fovRadians                  = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 viewProjectionMain      = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
+        const glm::mat4 viewProjectionMinimap   = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.topDownViewMatrix();
 
         // Controls
         ImGuiIO io = ImGui::GetIO();
@@ -363,11 +367,9 @@ int main() {
         // Render point lights shadow maps
         const glm::mat4 pointLightShadowMapsProjection = renderConfig.pointShadowMapsProjectionMatrix();
         glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
-
         for (size_t pointLightNum = 0U; pointLightNum < lightManager.numPointLights(); pointLightNum++) {
             const PointLight& light = lightManager.pointLightAt(pointLightNum);
             light.wipeFramebuffers();
-
             drawMeshTreePtL(scene.root,glm::mat4(1),light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
         }
 
@@ -389,16 +391,16 @@ int main() {
 
             // Render each model in the scene
             drawMeshTreeAL(scene.root,glm::mat4(1),areaLightShadowMapsProjection, lightView, renderConfig);
-       
         }
 
         // Render scene
-        deferredRenderer.render(m_viewProjectionMatrix, mainCamera.cameraPos(), 0.f);
+        mainRenderer.render(viewProjectionMain, mainCamera.cameraPos());
+        if (renderConfig.drawMinimap) { minimapRenderer.render(viewProjectionMinimap, mainCamera.topDownPos()); }
 
         // Draw UI
         glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        menu.draw(m_viewProjectionMatrix);
+        menu.draw(viewProjectionMain);
 
         // Process inputs and swap the window buffer
         m_window.swapBuffers();

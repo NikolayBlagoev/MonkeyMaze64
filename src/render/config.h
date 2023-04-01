@@ -20,6 +20,9 @@ enum class LightingModel {
 };
 
 struct RenderConfig {
+    // Game mechanics
+    bool drawMinimap    { true };
+
     // Camera (angles in degrees)
     float moveSpeed         { 0.03f };
     float lookSpeed         { 0.0015f };

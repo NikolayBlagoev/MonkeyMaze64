@@ -14,15 +14,17 @@ DISABLE_WARNINGS_POP()
 
 class Camera {
 public:
-    Camera(Window* pWindow, const RenderConfig& m_renderConfig);
-    Camera(Window* pWindow, const RenderConfig& m_renderConfig,
+    Camera(Window* pWindow, const RenderConfig& m_renderConfig, float topDownOffset);
+    Camera(Window* pWindow, const RenderConfig& m_renderConfig, float topDownOffset,
            const glm::vec3& position, const glm::vec3& forward);
 
     void updateInput();
     void setUserInteraction(bool enabled);
 
     glm::vec3 cameraPos() const;
+    glm::vec3 topDownPos() const;
     glm::mat4 viewMatrix() const;
+    glm::mat4 topDownViewMatrix() const;
 
 private:
     void rotateX(float angle);
@@ -30,9 +32,12 @@ private:
 
 private:
     static constexpr glm::vec3 s_yAxis { 0, 1, 0 };
+
     glm::vec3 m_position { 0 };
     glm::vec3 m_forward { 0, 0, -1 };
     glm::vec3 m_up { 0, 1, 0 };
+
+    float TOP_DOWN_OFFSET { 1.0f };
 
     const Window* m_pWindow;
     const RenderConfig& m_renderConfig;

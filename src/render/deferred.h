@@ -18,11 +18,12 @@ DISABLE_WARNINGS_POP()
 // TODO: Adapt to resize framebuffer sizes when window size changes
 class DeferredRenderer {
 public:
-    DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager,
+    DeferredRenderer(int32_t renderWidth, int32_t renderHeight,
+                     RenderConfig& renderConfig, Scene& scene, LightManager& lightManager,
                      ParticleEmitterManager& particleEmitterManager, std::weak_ptr<const Texture> xToonTex);
     ~DeferredRenderer();
 
-    void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos, const float enred);
+    void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos);
     void initLightingShader();
 
 private:
@@ -36,7 +37,7 @@ private:
     void renderGeometry(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const;
     
     void bindGBufferTextures() const;
-    void renderLighting(const glm::vec3& cameraPos, const float enred);
+    void renderLighting(const glm::vec3& cameraPos);
 
     void renderForward(const glm::mat4& viewProjectionMatrix);
     void renderPostProcessing();
@@ -44,6 +45,10 @@ private:
 
     static constexpr GLuint INVALID     = 0xFFFFFFFF;
     static constexpr float clearDepth   = 1.0f;
+
+    // Render resolution
+    const int32_t RENDER_WIDTH  { utils::WIDTH };
+    const int32_t RENDER_HEIGHT { utils::HEIGHT };
 
     GLuint gBuffer;     // Framebuffer ID for the G-buffer
     GLuint rboDepthG;   // G-buffer depth buffer

@@ -4,8 +4,10 @@
 #include <utils/constants.h>
 #include <utils/render_utils.hpp>
 
-BloomFilter::BloomFilter(RenderConfig& renderConfig)
-    : m_renderConfig(renderConfig) {
+BloomFilter::BloomFilter(int32_t renderWidth, int32_t renderHeight, RenderConfig& renderConfig)
+    : RENDER_WIDTH(renderWidth)
+    , RENDER_HEIGHT(renderHeight)
+    , m_renderConfig(renderConfig) {
         initBuffers();
         initTextures();
         initShaders();
@@ -31,7 +33,7 @@ void BloomFilter::initBuffers() {
 void BloomFilter::initTextures() {
     // Bright regions
     glCreateTextures(GL_TEXTURE_2D, 1, &brightTex);
-    glTextureStorage2D(brightTex, 1, GL_RGB16F, utils::WIDTH , utils::HEIGHT);
+    glTextureStorage2D(brightTex, 1, GL_RGB16F, RENDER_WIDTH , RENDER_HEIGHT);
     glTextureParameteri(brightTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTextureParameteri(brightTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTextureParameteri(brightTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -42,7 +44,7 @@ void BloomFilter::initTextures() {
     // Blur
     glCreateTextures(GL_TEXTURE_2D, 2, blurTextures.data());
     for (size_t blurIdx = 0UL; blurIdx < 2UL; blurIdx++) {
-        glTextureStorage2D(blurTextures[blurIdx], 1, GL_RGB16F, utils::WIDTH , utils::HEIGHT);
+        glTextureStorage2D(blurTextures[blurIdx], 1, GL_RGB16F, RENDER_WIDTH , RENDER_HEIGHT);
         glTextureParameteri(blurTextures[blurIdx], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTextureParameteri(blurTextures[blurIdx], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTextureParameteri(blurTextures[blurIdx], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
