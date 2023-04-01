@@ -241,8 +241,8 @@ void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix, con
     // Clear color and depth values then render each model
     glClearTexImage(positionTex,    0, GL_RGBA, GL_HALF_FLOAT, 0);
     glClearTexImage(normalTex,      0, GL_RGBA, GL_HALF_FLOAT, 0);
-    glClearTexImage(albedoTex,      0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, 0);
-    glClearTexImage(materialTex,    0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, 0);
+    glClearTexImage(albedoTex,      0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glClearTexImage(materialTex,    0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     glClearNamedFramebufferfv(gBuffer, GL_DEPTH, 0, &clearDepth);
 
     // Bind G-Buffer and render each model
@@ -266,11 +266,12 @@ void DeferredRenderer::bindGBufferTextures() const {
 }
 
 void DeferredRenderer::renderLighting(const glm::vec3& cameraPos, const float enred) {
-    // Bind HDR framebuffer and clear previous values
+    // Clear previous HDR texture values
+    glClearTexImage(hdrTex, 0, GL_RGBA, GL_HALF_FLOAT, 0);
+    glClearNamedFramebufferfv(hdrBuffer, GL_DEPTH, 0, &clearDepth);
+    
+    // Bind HDR framebuffer, lighting shader, G-buffer textures, and set general usage uniforms
     glBindFramebuffer(GL_FRAMEBUFFER, hdrBuffer);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Bind shader, G-buffer textures, and general usage uniforms
     lightingPass.bind();
     bindGBufferTextures();
     glUniform3fv(4, 1, glm::value_ptr(cameraPos));
