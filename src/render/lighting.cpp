@@ -39,11 +39,17 @@ glm::vec3 AreaLight::forwardDirection() const {
 
 glm::mat4 AreaLight::viewMatrix() const {
     // Construct upward direction
-    const glm::vec3 forward = forwardDirection();
-    const glm::vec3 horAxis = glm::cross(s_yAxis, forward);
-    const glm::vec3 up      = glm::normalize(glm::cross(forward, horAxis));
+    if(!selfRotating){
+        const glm::vec3 forward = forwardDirection();
+        const glm::vec3 horAxis = glm::cross(s_yAxis, forward);
+        const glm::vec3 up      = glm::normalize(glm::cross(forward, horAxis));
 
-    return glm::lookAt(position, position + forward, up);
+        return glm::lookAt(position, position + forward, up);
+    }else{
+        const glm::vec3 horAxis = glm::cross(s_yAxis, forwardown);
+        const glm::vec3 up      = glm::normalize(glm::cross(forwardown, horAxis));
+        return glm::lookAt(position, position + forwardown, up);
+    }
 }
 
 LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(renderConfig) { 

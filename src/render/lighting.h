@@ -55,6 +55,8 @@ struct AreaLight {
 
     glm::vec3 forwardDirection() const;
     glm::mat4 viewMatrix() const;
+    bool selfRotating = false;
+    glm::vec3 forwardown = glm::vec3(0.0f);
 };
 
 struct AreaLightShader {

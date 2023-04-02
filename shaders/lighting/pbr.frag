@@ -78,7 +78,7 @@ float sampleAreaShadow(vec4 sampleLightCoord, uint lightIdx, float falloff) {
     dist = 1.0 - dist;
     dist = max(0.0, dist);
     dist = pow(dist, falloff);
-    return dist*texture(areaShadowTexArr, texcoord);
+    return texture(areaShadowTexArr, texcoord) != 0.0 ? dist : 0.f;
 }
 
 /*****************************************************************************************************/
@@ -200,7 +200,7 @@ void main() {
         // dist = pow(dist, light.falloff.x);
         vec4 fragLightCoord     = light.viewProjection * vec4(fragPos, 1.0);
         float successFraction   = sampleAreaShadow(fragLightCoord, lightIdx, light.falloff.x);
-        if (successFraction != 0.0) { fragColor.rgb += computeReflectance(fragPos, fragNormal, fragAlbedo, metallic, roughness, lightPosition, lightColor, positionToCamera, F0); }
+        if (successFraction != 0.0) { fragColor.rgb += successFraction*computeReflectance(fragPos, fragNormal, fragAlbedo, metallic, roughness, lightPosition, lightColor, positionToCamera, F0); }
     }
     
     // Ambient lighting
