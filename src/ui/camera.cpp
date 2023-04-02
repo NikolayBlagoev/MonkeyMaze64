@@ -156,7 +156,7 @@ void Camera::updateInput(MeshTree *mesh) {
             // rotate
             rotateY(delta.x);
 
-            mesh->transform.selfRotate = glm::vec4(0.f, 1.f, 0.f, 180.f + glm::degrees(delta.x));
+            mesh->transform.selfRotate *= glm::angleAxis(delta.x, glm::vec3(0.0f, 1.0f, 0.0f));
 
             if (!m_renderConfig.constrainVertical) {
                 rotateX(-delta.y);

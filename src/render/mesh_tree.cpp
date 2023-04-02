@@ -36,38 +36,38 @@ static HitBox makeHitBox(Mesh& cpuMesh, bool allowCollision) {
     return {allowCollision, points};
 }
 
-MeshTree::MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision) {
+MeshTree::MeshTree(Mesh* msh, glm::vec3 off, glm::quat rots, glm::quat rotp, glm::vec3 scl, bool allowCollision) {
     this->mesh = new GPUMesh(*msh);
     this->transform = {off, rots, rotp, scl};
-    this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
-    this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
-    this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
-    this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
+    // this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
+    // this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
+    // this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
+    // this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->hitBox = makeHitBox(*msh, allowCollision);
 }
 
 MeshTree::MeshTree(){
     this->transform = {glm::vec3(0.f),
-                       glm::vec4(0.f,1.f,0.f,0.f),
-                       glm::vec4(0.f,1.f,0.f,0.f),
+                       glm::identity<glm::quat>(),
+                       glm::identity<glm::quat>(),
                        glm::vec3(1.f)};
-    this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
-    this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
-    this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
-    this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
+    // this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
+    // this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
+    // this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
+    // this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->mesh = nullptr;
 }
 
 MeshTree::MeshTree(Mesh* msh, bool allowCollision) {
     this->transform = {glm::vec3(0.f),
-                       glm::vec4(0.f,1.f,0.f,0.f),
-                       glm::vec4(0.f,1.f,0.f,0.f),
+                       glm::identity<glm::quat>(),
+                       glm::identity<glm::quat>(),
                        glm::vec3(1.f)};
     this->mesh = new GPUMesh(*msh);
-    this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
-    this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
-    this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
-    this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
+    // this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
+    // this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
+    // this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
+    // this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->hitBox = makeHitBox(*msh, allowCollision);
 }
 
@@ -85,16 +85,13 @@ glm::mat4 MeshTree::modelMatrix() {
         currTransform = parent->modelMatrix();
 
     // Translate
-    
+    currTransform = glm::translate(currTransform, transform.translate);
 
     // Rotate
-    // glm::vec3 axis = glm::normalize(glm::vec3(transform.rotateParent.x, transform.rotateParent.y, transform.rotateParent.z));
-    currTransform = glm::rotate(currTransform, glm::radians(transform.rotateParent.w), glm::vec3(transform.rotateParent.x, transform.rotateParent.y, transform.rotateParent.z));
+    // currTransform = glm::rotate(currTransform, glm::radians(transform.rotateParent.w), glm::vec3(transform.rotateParent.x, transform.rotateParent.y, transform.rotateParent.z));
+    // currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.w), glm::vec3(transform.selfRotate.x, transform.selfRotate.y, transform.selfRotate.z));
 
-
-    currTransform = glm::translate(currTransform, transform.translate);
-    currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.w), glm::vec3(transform.selfRotate.x, transform.selfRotate.y, transform.selfRotate.z));
-
+    currTransform *= glm::toMat4(transform.selfRotate);
 
     // Scale
     return glm::scale(currTransform, transform.scale);

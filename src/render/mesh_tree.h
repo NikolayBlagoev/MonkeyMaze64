@@ -8,6 +8,7 @@ DISABLE_WARNINGS_PUSH()
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
+#include <glm/gtx/quaternion.hpp>
 DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <vector>
@@ -15,17 +16,17 @@ DISABLE_WARNINGS_POP()
 
 struct MeshTransform {
     glm::vec3 translate;
-    glm::vec4 selfRotate; // ROTATE AROUND AXIS
-    glm::vec4 rotateParent;
+    glm::quat selfRotate;
+    glm::quat rotateParent;
     glm::vec3 scale;
 };
 
 class MeshTree {
 public:
    
-    MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl)
+    MeshTree(Mesh* msh, glm::vec3 off, glm::quat rots, glm::quat rotp, glm::vec3 scl)
         : MeshTree(msh, off, rots, rotp, scl, true) {}
-    MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision);
+    MeshTree(Mesh* msh, glm::vec3 off, glm::quat rots, glm::quat rotp, glm::vec3 scl, bool allowCollision);
     MeshTree();
     MeshTree(Mesh* msh)
         : MeshTree(msh, true) {}
@@ -47,10 +48,10 @@ public:
     std::shared_ptr<CameraObj> camera;
     MeshTree* parent { nullptr };
     std::vector<MeshTree*> children;
-    std::shared_ptr<glm::vec4> selfRotate;
-    std::shared_ptr<glm::vec4> rotateParent;
-    std::shared_ptr<glm::vec3> translate;
-    std::shared_ptr<glm::vec3> scale;
+    // std::shared_ptr<glm::vec4> selfRotate;
+    // std::shared_ptr<glm::vec4> rotateParent;
+    // std::shared_ptr<glm::vec3> translate;
+    // std::shared_ptr<glm::vec3> scale;
 };
 
 #endif
