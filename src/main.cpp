@@ -215,10 +215,11 @@ void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* cam
             stand2m->addChild(cameram);
             MeshTree* aperturem = new MeshTree(aperture, glm::vec3(0.f, 0.f, 0.f), glm::identity<glm::quat>(), glm::identity<glm::quat>(), glm::vec3(1.f));
             cameram->addChild(aperturem);
-            CameraObj* cam = new CameraObj(&(cameram->transform.selfRotate), &(stand2m->transform.selfRotate));
+            // TODO
+            // CameraObj* cam = new CameraObj(&(cameram->transform.selfRotate), &(stand2m->transform.selfRotate));
             room->addChild(ret);
-            room->camera = std::shared_ptr<CameraObj>(cam);
-            cameras.push_back(std::weak_ptr(room->camera));
+            // room->camera = std::shared_ptr<CameraObj>(cam);
+            // cameras.push_back(std::weak_ptr(room->camera));
               
         }else if(roomTile->objs.at(i)->type == 1){
             // CameraObj* cam = makeCamera(aperture, camera, stand2, stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::identity<glm::quat>(), glm::angleAxis(glm::radians(90.f), glm::vec3(0.f, 1.f, 0.f)), glm::vec3(1.f));
@@ -227,8 +228,9 @@ void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* cam
             BezierCurve3d* b3d = new BezierCurve3d(glm::vec3(-3.f, 2.f, 0.f), glm::vec3(-3.3f , 3.f, 0.f), glm::vec3(-2.7f , 4.f, 0.f), glm::vec3(-3.f, 5.f, 0.f), 10.f);
             BezierCurve3d* b3d2 = new BezierCurve3d(glm::vec3(-3.f, 5.f, 0.f), glm::vec3(-2.7f , 4.f, 0.f), glm::vec3(-3.3f , 3.f, 0.f), glm::vec3(-3.f, 2.f, 0.f), 10.f);
             CompositeBezier3d* b3c = new CompositeBezier3d({b3d,b3d2}, true, 20.f);
-            BezierCombo3dcomp* combo = new BezierCombo3dcomp(b3c, std::shared_ptr<glm::vec3>(&(ret->transform.translate)));
-            rndrr.add3dcomp(combo);
+            // TODO
+            // BezierCombo3dcomp* combo = new BezierCombo3dcomp(b3c, std::shared_ptr<glm::vec3>(&(ret->transform.translate)));
+            // rndrr.add3dcomp(combo);
 
             BezierCurve4d* b4d = new BezierCurve4d(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
             BezierCurve4d* b4d2 = new BezierCurve4d(glm::vec4(0.f , 1.f, 0.f, 0.f) , glm::vec4(0.f , -0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , -0.3826834f, 0.f, 0.9238795f),  glm::vec4(0.f, -0.0005f, 0.f, 0.9999999f), 10.f);
@@ -328,15 +330,15 @@ int main() {
     scene.addMesh(bezierDragon);
 
     MeshTree* playerDragon = new MeshTree(&monkeypose0, playerPos,
-                                          glm::vec4(0.0f, 1.0f, 0.0f, 180.0f),
-                                          glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                                          glm::angleAxis(glm::radians(180.f), glm::vec3(0.f, 1.f, 0.f)),
+                                          glm::angleAxis(glm::radians(0.f), glm::vec3(0.f, 1.f, 0.f)),
                                           glm::vec3(0.3f),
                                           true);
     scene.addMesh(playerDragon);
 
     scene.addMesh(new MeshTree(&dragonMesh, playerPos + glm::vec3(1.0f, 0.0f, 0.0f),
-                                   glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
-                                   glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                                   glm::angleAxis(glm::radians(0.f), glm::vec3(0.f, 1.f, 0.f)),
+                                   glm::angleAxis(glm::radians(0.f), glm::vec3(0.f, 1.f, 0.f)),
                                    glm::vec3(1.0f),
                                    false));
 
@@ -369,10 +371,12 @@ int main() {
     BezierCurveRenderer rndrr = BezierCurveRenderer(millisec_since_epoch);
     b3c.start_time = millisec_since_epoch;
     b4d.prev_time = millisec_since_epoch;
-    BezierCombo3dcomp combo1 = BezierCombo3dcomp(&b3c, bezierDragon->translate);
-    rndrr.add3dcomp(&combo1);
-    BezierCombo4d combo2 = BezierCombo4d(&b4d, bezierDragon->selfRotate);
-    rndrr.add4d(&combo2);
+    // auto bla = &(bezierDragon->transform.translate);
+    // BezierCombo3dcomp combo1 = BezierCombo3dcomp(&b3c, std::shared_ptr<glm::vec3>(nullptr));
+    // rndrr.add3dcomp(&combo1);
+    // TODO
+    // BezierCombo4d combo2 = BezierCombo4d(&b4d, bezierDragon->selfRotate);
+    // rndrr.add4d(&combo2);
     bool flag = true;
     bool prev_motion = motion;
     std::chrono::time_point start_motion = millisec_since_epoch;
