@@ -76,13 +76,10 @@ void main() {
     gPosition = fragPos;
 
     // Transform texture coords if height map is present
+    // You might want to add culling of fragments with coords outside the [0, 1] range post parallax mapping here,
+    // but we abuse texture tiling in this project, so we do not
     vec2 finalTexCoords;
-    if (hasDisplacement) {
-        finalTexCoords = parallaxMapping();
-        if (finalTexCoords.x < 0.0 || finalTexCoords.x > 1.0 || // If tex coords are offset outside the [0, 1] range, discard this fragment
-            finalTexCoords.y < 0.0 || finalTexCoords.y > 1.0) { discard; }
-
-    } else { finalTexCoords = fragTexCoord; }
+    if (hasDisplacement) { finalTexCoords = parallaxMapping(); } else { finalTexCoords = fragTexCoord; }
     
     // Normal
     if (hasNormal) { 
