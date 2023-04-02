@@ -163,7 +163,7 @@ std::vector<AreaLightShader> LightManager::createAreaLightsShaderData() {
     std::vector<AreaLightShader> shaderData;
     for (AreaLight* light : areaLights) {
         glm::mat4 viewProjection = projection * light->viewMatrix();
-        shaderData.push_back({ glm::vec4(light->position, 0.0f), glm::vec4(light->color * light->intensityMultiplier, 0.0f), viewProjection });
+        shaderData.push_back({ glm::vec4(light->position, 0.0f), glm::vec4(light->color * light->intensityMultiplier, 0.0f), viewProjection, glm::vec4(light->falloff) });
     }
     return shaderData;
 }

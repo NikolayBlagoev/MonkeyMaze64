@@ -9,7 +9,7 @@ struct AreaLight {
     vec4 position;
     vec4 color;
     mat4 viewProjection;
-    float falloff;
+    vec4 falloff;
 };
 
 // SSBOs

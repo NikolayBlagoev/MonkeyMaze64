@@ -1,4 +1,5 @@
 #include "mesh_tree.h"
+#include <glm/gtx/quaternion.hpp>
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtx/transform.hpp>
 DISABLE_WARNINGS_POP()
@@ -102,9 +103,9 @@ glm::mat4 MeshTree::modelMatrix() {
 
     currTransform = glm::translate(currTransform, transform.translate);
     if(al != nullptr){
-        al->position = currTransform*glm::vec4(0.f, 0.f, 0.f, 1.f);
-        al->rotY = transform.selfRotate.w;
-        al->rotX = -10.f;
+        al->position = currTransform*glm::vec4(0.f, 0.f, 1.f, 1.f);
+        al->rotY = glm::degrees(glm::eulerAngles( glm::quat_cast(currTransform)).y)+90.f;
+        al->rotX = 0.f;
     }
     currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.w), glm::vec3(transform.selfRotate.x, transform.selfRotate.y, transform.selfRotate.z));
 

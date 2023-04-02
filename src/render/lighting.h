@@ -61,6 +61,7 @@ struct AreaLightShader {
     glm::vec4 position;
     glm::vec4 color;
     glm::mat4 viewProjection;
+    glm::vec4 falloff;
 };
 
 class LightManager {
