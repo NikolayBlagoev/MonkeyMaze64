@@ -181,3 +181,17 @@ bool MeshTree::tryTranslation(glm::vec3 translation, MeshTree* root) {
 MeshTree::~MeshTree(){
 
 }
+
+void MeshTree::clean(LightManager& lmngr){
+    for(size_t i = 0; i < children.size(); i++){
+        if(!children[i].expired()){
+            MeshTree* child = children[i].lock().get();
+            child->clean(lmngr);
+            child->~MeshTree();
+            free(child);
+        }
+    }
+    if(al != nullptr){
+        lmngr.removeByReference(al);
+    }
+}

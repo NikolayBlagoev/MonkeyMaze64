@@ -32,7 +32,7 @@ public:
     MeshTree(Mesh* msh)
         : MeshTree(msh, true) {}
     MeshTree(Mesh* msh, bool allowCollision);
-    
+    void clean(LightManager& lmngr);
     void addChild(std::shared_ptr<MeshTree> child);
     glm::mat4 modelMatrix();
     HitBox getTransformedHitBox();
