@@ -262,13 +262,13 @@ int main() {
     *ready = false;
     std::thread worker(worker_thread);
 
-    glm::vec3 playerPos = glm::vec3(0.0f, 1.0f, 1.0f);
-    glm::vec3 playerCameraPos = playerPos + glm::vec3(0.0f, 1.0f, 1.0f);
+    glm::vec3 playerPos = glm::vec3(0.0f, -0.1f, 1.0f);
+    glm::vec3 playerCameraPos = playerPos + glm::vec3(0.0f, 1.5f, 1.5f);
 
     RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
     Camera mainCamera(&m_window, renderConfig, glm::vec3(2.0f, 3.0f, 0.0f), -glm::vec3(1.0f, 1.1f, 0.0f));
-    Camera playerCamera(&m_window, renderConfig, playerCameraPos, playerPos - playerCameraPos);
+    Camera playerCamera(&m_window, renderConfig, playerCameraPos, (playerPos - playerCameraPos) + glm::vec3(0.f,1.f,0.f));
     playerCamera.update = &motion;
     TextureManager textureManager;
     Scene scene;
