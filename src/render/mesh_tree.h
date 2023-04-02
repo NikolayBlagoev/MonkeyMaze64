@@ -12,6 +12,7 @@ DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <vector>
 #include <camera.h>
+#include "lighting.h"
 
 struct MeshTransform {
     glm::vec3 translate;
@@ -55,6 +56,7 @@ public:
     std::shared_ptr<glm::vec4> rotateParent;
     std::shared_ptr<glm::vec3> translate;
     std::shared_ptr<glm::vec3> scale;
+    AreaLight* al { nullptr };
 };
 
 #endif

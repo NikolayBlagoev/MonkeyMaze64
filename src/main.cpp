@@ -220,7 +220,7 @@ void makeCameraMoves(){
 //     return cam;
 // }
 
-void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* camera, Mesh* stand2, Mesh* stand1, Mesh* suzanne, BezierCurveRenderer& rndrr){
+void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* camera, Mesh* stand2, Mesh* stand1, Mesh* suzanne, BezierCurveRenderer& rndrr, LightManager& lightManager){
     for(int i = 0; i < roomTile->objs.size(); i++){
         if(roomTile->objs.at(i)->type == 0){
             // CameraObj* cam = makeCamera(aperture, camera, stand2, stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec3(1.f));
@@ -235,7 +235,10 @@ void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* cam
             room->addChild(ret->self);
             room->camera = std::shared_ptr<CameraObj>(cam);
             cameras.push_back(std::weak_ptr(room->camera));
-              
+            
+            aperturem->al=lightManager.addAreaLight(glm::vec3(1.0f, -3.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            aperturem->al->falloff = 2.f;
+            // aperturem->modelMatrix();
         }else if(roomTile->objs.at(i)->type == 1){
             // CameraObj* cam = makeCamera(aperture, camera, stand2, stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec3(1.f));
             MeshTree* ret = new MeshTree(suzanne, glm::vec3(-3.f, 2.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(1.f));
@@ -426,6 +429,8 @@ int main() {
             free(boardRoot);
             
             boardRoot = new MeshTree();
+            scene.root->addChild(boardRoot->self);
+
             boardRoot->transform.translate = offsetBoard;
             for(int i = 0; i < 7; i ++){
                 // glm::vec3 offset(0.f,10.f*i,0.f);
@@ -437,19 +442,19 @@ int main() {
                     }else if(boardCopy[i][j]->tileType == 2 ){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 270.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile->self);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr);
+                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr, lightManager);
                     }else if(boardCopy[i][j]->tileType == 3){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile->self);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr);
+                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr, lightManager);
                     }else if(boardCopy[i][j]->tileType == 4){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile->self);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr);
+                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr, lightManager);
                     }else if(boardCopy[i][j]->tileType == 5){
                         MeshTree* roomTile = new MeshTree(&room, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 180.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(roomTile->self);
-                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr);
+                        addObjectsRoom(roomTile, boardCopy[i][j], &aperture, &camera, &stand2, &stand1, &suzanne, rndrr, lightManager);
                     }else if(boardCopy[i][j]->tileType == 6){
                         MeshTree* crossingTile = new MeshTree(&crossing, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         boardRoot->addChild(crossingTile->self);
@@ -480,8 +485,7 @@ int main() {
                     } 
                 }
             }
-            scene.root->addChild(boardRoot->self);
-
+            
         }
 
         // Controls

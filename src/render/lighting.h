@@ -45,7 +45,7 @@ struct AreaLight {
     glm::vec3 position;
     float rotX;
     float rotY;
-
+    float falloff;
     // Lighting properties
     glm::vec3 color;
     float intensityMultiplier { 1.0f }; // Color is multiplied by this value before being sent to shader (intended for usage w/ HDR rendering)
@@ -76,10 +76,11 @@ public:
     PointLight& pointLightAt(size_t idx) { return pointLights[idx]; }
     std::vector<PointLightShader> createPointLightsShaderData();
 
-    void addAreaLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier = 1.0f, float xAngle = 0.0f, float yAngle = 0.0f);
+    AreaLight* addAreaLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier = 1.0f, float xAngle = 0.0f, float yAngle = 0.0f, float falloff = 0.f);
     void removeAreaLight(size_t idx);
+    void removeByReference(AreaLight* al);
     size_t numAreaLights() { return areaLights.size(); }
-    AreaLight& areaLightAt(size_t idx) { return areaLights[idx]; }
+    AreaLight& areaLightAt(size_t idx) { return *areaLights[idx]; }
     std::vector<AreaLightShader> createAreaLightsShaderData();
 
 private:
@@ -93,7 +94,7 @@ private:
 
     GLuint ssboAreaLights { INVALID };
     GLuint areaShadowTexArr { INVALID };
-    std::vector<AreaLight> areaLights;
+    std::vector<AreaLight*> areaLights;
 };
 
 #endif
