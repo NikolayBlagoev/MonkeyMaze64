@@ -232,8 +232,15 @@ void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& viewProjectionMatri
         mesh.draw();   
     }
     
-    for (MeshTree* child : mt->children) {
-        helper(child, viewProjectionMatrix, cameraPos);
+    for (size_t i = 0; i < mt->children.size(); i++) {
+        std::weak_ptr<MeshTree> tmp = mt->children.at(i);
+        if(tmp.expired()){
+            mt->children.erase(mt->children.begin()+i);
+            i--;
+            continue;
+        }
+        std::shared_ptr<MeshTree> shrtmp = tmp.lock();
+        helper(shrtmp.get(), viewProjectionMatrix, cameraPos);
     }
 }
 

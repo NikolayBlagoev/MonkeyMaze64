@@ -11,13 +11,16 @@ void Scene::addMesh(std::filesystem::path filePath) {
 
     if(root == nullptr){
         root = new MeshTree();
+        root->is_root = true;
     }
-    root->addChild(new MeshTree(&cpuMesh));
+    MeshTree* newMesh = new MeshTree(&cpuMesh);
+    root->addChild(newMesh->self);
 }
 
-void Scene::addMesh(MeshTree* nd){
+void Scene::addMesh(std::shared_ptr<MeshTree> nd){
     if(root == nullptr){
         root = new MeshTree();
+        root->is_root = true;
     }
     root->addChild(nd);
 }

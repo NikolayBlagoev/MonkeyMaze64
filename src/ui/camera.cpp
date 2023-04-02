@@ -88,7 +88,7 @@ void Camera::updateInput() {
     } else { m_prevCursorPos = m_pWindow->getCursorPos(); }
 }
 
-void Camera::updateInput(MeshTree *mesh) {
+void Camera::updateInput(MeshTree *mesh, MeshTree* root) {
     if (m_userInteraction) {
         glm::vec3 right = glm::normalize(glm::cross(m_forward, m_up)) * m_renderConfig.moveSpeed;
         glm::vec3 forward = m_forward * m_renderConfig.moveSpeed;
@@ -100,25 +100,25 @@ void Camera::updateInput(MeshTree *mesh) {
 
         // Forward, backward and strafe
         if (m_pWindow->isKeyPressed(GLFW_KEY_A)) {
-            if (mesh->tryTranslation(-right)){
+            if (mesh->tryTranslation(-right, root)){
                 m_position -= right;
                 *update = true;
             }
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_D)) {
-            if (mesh->tryTranslation(right)){
+            if (mesh->tryTranslation(right, root)){
                 m_position += right;
                 *update = true;
             }
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_W)) {
-            if (mesh->tryTranslation(forward)){
+            if (mesh->tryTranslation(forward, root)){
                 m_position += forward;
                 *update = true;
             }
         }
         if (m_pWindow->isKeyPressed(GLFW_KEY_S)) {
-            if (mesh->tryTranslation(-forward)){
+            if (mesh->tryTranslation(-forward, root)){
                 m_position -= forward;
                 *update = true;
             }
@@ -127,11 +127,11 @@ void Camera::updateInput(MeshTree *mesh) {
         // Up and down
         if (!m_renderConfig.constrainVertical) {
             if (m_pWindow->isKeyPressed(GLFW_KEY_SPACE)) {
-                if (mesh->tryTranslation(up))
+                if (mesh->tryTranslation(up, root))
                     m_position += up;
             }
             if (m_pWindow->isKeyPressed(GLFW_KEY_C)) {
-                if (mesh->tryTranslation(-up))
+                if (mesh->tryTranslation(-up, root))
                     m_position -= up;
             }
         }

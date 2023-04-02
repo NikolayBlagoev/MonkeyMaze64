@@ -27,17 +27,18 @@ public:
         : MeshTree(msh, off, rots, rotp, scl, true) {}
     MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision);
     MeshTree();
+    ~MeshTree();
     MeshTree(Mesh* msh)
         : MeshTree(msh, true) {}
     MeshTree(Mesh* msh, bool allowCollision);
     
-    void addChild(MeshTree* child);
+    void addChild(std::shared_ptr<MeshTree> child);
     glm::mat4 modelMatrix();
     HitBox getTransformedHitBox();
     glm::vec3 getTransformedHitBoxMiddle();
     bool collide(MeshTree* other);
     
-    bool tryTranslation(glm::vec3 translation);
+    bool tryTranslation(glm::vec3 translation, MeshTree* root);
 
 public:
     GPUMesh* mesh;
@@ -45,8 +46,11 @@ public:
     MeshTransform transform;
     HitBox hitBox;
     std::shared_ptr<CameraObj> camera;
-    MeshTree* parent { nullptr };
-    std::vector<MeshTree*> children;
+    // MeshTree* parent { nullptr };
+    bool is_root = false;
+    std::weak_ptr<MeshTree> parent;
+    std::shared_ptr<MeshTree> self;
+    std::vector<std::weak_ptr<MeshTree>> children;
     std::shared_ptr<glm::vec4> selfRotate;
     std::shared_ptr<glm::vec4> rotateParent;
     std::shared_ptr<glm::vec3> translate;

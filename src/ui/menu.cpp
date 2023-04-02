@@ -83,35 +83,6 @@ void Menu::drawMaterialControls() {
     ImGui::SliderFloat("AO", &m_renderConfig.defaultAO, 0.0f, 1.0f, "%.2f");
 }
 
-void Menu::drawMeshControls() {
-    // Add / remove controls
-    if (ImGui::Button("Add")) { addMesh(); }
-    if (ImGui::Button("Remove selected")) {
-        if (selectedMesh < m_scene.numMeshes()) {
-            m_scene.removeMesh(selectedMesh);
-            selectedMesh = 0U;
-        }
-    }
-    ImGui::NewLine();
-
-    // Selection controls
-    std::vector<std::string> options;
-    for (size_t meshIdx = 0U; meshIdx < m_scene.numMeshes(); meshIdx++) { options.push_back("Mesh " + std::to_string(meshIdx + 1)); }
-    std::vector<const char*> optionsPointers;
-    std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
-        [](const auto& str) { return str.c_str(); });
-    ImGui::Combo("Selected mesh", (int*) &selectedMesh, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
-
-        // Selected mesh controls
-        if (m_scene.numMeshes() > 0U) {
-            ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.root->children[selectedMesh]->transform.translate), 0.05f);
-            ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.root->children[selectedMesh]->transform.selfRotate), 1.0f, 0.0f, 360.0f);
-            ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.root->children[selectedMesh]->transform.scale), 0.05f);
-        }
-
-        ImGui::EndTabItem();
-    
-}
 
 void Menu::drawGeneralLightControls() {
     ImGui::Checkbox("Draw all lights", &m_renderConfig.drawLights);
@@ -353,7 +324,7 @@ void Menu::drawMeshTab() {
         ImGui::Separator();
 
         ImGui::Text("Mesh controls");
-        drawMeshControls();
+        
 
 
         ImGui::EndTabItem();
