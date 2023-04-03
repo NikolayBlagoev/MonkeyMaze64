@@ -64,18 +64,6 @@ void Menu::drawCameraTab() {
     }
 }
 
-void Menu::addMesh() {
-    nfdchar_t *outPath = NULL;
-    nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath );
-        
-    if (result == NFD_OKAY) {
-        std::filesystem::path objPath(outPath);
-        m_scene.addMesh(objPath);
-        free(outPath);
-    } else if (result == NFD_CANCEL) { std::cout << "Model loading cancelled" << std::endl; }
-      else { std::cerr << "Model loading error" << std::endl; }
-}
-
 void Menu::drawMaterialControls() {
     ImGui::ColorEdit4("Albedo", glm::value_ptr(m_renderConfig.defaultAlbedo));
     ImGui::SliderFloat("Metallic", &m_renderConfig.defaultMetallic, 0.0f, 1.0f, "%.2f");
@@ -83,6 +71,14 @@ void Menu::drawMaterialControls() {
     ImGui::SliderFloat("AO", &m_renderConfig.defaultAO, 0.0f, 1.0f, "%.2f");
 }
 
+void Menu::drawMeshTab() {
+    if (ImGui::BeginTabItem("Meshes")) {
+        ImGui::Text("Default materials (for objects lacking textures)");
+        drawMaterialControls();
+        
+        ImGui::EndTabItem();
+    }
+}
 
 void Menu::drawGeneralLightControls() {
     ImGui::Checkbox("Draw all lights", &m_renderConfig.drawLights);
@@ -144,6 +140,7 @@ void Menu::drawAreaLightControls() {
         AreaLight& selectedLight = m_lightManager.areaLightAt(selectedAreaLight);
         ImGui::InputFloat("Intensity##point", &selectedLight.intensityMultiplier, 0.1f, 1.0f, "%.1f");
         ImGui::ColorEdit3("Colour##area", glm::value_ptr(selectedLight.color));
+        ImGui::DragFloat3("Falloff coefficients (constant, linear, quadratic)", glm::value_ptr(selectedLight.falloff), 0.05f);
         ImGui::DragFloat3("Position##area", glm::value_ptr(selectedLight.position), 0.05f);
         ImGui::SliderFloat("X Rotation", &selectedLight.rotX, 0.0f, 360.0f);
         ImGui::SliderFloat("Y Rotation", &selectedLight.rotY, 0.0f, 360.0f);
@@ -315,21 +312,7 @@ void Menu::drawRenderTab() {
         ImGui::EndTabItem();
     }
 }
-void Menu::drawMeshTab() {
-    if (ImGui::BeginTabItem("Meshes")) {
-        ImGui::Text("Default materials (for objects lacking textures)");
-        drawMaterialControls();
 
-        ImGui::NewLine();
-        ImGui::Separator();
-
-        ImGui::Text("Mesh controls");
-        
-
-
-        ImGui::EndTabItem();
-    }
-}
 void Menu::drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& color) {
     glPointSize(radius);
     glUniform4fv(0, 1, glm::value_ptr(screenPos));

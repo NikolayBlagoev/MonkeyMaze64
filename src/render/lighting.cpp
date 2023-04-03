@@ -10,7 +10,7 @@ DISABLE_WARNINGS_POP()
 #include <utils/constants.h>
 #include <iostream>
 
-void PointLight::wipeFramebuffers() const {
+void PointLight::wipeFramebuffers() {
     constexpr float clearValue = 1.0f; 
     for (size_t face = 0UL; face < 6UL; face++) { glClearNamedFramebufferfv(framebuffers[face], GL_DEPTH, 0, &clearValue); }
 }
@@ -30,6 +30,11 @@ std::array<glm::mat4, 6UL> PointLight::genMvpMatrices(const glm::mat4& model, co
     return views;
 }
 
+void AreaLight::wipeFramebuffer() {
+    constexpr float clearValue = 1.0f; 
+    glClearNamedFramebufferfv(framebuffer, GL_DEPTH, 0, &clearValue);
+}
+
 glm::vec3 AreaLight::forwardDirection() const { 
     float radiansRotX = glm::radians(rotX);
     float radiansRotY = glm::radians(rotY);
@@ -39,16 +44,15 @@ glm::vec3 AreaLight::forwardDirection() const {
 
 glm::mat4 AreaLight::viewMatrix() const {
     // Construct upward direction
-    if(!selfRotating){
+    if (!externalRotationControl){
         const glm::vec3 forward = forwardDirection();
         const glm::vec3 horAxis = glm::cross(s_yAxis, forward);
         const glm::vec3 up      = glm::normalize(glm::cross(forward, horAxis));
-
         return glm::lookAt(position, position + forward, up);
-    }else{
-        const glm::vec3 horAxis = glm::cross(s_yAxis, forwardown);
-        const glm::vec3 up      = glm::normalize(glm::cross(forwardown, horAxis));
-        return glm::lookAt(position, position + forwardown, up);
+    } else {
+        const glm::vec3 horAxis = glm::cross(s_yAxis, externalForward);
+        const glm::vec3 up      = glm::normalize(glm::cross(externalForward, horAxis));
+        return glm::lookAt(position, position + externalForward, up);
     }
 }
 
@@ -125,12 +129,16 @@ void LightManager::removePointLight(size_t idx) {
 
 std::vector<PointLightShader> LightManager::createPointLightsShaderData() {
     const glm::mat4 projection = m_renderConfig.pointShadowMapsProjectionMatrix();
-    std::vector<PointLightShader> shaderData;
-    for (const PointLight& light : pointLights) { shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color * light.intensityMultiplier, 0.0f) }); }
+    std::vector<PointLightShader> shaderData(pointLights.size());
+    for (size_t lightIdx = 0UL; lightIdx < pointLights.size(); lightIdx++) {
+        const PointLight& light = pointLights[lightIdx]; 
+        shaderData[lightIdx]    = { glm::vec4(light.position, 1.0f), glm::vec4(light.color * light.intensityMultiplier, 1.0f) };
+    }
     return shaderData;
 }
 
-AreaLight* LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier, float xAngle, float yAngle, float falloff) {
+AreaLight* LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& color, const glm::vec3& falloff,
+                                      float intensityMultiplier, float xAngle, float yAngle) {
     AreaLight* light = new AreaLight{ position, xAngle, yAngle, falloff, color, intensityMultiplier, INVALID };
 
     // Resize texture array to fit new shadowmap
@@ -156,6 +164,7 @@ void LightManager::removeAreaLight(size_t idx) {
 
     areaLights.erase(areaLights.begin() + idx);
     free(light);
+
     // Reattach framebuffers to corresponding texture layers
     // Plonking out a framebuffer from the beginning or middle causes the framebuffers to become misaligned from their position in the array
     for (size_t lightIdx = 0UL; lightIdx < areaLights.size(); lightIdx++) {
@@ -166,34 +175,15 @@ void LightManager::removeAreaLight(size_t idx) {
 
 std::vector<AreaLightShader> LightManager::createAreaLightsShaderData() {
     const glm::mat4 projection = m_renderConfig.areaShadowMapsProjectionMatrix();
-    std::vector<AreaLightShader> shaderData;
-    for (AreaLight* light : areaLights) {
-        glm::mat4 viewProjection = projection * light->viewMatrix();
-        shaderData.push_back({ glm::vec4(light->position, 0.0f), glm::vec4(light->color * light->intensityMultiplier, 0.0f), viewProjection, glm::vec4(light->falloff) });
+    std::vector<AreaLightShader> shaderData(areaLights.size());
+    for (size_t lightIdx = 0UL; lightIdx < areaLights.size(); lightIdx++) {
+        const AreaLight* light  = areaLights[lightIdx]; 
+        shaderData[lightIdx]    = { glm::vec4(light->position, 1.0f),
+                                    glm::vec4(light->color * light->intensityMultiplier, 1.0f),
+                                    projection * light->viewMatrix(),
+                                    glm::vec4(light->falloff, 0.0f) };
     }
     return shaderData;
-}
-
-void LightManager::bind() {
-    // Point lights
-    std::vector<PointLightShader> pointLightsShaderData = createPointLightsShaderData();
-    glNamedBufferData(ssboPointLights, sizeof(PointLightShader) * pointLightsShaderData.size(), pointLightsShaderData.data(), GL_STATIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboPointLights); // Bind to binding=0
-
-    // Point lights shadow maps sampler
-    glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
-    glUniform1i(7, utils::SHADOW_START_IDX);
-
-    // Area lights
-    std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData();
-    glNamedBufferData(ssboAreaLights, sizeof(AreaLightShader) * areaLightsShaderData.size(), areaLightsShaderData.data(), GL_STATIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboAreaLights); // Bind to binding=1
-
-    // Area lights shadow maps sampler
-    glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX + 1);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
-    glUniform1i(8, utils::SHADOW_START_IDX + 1);
 }
 
 void LightManager::removeByReference(AreaLight* al){
@@ -219,4 +209,31 @@ void LightManager::removeByReference(AreaLight* al){
         }
     }
     
+}
+
+void LightManager::bind() {
+    // Point lights
+    std::vector<PointLightShader> pointLightsShaderData = createPointLightsShaderData();
+    glNamedBufferData(ssboPointLights, sizeof(PointLightShader) * pointLightsShaderData.size(), pointLightsShaderData.data(), GL_STATIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboPointLights); // Bind to binding=0
+
+    // Point lights shadow maps sampler
+    glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
+    glUniform1i(7, utils::SHADOW_START_IDX);
+
+    // Area lights
+    std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData();
+    glNamedBufferData(ssboAreaLights, sizeof(AreaLightShader) * areaLightsShaderData.size(), areaLightsShaderData.data(), GL_STATIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboAreaLights); // Bind to binding=1
+
+    // Area lights shadow maps sampler
+    glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX + 1);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
+    glUniform1i(8, utils::SHADOW_START_IDX + 1);
+}
+
+void LightManager::wipeFramebuffers() {
+    for (PointLight& pointLight : pointLights)  { pointLight.wipeFramebuffers(); }
+    for (AreaLight* areaLight   : areaLights)   { areaLight->wipeFramebuffer(); }
 }

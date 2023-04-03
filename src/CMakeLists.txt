@@ -1,6 +1,6 @@
 target_sources(FinalProject
 	PRIVATE
-        # "${CMAKE_CURRENT_LIST_DIR}/networking/client.cpp" # Uncomment when a cross-platform solution is working
+        "${CMAKE_CURRENT_LIST_DIR}/generator/generator.cpp"
 
         "${CMAKE_CURRENT_LIST_DIR}/render/bloom.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/deferred.cpp"
@@ -11,6 +11,6 @@ target_sources(FinalProject
         "${CMAKE_CURRENT_LIST_DIR}/render/stb_image.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/texture.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/mesh_tree.cpp"
+
         "${CMAKE_CURRENT_LIST_DIR}/ui/camera.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/ui/menu.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/generator/generator.cpp")
+        "${CMAKE_CURRENT_LIST_DIR}/ui/menu.cpp")

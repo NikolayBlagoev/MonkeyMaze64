@@ -80,19 +80,18 @@ MeshTree::MeshTree(std::string tag, Mesh* msh, bool allowCollision) {
 }
 
 void MeshTree::addChild(std::shared_ptr<MeshTree> child){
-    // std::cout<<MemoryManager::objs[this]<<std::endl;
     child.get()->parent = std::weak_ptr<MeshTree>(shared_from_this());
     this->children.push_back(child);
 }
 
-glm::mat4 MeshTree::modelMatrix() {
+glm::mat4 MeshTree::modelMatrix() const {
     glm::mat4 currTransform;
 
     if (is_root)
         currTransform = glm::identity<glm::mat4>();
     else{
         if(parent.expired()){
-            std::cout<<"WARNING! EXPIRED PARENT!!"<<std::endl;
+            std::cerr << "WARNING! EXPIRED PARENT!!" << std::endl;
             return glm::identity<glm::mat4>();
         }
         std::shared_ptr parentPtr = parent.lock();
@@ -110,10 +109,7 @@ glm::mat4 MeshTree::modelMatrix() {
     currTransform = glm::translate(currTransform, transform.translate);
     if(al != nullptr){
         al->position = currTransform*glm::vec4(0.f, 0.f, 0.f, 1.f);
-        al->forwardown = glm::normalize(currTransform*glm::vec4(-1.f, 0.f, 0.f, 1.f));
-
-        // std::cout<<al->forwardown.x<<" "<<al->forwardown.y<<" "<<al->forwardown.z<<std::endl;
-
+        al->externalForward = glm::normalize(currTransform*glm::vec4(-1.f, 0.f, 0.f, 1.f));
     }
     currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.w), glm::vec3(transform.selfRotate.x, transform.selfRotate.y, transform.selfRotate.z));
 
@@ -185,11 +181,7 @@ bool MeshTree::tryTranslation(glm::vec3 translation, MeshTree* root) {
     return false;
 }
 
-MeshTree::~MeshTree(){
-    
-    std::cout<<this->tag<<std::endl;
-
-}
+MeshTree::~MeshTree() { std::cout<<this->tag<<std::endl; }
 
 void MeshTree::clean(LightManager& lmngr){
     for(size_t i = 0; i < children.size(); i++){

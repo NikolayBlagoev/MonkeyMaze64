@@ -10,8 +10,8 @@ struct PointLight {
 struct AreaLight {
     vec4 position;
     vec4 color;
-    mat4 viewProjection;
-    vec4 falloff;
+    mat4 viewProjection;    
+    vec4 falloff;           // X-coordinate is constant coefficient, Y-coordinate is linear coefficient, Z-coordinate is quadratic coefficient, W-coordinate is unused
 };
 
 // SSBOs
@@ -35,8 +35,6 @@ layout(location = 6) uniform float shadowFarPlane;
 layout(location = 7) uniform samplerCubeArrayShadow pointShadowTexArr;
 layout(location = 8) uniform sampler2DArrayShadow areaShadowTexArr;
 
-//ennred
-layout(location = 9) uniform float enred = 0.0f;
 // Quad texture to use with G-buffer
 layout(location = 0) in vec2 bufferCoords;
 
@@ -58,27 +56,28 @@ float samplePointShadow(vec3 sampleCoord, uint lightIdx) {
 
 // @param sampleLightCoord: Homogeneous coordinates of fragment sample tranformed by viewProjection of shadow-casting light
 // @param lightIdx: Index of the area light in the SSBO/shadow map
-float sampleAreaShadow(vec4 sampleLightCoord, uint lightIdx, float falloff) {
-    // Divide by w because sampleLightCoord are homogeneous coordinates
-    sampleLightCoord.xyz /= sampleLightCoord.w;
+float sampleAreaShadow(vec4 sampleLightCoord, uint lightIdx) {
+    // Map sample to light shadowmap's texture coordinate space
+    sampleLightCoord.xyz /= sampleLightCoord.w;              // Divide by w because sampleLightCoord are homogeneous coordinates
+    sampleLightCoord.xyz = sampleLightCoord.xyz * 0.5 + 0.5; // The resulting value is in NDC space (-1 to +1), we transform them to texture space (0 to 1).
 
-    // The resulting value is in NDC space (-1 to +1), we transform them to texture space (0 to 1).
-    sampleLightCoord.xyz = sampleLightCoord.xyz * 0.5 + 0.5;
+    // Dropoff factor
+    vec3 dropoffFactors         = areaLightsData[lightIdx].falloff.xyz;
+    float distanceFromCenter    = length(sampleLightCoord.xy - vec2(0.5, 0.5));                 // Distance of sample from center of texture
+    float falloffFunction       = dropoffFactors.z * distanceFromCenter * distanceFromCenter +  // Quadratic decay
+                                  dropoffFactors.y * distanceFromCenter +
+                                  dropoffFactors.x;
+    float falloffFactor         = max(0.0, -falloffFunction);                                   // Floor to 0 to prevent negative values  
 
     // Add slight epsilon to fragment depth value used for comparison
     const float EPSILON = 1e-3;
     sampleLightCoord.z -= EPSILON;
 
-    // Shadow map value from the corresponding shadow map position ()
+    // Shadow map value from the corresponding shadow map position multiplied by falloff factor
     vec4 texcoord;
     texcoord.xyw    = sampleLightCoord.xyz;
     texcoord.z      = lightIdx;
-    float dist = sqrt(pow(sampleLightCoord.x - 0.5, 2) + pow(sampleLightCoord.y - 0.5, 2));
-    // float dist = 1;
-    dist = 1.0 - dist;
-    dist = max(0.0, dist);
-    dist = pow(dist, falloff);
-    return texture(areaShadowTexArr, texcoord) != 0.0 ? dist : 0.f;
+    return texture(areaShadowTexArr, texcoord) * falloffFactor;
 }
 
 /*****************************************************************************************************/
@@ -162,8 +161,6 @@ vec3 computeReflectance(vec3 fragPos, vec3 fragNormal,
 /*****************************************************************************************************/
 
 void main() {
-    
-    
     // Extract values from G-buffer
     vec3 fragPos        = texture(gPosition, bufferCoords).xyz;
     vec3 fragNormal     = texture(gNormal, bufferCoords).xyz;
@@ -197,13 +194,11 @@ void main() {
         vec3 lightColor     = light.color.rgb;
         vec3 lightPosition  = light.position.xyz;
         
-        // dist = pow(dist, light.falloff.x);
         vec4 fragLightCoord     = light.viewProjection * vec4(fragPos, 1.0);
-        float successFraction   = sampleAreaShadow(fragLightCoord, lightIdx, light.falloff.x);
+        float successFraction   = sampleAreaShadow(fragLightCoord, lightIdx);
         if (successFraction != 0.0) { fragColor.rgb += successFraction*computeReflectance(fragPos, fragNormal, fragAlbedo, metallic, roughness, lightPosition, lightColor, positionToCamera, F0); }
     }
     
     // Ambient lighting
     fragColor.rgb += vec3(0.1) * fragAlbedo * ao;
-    fragColor.r += enred;
 }

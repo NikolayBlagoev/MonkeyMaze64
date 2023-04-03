@@ -1,20 +1,23 @@
 #ifndef _MESH_TREE_H_
 #define _MESH_TREE_H_
 
-#include "mesh.h"
-#include "utils/hitBox.h"
+
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 DISABLE_WARNINGS_POP()
+#include <gameplay/enemy_camera.h>
+#include <render/lighting.h>
+#include <render/mesh.h>
+#include <utils/hitBox.h>
+
 #include <filesystem>
 #include <vector>
-#include <camera.h>
-#include "lighting.h"
-#include <string.h>
+#include <string>
 #include <unordered_map>
+
 struct MeshTransform {
     glm::vec3 translate;
     glm::vec4 selfRotate; // ROTATE AROUND AXIS
@@ -24,7 +27,6 @@ struct MeshTransform {
 
 class MeshTree : public std::enable_shared_from_this<MeshTree> {
 public:
-   
     MeshTree(std::string tag, Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl)
         : MeshTree(tag, msh, off, rots, rotp, scl, true) {}
     MeshTree(std::string tag, Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision);
@@ -35,7 +37,7 @@ public:
     MeshTree(std::string tag, Mesh* msh, bool allowCollision);
     void clean(LightManager& lmngr);
     void addChild(std::shared_ptr<MeshTree> child);
-    glm::mat4 modelMatrix();
+    glm::mat4 modelMatrix() const;
     HitBox getTransformedHitBox();
     glm::vec3 getTransformedHitBoxMiddle();
     bool collide(MeshTree* other);
@@ -59,6 +61,7 @@ public:
     // std::shared_ptr<glm::vec3> scale;
     AreaLight* al { nullptr };
 };
+
 class MemoryManager {
     public:
     MemoryManager(){
@@ -73,4 +76,5 @@ class MemoryManager {
     };
     
 };
+
 #endif
