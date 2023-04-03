@@ -10,16 +10,18 @@ void Scene::addMesh(std::filesystem::path filePath) {
     Mesh cpuMesh = mergeMeshes(loadMesh(filePath));
 
     if(root == nullptr){
-        root = new MeshTree();
+        root = new MeshTree("root");
+        MemoryManager::addEl(root);
         root->is_root = true;
     }
-    MeshTree* newMesh = new MeshTree(&cpuMesh);
-    root->addChild(newMesh->self);
+    MeshTree* newMesh = new MeshTree(filePath.filename(), &cpuMesh);
+    root->addChild(newMesh->shared_from_this());
 }
 
 void Scene::addMesh(std::shared_ptr<MeshTree> nd){
     if(root == nullptr){
-        root = new MeshTree();
+        root = new MeshTree("root");
+        MemoryManager::addEl(root);
         root->is_root = true;
     }
     root->addChild(nd);
