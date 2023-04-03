@@ -85,7 +85,7 @@ void MeshTree::addChild(std::shared_ptr<MeshTree> child){
     this->children.push_back(child);
 }
 
-glm::mat4 MeshTree::modelMatrix() {
+glm::mat4 MeshTree::modelMatrix() const {
     glm::mat4 currTransform;
 
     if (is_root)

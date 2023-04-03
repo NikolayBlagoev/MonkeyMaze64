@@ -1,3 +1,13 @@
+#include <framework/disable_all_warnings.h>
+DISABLE_WARNINGS_PUSH()
+#include <glad/glad.h>
+#include <GLFW/glfw3.h> // Include glad before glfw3
+#include <imgui/imgui.h>
+DISABLE_WARNINGS_POP()
+#include <framework/window.h>
+
+#include <generator/generator.h>
+#include <render/bezier.h>
 #include <render/config.h>
 #include <render/deferred.h>
 #include <render/lighting.h>
@@ -8,33 +18,18 @@
 #include <ui/camera.h>
 #include <ui/menu.h>
 #include <utils/constants.h>
-#include "camera.h"
-// Always include window first (because it includes glfw, which includes GL which needs to be included AFTER glew).
-// Can't wait for modules to fix this stuff...
-#include <framework/disable_all_warnings.h>
-DISABLE_WARNINGS_PUSH()
-#include <glad/glad.h>
-// Include glad before glfw3
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/mat4x4.hpp>
-#include <imgui/imgui.h>
-DISABLE_WARNINGS_POP()
-#include <framework/shader.h>
-#include <framework/window.h>
+#include <utils/render_utils.hpp>
+#include <board.h>
+#include <camera.h>
+
 #include <mutex>
 #include <condition_variable>
 #include <functional>
 #include <iostream>
 #include <vector>
-#include <render/bezier.h>
 #include <ctime>
 #include <chrono>
-#include <generator/generator.h>
-#include <board.h>
+
 // Game state
 // TODO: Have a separate struct for this if it becomes too much
 bool cameraZoomed = false;
@@ -53,6 +48,7 @@ int dir = -1;
 bool* ready = new bool;
 bool processed = false;
 Generator* gen =  new Generator();
+
 void signalChange(){
     std::cout<<"Change\n";
     {
@@ -145,74 +141,6 @@ void mouseButtonCallback(int button, int action, int mods) {
     else if (action == GLFW_RELEASE) { onMouseReleased(button, mods); }
 }
 
-void drawMeshTreePtL(MeshTree* mt, const PointLight& light, Shader& m_pointShadowShader,
-                     const glm::mat4& pointLightShadowMapsProjection, RenderConfig& renderConfig){
-    if(mt == nullptr) return;
-
-    const glm::mat4& modelMatrix = mt->modelMatrix();
-    if(mt->mesh != nullptr){
-        const GPUMesh& mesh                         = *(mt->mesh);
-        // std::cout<<"DRAWING"<<std::endl;
-        const std::array<glm::mat4, 6U> lightMvps   = light.genMvpMatrices(modelMatrix, pointLightShadowMapsProjection);
-
-         // Render each cubemap face
-        for (size_t face = 0UL; face < 6UL; face++) {
-            // Bind shadow shader and shadowmap framebuffer
-            m_pointShadowShader.bind();
-            glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffers[face]);
-            glEnable(GL_DEPTH_TEST);
-
-            // Bind uniforms
-            glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvps[face]));
-            glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-            glUniform3fv(2, 1, glm::value_ptr(light.position));
-            glUniform1f(3, renderConfig.shadowFarPlane);
-
-            // Bind model's VAO and draw its elements
-            mesh.draw();
-        }
-    }
-    for (size_t i = 0; i < mt->children.size(); i++) {
-        std::weak_ptr<MeshTree> tmp = mt->children.at(i);
-        if(tmp.expired()){
-            mt->children.erase(mt->children.begin()+i);
-            i--;
-            continue;
-        }
-        std::shared_ptr<MeshTree> shrtmp = tmp.lock();
-        drawMeshTreePtL(shrtmp.get(), light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
-    }
-}
-
-void drawMeshTreeAL(MeshTree* mt, const glm::mat4& areaLightShadowMapsProjection, const glm::mat4& lightView, RenderConfig& renderConfig){
-    if(mt == nullptr) return;
-    
-    const glm::mat4& modelMatrix = mt->modelMatrix();
-    if(mt->mesh != nullptr){
-        const GPUMesh& mesh                         = *(mt->mesh);
-    
-             
-
-        // Bind light camera mvp matrix
-        const glm::mat4 lightMvp = areaLightShadowMapsProjection * lightView *  modelMatrix;
-        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(lightMvp));
-
-        // Bind model's VAO and draw its elements
-        mesh.draw();
-    }
-    for (size_t i = 0; i < mt->children.size(); i++) {
-        std::weak_ptr<MeshTree> tmp = mt->children.at(i);
-        if(tmp.expired()){
-            mt->children.erase(mt->children.begin()+i);
-            i--;
-            continue;
-        }
-        std::shared_ptr<MeshTree> shrtmp = tmp.lock();
-        drawMeshTreeAL(shrtmp.get(), areaLightShadowMapsProjection, lightView, renderConfig);
-    }
-        
- 
-}
 void makeCameraMoves(){
     for(size_t i = 0; i < cameras.size(); i++){
         if(cameras.at(i).expired()){
@@ -240,15 +168,8 @@ void makeCameraMoves(){
         }
     }
 }
-// CameraObj* makeCamera(Mesh* aperture, Mesh* camera, Mesh* stand2, Mesh* stand1,
-//                       glm::vec3 tr, glm::vec4 selfRot, glm::vec4 parRot, glm::vec3 scl){
-    
-//     return cam;
-// }
 
-
-
-int main() {
+int main(int argc, char* argv[]) {
     // Init core objects
     *ready = false;
     std::thread worker(worker_thread);
@@ -276,19 +197,8 @@ int main() {
     m_window.registerMouseMoveCallback(onMouseMove);
     m_window.registerMouseButtonCallback(mouseButtonCallback);
 
-    // Build shadow shaders
-    Shader m_pointShadowShader;
-    Shader m_areaShadowShader;
-    try {
-        ShaderBuilder pointShadowBuilder;
-        pointShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.vert");
-        pointShadowBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_point.frag");
-        m_pointShadowShader = pointShadowBuilder.build();
-
-        ShaderBuilder areaShadowBuilder;
-        areaShadowBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "shadows" / "shadow_stock.vert");
-        m_areaShadowShader = areaShadowBuilder.build();
-    } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
+    // Load shadow shaders
+    utils::initShadowShaders();
 
     // Load textures
     std::weak_ptr<const Texture> rustAlbedo     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
@@ -543,7 +453,6 @@ int main() {
             }
         }
 
-
         // Controls
         ImGuiIO io = ImGui::GetIO();
         m_window.updateInput();
@@ -561,37 +470,8 @@ int main() {
         // Particle simulation
         particleEmitterManager.updateEmitters();
 
-        // Render point lights shadow maps
-        const glm::mat4 pointLightShadowMapsProjection = renderConfig.pointShadowMapsProjectionMatrix();
-        glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
-
-        for (size_t pointLightNum = 0U; pointLightNum < lightManager.numPointLights(); pointLightNum++) {
-            const PointLight& light = lightManager.pointLightAt(pointLightNum);
-            light.wipeFramebuffers();
-
-            drawMeshTreePtL(scene.root, light, m_pointShadowShader, pointLightShadowMapsProjection, renderConfig);
-        }
-
-        // Render area lights shadow maps
-        const glm::mat4 areaLightShadowMapsProjection = renderConfig.areaShadowMapsProjectionMatrix();
-        glViewport(0, 0, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT); // Set viewport size to fit shadow map resolution
-        for (size_t areaLightNum = 0U; areaLightNum < lightManager.numAreaLights(); areaLightNum++) {
-            const AreaLight& light      = lightManager.areaLightAt(areaLightNum);
-            const glm::mat4 lightView   = light.viewMatrix();
-
-            // Bind shadow shader and shadowmap framebuffer
-            m_areaShadowShader.bind();
-            glBindFramebuffer(GL_FRAMEBUFFER, light.framebuffer);
-
-            // Clear the shadow map and set needed options
-            glClearDepth(1.0f);
-            glClear(GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_DEPTH_TEST);
-
-            // Render each model in the scene
-            drawMeshTreeAL(scene.root, areaLightShadowMapsProjection, lightView, renderConfig);
-       
-        }
+        // Render shadow maps
+        utils::renderShadowMaps(scene.root, renderConfig, lightManager);
 
         // Render scene
         deferredRenderer.render(m_viewProjectionMatrix, currentCamera.cameraPos());

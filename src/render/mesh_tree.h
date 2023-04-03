@@ -15,6 +15,7 @@ DISABLE_WARNINGS_POP()
 #include "lighting.h"
 #include <string.h>
 #include <unordered_map>
+
 struct MeshTransform {
     glm::vec3 translate;
     glm::vec4 selfRotate; // ROTATE AROUND AXIS
@@ -24,7 +25,6 @@ struct MeshTransform {
 
 class MeshTree : public std::enable_shared_from_this<MeshTree> {
 public:
-   
     MeshTree(std::string tag, Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl)
         : MeshTree(tag, msh, off, rots, rotp, scl, true) {}
     MeshTree(std::string tag, Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision);
@@ -35,7 +35,7 @@ public:
     MeshTree(std::string tag, Mesh* msh, bool allowCollision);
     void clean(LightManager& lmngr);
     void addChild(std::shared_ptr<MeshTree> child);
-    glm::mat4 modelMatrix();
+    glm::mat4 modelMatrix() const;
     HitBox getTransformedHitBox();
     glm::vec3 getTransformedHitBoxMiddle();
     bool collide(MeshTree* other);
@@ -59,6 +59,7 @@ public:
     // std::shared_ptr<glm::vec3> scale;
     AreaLight* al { nullptr };
 };
+
 class MemoryManager {
     public:
     MemoryManager(){
@@ -73,4 +74,5 @@ class MemoryManager {
     };
     
 };
+
 #endif

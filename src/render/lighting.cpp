@@ -10,7 +10,7 @@ DISABLE_WARNINGS_POP()
 #include <utils/constants.h>
 #include <iostream>
 
-void PointLight::wipeFramebuffers() const {
+void PointLight::wipeFramebuffers() {
     constexpr float clearValue = 1.0f; 
     for (size_t face = 0UL; face < 6UL; face++) { glClearNamedFramebufferfv(framebuffers[face], GL_DEPTH, 0, &clearValue); }
 }
@@ -28,6 +28,11 @@ std::array<glm::mat4, 6UL> PointLight::genMvpMatrices(const glm::mat4& model, co
     std::array<glm::mat4, 6UL> views = viewMatrices();
     for (size_t idx = 0U; idx < views.size(); idx++) { views[idx] = projection * views[idx] * model; }
     return views;
+}
+
+void AreaLight::wipeFramebuffer() {
+    constexpr float clearValue = 1.0f; 
+    glClearNamedFramebufferfv(framebuffer, GL_DEPTH, 0, &clearValue);
 }
 
 glm::vec3 AreaLight::forwardDirection() const { 
@@ -159,6 +164,7 @@ void LightManager::removeAreaLight(size_t idx) {
 
     areaLights.erase(areaLights.begin() + idx);
     free(light);
+
     // Reattach framebuffers to corresponding texture layers
     // Plonking out a framebuffer from the beginning or middle causes the framebuffers to become misaligned from their position in the array
     for (size_t lightIdx = 0UL; lightIdx < areaLights.size(); lightIdx++) {
@@ -178,28 +184,6 @@ std::vector<AreaLightShader> LightManager::createAreaLightsShaderData() {
                                     glm::vec4(light->falloff, 0.0f) };
     }
     return shaderData;
-}
-
-void LightManager::bind() {
-    // Point lights
-    std::vector<PointLightShader> pointLightsShaderData = createPointLightsShaderData();
-    glNamedBufferData(ssboPointLights, sizeof(PointLightShader) * pointLightsShaderData.size(), pointLightsShaderData.data(), GL_STATIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboPointLights); // Bind to binding=0
-
-    // Point lights shadow maps sampler
-    glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
-    glUniform1i(7, utils::SHADOW_START_IDX);
-
-    // Area lights
-    std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData();
-    glNamedBufferData(ssboAreaLights, sizeof(AreaLightShader) * areaLightsShaderData.size(), areaLightsShaderData.data(), GL_STATIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboAreaLights); // Bind to binding=1
-
-    // Area lights shadow maps sampler
-    glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX + 1);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
-    glUniform1i(8, utils::SHADOW_START_IDX + 1);
 }
 
 void LightManager::removeByReference(AreaLight* al){
@@ -225,4 +209,31 @@ void LightManager::removeByReference(AreaLight* al){
         }
     }
     
+}
+
+void LightManager::bind() {
+    // Point lights
+    std::vector<PointLightShader> pointLightsShaderData = createPointLightsShaderData();
+    glNamedBufferData(ssboPointLights, sizeof(PointLightShader) * pointLightsShaderData.size(), pointLightsShaderData.data(), GL_STATIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboPointLights); // Bind to binding=0
+
+    // Point lights shadow maps sampler
+    glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, pointShadowTexArr);
+    glUniform1i(7, utils::SHADOW_START_IDX);
+
+    // Area lights
+    std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData();
+    glNamedBufferData(ssboAreaLights, sizeof(AreaLightShader) * areaLightsShaderData.size(), areaLightsShaderData.data(), GL_STATIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboAreaLights); // Bind to binding=1
+
+    // Area lights shadow maps sampler
+    glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX + 1);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
+    glUniform1i(8, utils::SHADOW_START_IDX + 1);
+}
+
+void LightManager::wipeFramebuffers() {
+    for (PointLight& pointLight : pointLights)  { pointLight.wipeFramebuffers(); }
+    for (AreaLight* areaLight   : areaLights)   { areaLight->wipeFramebuffer(); }
 }
