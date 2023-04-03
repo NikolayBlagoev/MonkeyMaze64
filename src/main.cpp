@@ -64,7 +64,7 @@ void signalChange(){
     {
         std::unique_lock<std::mutex> lk(m);
         cv.wait(lk, []{ return processed_;});
-        processed = false;
+        processed_ = false;
 
     }
 }
@@ -99,6 +99,7 @@ void worker_thread()
             std::cout<<"WE GOOOD\n";
             ready_ = false;
             processed_ = true;
+            boardCopy = gen->board;
             lk.unlock();
             cv.notify_one();
         }
@@ -329,21 +330,24 @@ int main() {
                         GPUMesh(monkeypose8), GPUMesh(monkeypose10), GPUMesh(monkeypose12), GPUMesh(monkeypose14),
                         GPUMesh(monkeypose16), GPUMesh(monkeypose18), GPUMesh(monkeypose20), GPUMesh(monkeypose22),
                         GPUMesh(monkeypose24), GPUMesh(monkeypose26), GPUMesh(monkeypose28), GPUMesh(monkeypose30)};
-    MeshTree* bezierDragon = new MeshTree(&dragonMesh);
-    scene.addMesh(bezierDragon->self);
+    MeshTree* bezierDragon = new MeshTree("bezier dragon", &dragonMesh);
+    MemoryManager::addEl(bezierDragon);
+    scene.addMesh(bezierDragon->shared_from_this());
 
-    MeshTree* playerDragon = new MeshTree(&monkeypose0, playerPos,
+    MeshTree* playerDragon = new MeshTree("player", &monkeypose0, playerPos,
                                           glm::vec4(0.0f, 1.0f, 0.0f, 180.0f),
                                           glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
                                           glm::vec3(0.3f),
                                           true);
-    scene.addMesh(playerDragon->self);
-    MeshTree* tempMesh = new MeshTree(&dragonMesh, playerPos + glm::vec3(1.0f, 0.0f, 0.0f),
+    MemoryManager::addEl(playerDragon);
+    scene.addMesh(playerDragon->shared_from_this());
+    MeshTree* tempMesh = new MeshTree("dragon particle", &dragonMesh, playerPos + glm::vec3(1.0f, 0.0f, 0.0f),
                                    glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
                                    glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
                                    glm::vec3(1.0f),
                                    false);
-    scene.addMesh(tempMesh->self);
+    MemoryManager::addEl(tempMesh);
+    scene.addMesh(tempMesh->shared_from_this());
 
     Mesh crossing = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj"));
     Mesh room = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj"));
@@ -362,7 +366,8 @@ int main() {
     particleEmitterManager.addEmitter({ 1.0f, 1.0f, 1.0f });
 
     // Init MeshTree
-    MeshTree* boardRoot = new MeshTree();
+    MeshTree* boardRoot = new MeshTree("board root");
+    MemoryManager::addEl(boardRoot);
     boardRoot->transform.translate = offsetBoard;
    
     std::chrono::high_resolution_clock timer; 
@@ -374,16 +379,17 @@ int main() {
     BezierCurveRenderer rndrr = BezierCurveRenderer(millisec_since_epoch);
     b3c.start_time = millisec_since_epoch;
     b4d.prev_time = millisec_since_epoch;
-    BezierCombo3dcomp combo1 = BezierCombo3dcomp(&b3c, bezierDragon->translate);
-    rndrr.add3dcomp(&combo1);
-    BezierCombo4d combo2 = BezierCombo4d(&b4d, bezierDragon->selfRotate);
-    rndrr.add4d(&combo2);
+    // BezierCombo3dcomp combo1 = BezierCombo3dcomp(&b3c, bezierDragon->translate);
+    // rndrr.add3dcomp(&combo1);
+    // BezierCombo4d combo2 = BezierCombo4d(&b4d, bezierDragon->selfRotate);
+    // rndrr.add4d(&combo2);
     bool flag = true;
     bool prev_motion = motion;
     std::chrono::time_point start_motion = millisec_since_epoch;
-
+    glm::vec3 prev_pos = playerPos;
     // Main loop
     while (!m_window.shouldClose()) {
+        playerPos = (playerDragon->transform.translate);
         Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
         std::chrono::time_point curr_frame = timer.now();
         rndrr.do_moves(curr_frame);
@@ -413,19 +419,54 @@ int main() {
         glEnable(GL_DEPTH_TEST);
         if (flag){
             flag = false;
-            free(boardRoot);
+           
             
-            boardRoot = new MeshTree();
-            scene.root->addChild(boardRoot->self);
+            boardRoot = new MeshTree("boardoot");
+            MemoryManager::addEl(boardRoot);
+            scene.root->addChild(boardRoot->shared_from_this());
 
             boardRoot->transform.translate = offsetBoard;
             b = new Board(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras});
             for(int i = 0; i < 7; i ++){
                 for(int j = 0; j < 7; j++)
-                    boardRoot->addChild(b->board[i][j]->self);
+                    boardRoot->addChild(b->board[i][j]->shared_from_this());
             }
             
         }
+        // std::cout<<abs(playerPos.x - prev_pos.x)<<std::endl;
+        if(abs(playerPos.x - prev_pos.x) >= 2*factorx){
+            if(playerPos.x < prev_pos.x){
+                dir = 4;
+                b->move_l(lightManager);
+                MemoryManager::removeEl(boardRoot);
+            
+                boardRoot = new MeshTree("boardroot");
+                MemoryManager::addEl(boardRoot);
+                scene.root->addChild(boardRoot->shared_from_this());
+                offsetBoard.x -= 2*factorx;
+                boardRoot->transform.translate = offsetBoard;
+                signalChange();
+                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras},
+                0, 7, 0, 2);
+                prev_pos = playerPos;
+            }else{
+                dir = 2;
+                b->move_r(lightManager);
+                MemoryManager::removeEl(boardRoot);
+            
+                boardRoot = new MeshTree("boardroot");
+                MemoryManager::addEl(boardRoot);
+                scene.root->addChild(boardRoot->shared_from_this());
+                offsetBoard.x += 2*factorx;
+                boardRoot->transform.translate = offsetBoard;
+                signalChange();
+                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras},
+                0, 7, 5, 7);
+                prev_pos = playerPos;
+
+            }
+        }
+
 
         // Controls
         ImGuiIO io = ImGui::GetIO();

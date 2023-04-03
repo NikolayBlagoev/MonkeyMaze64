@@ -146,7 +146,7 @@ void Camera::updateInput(MeshTree *mesh, MeshTree* root) {
         m_prevCursorPos = cursorPos;
         if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
 
-            std::cout << delta.x << " " << delta.y  << std::endl;
+            // std::cout << delta.x << " " << delta.y  << std::endl;
 
             glm::vec3 objectPos = mesh->modelMatrix() * glm::vec4(glm::vec3(0.0f), 1.0f);
             glm::vec3 vecToObject = objectPos - m_position;
@@ -156,7 +156,7 @@ void Camera::updateInput(MeshTree *mesh, MeshTree* root) {
             // rotate
             rotateY(delta.x);
 
-            mesh->transform.selfRotate = glm::vec4(0.f, 1.f, 0.f, 180.f + glm::degrees(delta.x));
+            // mesh->transform.selfRotate = glm::vec4(0.f, 1.f, 0.f, 180.f + glm::degrees(delta.x));
 
             if (!m_renderConfig.constrainVertical) {
                 rotateX(-delta.y);
