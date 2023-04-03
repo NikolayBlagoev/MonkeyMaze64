@@ -45,25 +45,29 @@ struct AreaLight {
     glm::vec3 position;
     float rotX;
     float rotY;
-    float falloff;
+
     // Lighting properties
+    glm::vec3 falloff; // X-coordinate is constant coefficient, Y-coordinate is linear coefficient, Z-coordinate is quadratic coefficient
     glm::vec3 color;
+    
     float intensityMultiplier { 1.0f }; // Color is multiplied by this value before being sent to shader (intended for usage w/ HDR rendering)
 
     // OpenGL setup 
     GLuint framebuffer;
 
+    // Allow rotation to be controlled by external object(s)
+    bool externalRotationControl    = false;
+    glm::vec3 externalForward       = glm::vec3(0.0f);
+
     glm::vec3 forwardDirection() const;
     glm::mat4 viewMatrix() const;
-    bool selfRotating = false;
-    glm::vec3 forwardown = glm::vec3(0.0f);
 };
 
 struct AreaLightShader {
     glm::vec4 position;
     glm::vec4 color;
-    glm::mat4 viewProjection;
-    glm::vec4 falloff;
+    glm::mat4 viewProjection;   
+    glm::vec4 falloff; // X-coordinate is constant coefficient, Y-coordinate is linear coefficient, Z-coordinate is quadratic coefficient, W-coordinate is unused
 };
 
 class LightManager {
@@ -79,7 +83,8 @@ public:
     PointLight& pointLightAt(size_t idx) { return pointLights[idx]; }
     std::vector<PointLightShader> createPointLightsShaderData();
 
-    AreaLight* addAreaLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier = 1.0f, float xAngle = 0.0f, float yAngle = 0.0f, float falloff = 0.f);
+    AreaLight* addAreaLight(const glm::vec3& position, const glm::vec3& color, const glm::vec3& falloff = utils::CONSTANT_AREA_LIGHT_FALLOFF,
+                            float intensityMultiplier = 1.0f, float xAngle = 0.0f, float yAngle = 0.0f);
     void removeAreaLight(size_t idx);
     void removeByReference(AreaLight* al);
     size_t numAreaLights() { return areaLights.size(); }

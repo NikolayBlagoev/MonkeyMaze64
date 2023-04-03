@@ -105,8 +105,7 @@ glm::mat4 MeshTree::modelMatrix() {
     currTransform = glm::translate(currTransform, transform.translate);
     if(al != nullptr){
         al->position = currTransform*glm::vec4(0.f, 0.f, 0.f, 1.f);
-        al->forwardown = glm::normalize(currTransform*glm::vec4(-1.f, 0.f, 0.f, 1.f));
-        std::cout<<al->forwardown.x<<" "<<al->forwardown.y<<" "<<al->forwardown.z<<std::endl;
+        al->externalForward = glm::normalize(currTransform*glm::vec4(-1.f, 0.f, 0.f, 1.f));
     }
     currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.w), glm::vec3(transform.selfRotate.x, transform.selfRotate.y, transform.selfRotate.z));
 

@@ -1,6 +1,10 @@
 #ifndef _CONSTANTS_H_
 #define _CONSTANTS_H_
 
+#include <framework/disable_all_warnings.h>
+DISABLE_WARNINGS_PUSH()
+#include <glm/vec3.hpp>
+DISABLE_WARNINGS_POP()
 #include <filesystem>
 
 namespace utils {
@@ -16,11 +20,12 @@ namespace utils {
     constexpr int32_t HDR_BUFFER_TEX_START_IDX      = 56;
 
     // Shadow maps parameters
-    constexpr int32_t SHADOWTEX_WIDTH   = 1024;
-    constexpr int32_t SHADOWTEX_HEIGHT  = 1024;
-    constexpr float SHADOW_ASPECT_RATIO = static_cast<float>(SHADOWTEX_WIDTH) / static_cast<float>(SHADOWTEX_HEIGHT);
-    constexpr int32_t SHADOW_START_IDX  = 64;
-    constexpr float CUBE_SHADOW_FOV     = 90.0f; // Must be 90 degrees so that the cameras on the six sides of the cube touch each other
+    constexpr int32_t SHADOWTEX_WIDTH               = 1024;
+    constexpr int32_t SHADOWTEX_HEIGHT              = 1024;
+    constexpr float SHADOW_ASPECT_RATIO             = static_cast<float>(SHADOWTEX_WIDTH) / static_cast<float>(SHADOWTEX_HEIGHT);
+    constexpr int32_t SHADOW_START_IDX              = 64;
+    constexpr float CUBE_SHADOW_FOV                 = 90.0f; // Must be 90 degrees so that the cameras on the six sides of the cube touch each other
+    constexpr glm::vec3 CONSTANT_AREA_LIGHT_FALLOFF = { -1.0f, 0.0f, 0.0f };
 
     // Particles parameters
     constexpr size_t MAX_PARTICLES_PER_EMITTER = 512UL;

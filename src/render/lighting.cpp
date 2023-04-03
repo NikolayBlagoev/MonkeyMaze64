@@ -39,16 +39,15 @@ glm::vec3 AreaLight::forwardDirection() const {
 
 glm::mat4 AreaLight::viewMatrix() const {
     // Construct upward direction
-    if(!selfRotating){
+    if (!externalRotationControl){
         const glm::vec3 forward = forwardDirection();
         const glm::vec3 horAxis = glm::cross(s_yAxis, forward);
         const glm::vec3 up      = glm::normalize(glm::cross(forward, horAxis));
-
         return glm::lookAt(position, position + forward, up);
-    }else{
-        const glm::vec3 horAxis = glm::cross(s_yAxis, forwardown);
-        const glm::vec3 up      = glm::normalize(glm::cross(forwardown, horAxis));
-        return glm::lookAt(position, position + forwardown, up);
+    } else {
+        const glm::vec3 horAxis = glm::cross(s_yAxis, externalForward);
+        const glm::vec3 up      = glm::normalize(glm::cross(externalForward, horAxis));
+        return glm::lookAt(position, position + externalForward, up);
     }
 }
 
@@ -126,11 +125,13 @@ void LightManager::removePointLight(size_t idx) {
 std::vector<PointLightShader> LightManager::createPointLightsShaderData() {
     const glm::mat4 projection = m_renderConfig.pointShadowMapsProjectionMatrix();
     std::vector<PointLightShader> shaderData;
-    for (const PointLight& light : pointLights) { shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color * light.intensityMultiplier, 0.0f) }); }
+    for (const PointLight& light : pointLights) { shaderData.push_back({ glm::vec4(light.position, 1.0f),
+                                                                         glm::vec4(light.color * light.intensityMultiplier, 1.0f) }); }
     return shaderData;
 }
 
-AreaLight* LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier, float xAngle, float yAngle, float falloff) {
+AreaLight* LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& color, const glm::vec3& falloff,
+                                      float intensityMultiplier, float xAngle, float yAngle) {
     AreaLight* light = new AreaLight{ position, xAngle, yAngle, falloff, color, intensityMultiplier, INVALID };
 
     // Resize texture array to fit new shadowmap
@@ -169,7 +170,10 @@ std::vector<AreaLightShader> LightManager::createAreaLightsShaderData() {
     std::vector<AreaLightShader> shaderData;
     for (AreaLight* light : areaLights) {
         glm::mat4 viewProjection = projection * light->viewMatrix();
-        shaderData.push_back({ glm::vec4(light->position, 0.0f), glm::vec4(light->color * light->intensityMultiplier, 0.0f), viewProjection, glm::vec4(light->falloff) });
+        shaderData.push_back({ glm::vec4(light->position, 1.0f),
+                               glm::vec4(light->color * light->intensityMultiplier, 1.0f),
+                               viewProjection,
+                               glm::vec4(light->falloff, 1.0f) });
     }
     return shaderData;
 }

@@ -237,9 +237,9 @@ void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* cam
             cameras.push_back(std::weak_ptr(room->camera));
             
             aperturem->al=lightManager.addAreaLight(glm::vec3(1.0f, -3.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            aperturem->al->falloff = 0.f;
+            aperturem->al->falloff = glm::vec3(-1.0f, 1.5f, 1.0f); // This seems to be a good value for a spotlight
             aperturem->al->intensityMultiplier = 2.f;
-            aperturem->al->selfRotating = true;
+            aperturem->al->externalRotationControl = true;
             // aperturem->modelMatrix();
         }else if(roomTile->objs.at(i)->type == 1){
             // CameraObj* cam = makeCamera(aperture, camera, stand2, stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec3(1.f));
@@ -540,7 +540,7 @@ int main() {
         }
 
         // Render scene
-        deferredRenderer.render(m_viewProjectionMatrix, currentCamera.cameraPos(), 0.f);
+        deferredRenderer.render(m_viewProjectionMatrix, currentCamera.cameraPos());
 
         // Draw UI
         glViewport(0, 0, utils::WIDTH, utils::HEIGHT);

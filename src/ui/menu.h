@@ -24,7 +24,6 @@ private:
     void drawCameraTab();
 
     // Mesh tab
-    void addMesh();
     void drawMaterialControls();
     void drawMeshTab();
 
