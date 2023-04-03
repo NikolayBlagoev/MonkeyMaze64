@@ -381,14 +381,22 @@ int main() {
     BezierCurveRenderer rndrr = BezierCurveRenderer(millisec_since_epoch);
     b3c.start_time = millisec_since_epoch;
     b4d.prev_time = millisec_since_epoch;
-    // BezierCombo3dcomp combo1 = BezierCombo3dcomp(&b3c, bezierDragon->translate);
-    // rndrr.add3dcomp(&combo1);
-    // BezierCombo4d combo2 = BezierCombo4d(&b4d, bezierDragon->selfRotate);
-    // rndrr.add4d(&combo2);
-    bool flag = true;
+
     bool prev_motion = motion;
     std::chrono::time_point start_motion = millisec_since_epoch;
     glm::vec3 prev_pos = playerPos;
+
+    boardRoot = new MeshTree("boardoot");
+    MemoryManager::addEl(boardRoot);
+    scene.root->addChild(boardRoot->shared_from_this());
+    
+    boardRoot->transform.translate = offsetBoard;
+    b = new Board(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras});
+    for(int i = 0; i < 7; i ++){
+        for(int j = 0; j < 7; j++)
+            boardRoot->addChild(b->board[i][j]->shared_from_this());
+    }
+
     // Main loop
     while (!m_window.shouldClose()) {
         playerPos = (playerDragon->transform.translate);
@@ -415,27 +423,12 @@ int main() {
         }else{
             playerDragon->mesh = &monkeyposes[0];
         }
+
         // Clear the screen
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-        if (flag){
-            flag = false;
-           
-            
-            boardRoot = new MeshTree("boardoot");
-            MemoryManager::addEl(boardRoot);
-            scene.root->addChild(boardRoot->shared_from_this());
-            
-            boardRoot->transform.translate = offsetBoard;
-            b = new Board(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras});
-            for(int i = 0; i < 7; i ++){
-                for(int j = 0; j < 7; j++)
-                    boardRoot->addChild(b->board[i][j]->shared_from_this());
-            }
-            
-        }
-        // std::cout<<fabs(playerPos.x - prev_pos.x)<<std::endl;
+
         if(fabs(playerPos.z - prev_pos.z) >= 2*factory){
             if(playerPos.z < prev_pos.z){
                 std::cout<<"LEFt"<<std::endl;

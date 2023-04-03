@@ -14,7 +14,7 @@ void Scene::addMesh(std::filesystem::path filePath) {
         MemoryManager::addEl(root);
         root->is_root = true;
     }
-    MeshTree* newMesh = new MeshTree(filePath.filename(), &cpuMesh);
+    MeshTree* newMesh = new MeshTree(filePath.filename().string(), &cpuMesh);
     root->addChild(newMesh->shared_from_this());
 }
 

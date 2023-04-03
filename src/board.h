@@ -199,9 +199,9 @@ class Board{
             // cameras.push_back(std::weak_ptr(room->camera));
             
             aperturem->al=lightManager.addAreaLight(glm::vec3(1.0f, -3.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            aperturem->al->falloff = 0.f;
+            aperturem->al->falloff = utils::CONSTANT_AREA_LIGHT_FALLOFF;
             aperturem->al->intensityMultiplier = 2.f;
-            aperturem->al->selfRotating = true;
+            aperturem->al->externalRotationControl = true;
             // aperturem->modelMatrix();
         }else if(roomTile->objs.at(i)->type == 1){
             // CameraObj* cam = makeCamera(aperture, camera, stand2, stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec3(1.f));
