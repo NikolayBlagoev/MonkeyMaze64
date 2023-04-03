@@ -39,11 +39,17 @@ glm::vec3 AreaLight::forwardDirection() const {
 
 glm::mat4 AreaLight::viewMatrix() const {
     // Construct upward direction
-    const glm::vec3 forward = forwardDirection();
-    const glm::vec3 horAxis = glm::cross(s_yAxis, forward);
-    const glm::vec3 up      = glm::normalize(glm::cross(forward, horAxis));
+    if(!selfRotating){
+        const glm::vec3 forward = forwardDirection();
+        const glm::vec3 horAxis = glm::cross(s_yAxis, forward);
+        const glm::vec3 up      = glm::normalize(glm::cross(forward, horAxis));
 
-    return glm::lookAt(position, position + forward, up);
+        return glm::lookAt(position, position + forward, up);
+    }else{
+        const glm::vec3 horAxis = glm::cross(s_yAxis, forwardown);
+        const glm::vec3 up      = glm::normalize(glm::cross(forwardown, horAxis));
+        return glm::lookAt(position, position + forwardown, up);
+    }
 }
 
 LightManager::LightManager(const RenderConfig& renderConfig) : m_renderConfig(renderConfig) { 
@@ -77,7 +83,10 @@ LightManager::~LightManager() {
     glDeleteTextures(1, &areaShadowTexArr);
     glDeleteTextures(1, &pointShadowTexArr);
 
-    for (const AreaLight& areaLight : areaLights) { glDeleteFramebuffers(1, &areaLight.framebuffer); }
+    for (AreaLight* areaLight : areaLights) { 
+        glDeleteFramebuffers(1, &(areaLight->framebuffer)); 
+        free(areaLight);    
+    }
     for (const PointLight& pointLight : pointLights) { glDeleteFramebuffers(6, pointLight.framebuffers.data()); }
 }
 
@@ -121,45 +130,46 @@ std::vector<PointLightShader> LightManager::createPointLightsShaderData() {
     return shaderData;
 }
 
-void LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier, float xAngle, float yAngle) {
-    AreaLight light = { position, xAngle, yAngle, color, intensityMultiplier, INVALID };
+AreaLight* LightManager::addAreaLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier, float xAngle, float yAngle, float falloff) {
+    AreaLight* light = new AreaLight{ position, xAngle, yAngle, falloff, color, intensityMultiplier, INVALID };
 
     // Resize texture array to fit new shadowmap
     glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, static_cast<GLsizei>(areaLights.size() + 1UL), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
     // Create framebuffer to draw to
-    glCreateFramebuffers(1, &light.framebuffer);
-    glNamedFramebufferTextureLayer(light.framebuffer, GL_DEPTH_ATTACHMENT, areaShadowTexArr, 0, static_cast<GLint>(areaLights.size()));
+    glCreateFramebuffers(1, &(light->framebuffer));
+    glNamedFramebufferTextureLayer(light->framebuffer, GL_DEPTH_ATTACHMENT, areaShadowTexArr, 0, static_cast<GLint>(areaLights.size()));
 
     areaLights.push_back(light);
+    return light;
 }
 
 void LightManager::removeAreaLight(size_t idx) {
     // Destroy framebuffer corresponding to the shadow map
-    const AreaLight& light = areaLights[idx];
-    glDeleteFramebuffers(1, &light.framebuffer);
+    AreaLight* light = areaLights[idx];
+    glDeleteFramebuffers(1, &(light->framebuffer));
 
     // Resize texture array to save space
     glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, static_cast<GLsizei>(areaLights.size() - 1UL), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
     areaLights.erase(areaLights.begin() + idx);
-
+    free(light);
     // Reattach framebuffers to corresponding texture layers
     // Plonking out a framebuffer from the beginning or middle causes the framebuffers to become misaligned from their position in the array
     for (size_t lightIdx = 0UL; lightIdx < areaLights.size(); lightIdx++) {
-        const AreaLight& light = areaLights[lightIdx];
-        glNamedFramebufferTextureLayer(light.framebuffer, GL_DEPTH_ATTACHMENT, areaShadowTexArr, 0, static_cast<GLint>(lightIdx));
+        AreaLight* light = areaLights[lightIdx];
+        glNamedFramebufferTextureLayer(light->framebuffer, GL_DEPTH_ATTACHMENT, areaShadowTexArr, 0, static_cast<GLint>(lightIdx));
     }
 }
 
 std::vector<AreaLightShader> LightManager::createAreaLightsShaderData() {
     const glm::mat4 projection = m_renderConfig.areaShadowMapsProjectionMatrix();
     std::vector<AreaLightShader> shaderData;
-    for (const AreaLight& light : areaLights) {
-        glm::mat4 viewProjection = projection * light.viewMatrix();
-        shaderData.push_back({ glm::vec4(light.position, 0.0f), glm::vec4(light.color * light.intensityMultiplier, 0.0f), viewProjection });
+    for (AreaLight* light : areaLights) {
+        glm::mat4 viewProjection = projection * light->viewMatrix();
+        shaderData.push_back({ glm::vec4(light->position, 0.0f), glm::vec4(light->color * light->intensityMultiplier, 0.0f), viewProjection, glm::vec4(light->falloff) });
     }
     return shaderData;
 }
@@ -184,4 +194,29 @@ void LightManager::bind() {
     glActiveTexture(GL_TEXTURE0 + utils::SHADOW_START_IDX + 1);
     glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
     glUniform1i(8, utils::SHADOW_START_IDX + 1);
+}
+
+void LightManager::removeByReference(AreaLight* al){
+    if(al == nullptr) return;
+    for(int i = 0; i < areaLights.size(); i++){
+        AreaLight* light = areaLights[i];
+        if(light != al){
+            continue;
+        }
+        glDeleteFramebuffers(1, &(light->framebuffer));
+
+        // Resize texture array to save space
+        glBindTexture(GL_TEXTURE_2D_ARRAY, areaShadowTexArr);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, utils::SHADOWTEX_WIDTH, utils::SHADOWTEX_HEIGHT, static_cast<GLsizei>(areaLights.size() - 1UL), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+        areaLights.erase(areaLights.begin() + i);
+        free(light);
+        // Reattach framebuffers to corresponding texture layers
+        // Plonking out a framebuffer from the beginning or middle causes the framebuffers to become misaligned from their position in the array
+        for (size_t lightIdx = 0UL; lightIdx < areaLights.size(); lightIdx++) {
+            AreaLight* light = areaLights[lightIdx];
+            glNamedFramebufferTextureLayer(light->framebuffer, GL_DEPTH_ATTACHMENT, areaShadowTexArr, 0, static_cast<GLint>(lightIdx));
+        }
+    }
+    
 }

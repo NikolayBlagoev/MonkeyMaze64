@@ -11,6 +11,7 @@ struct AreaLight {
     vec4 position;
     vec4 color;
     mat4 viewProjection;
+    vec4 falloff;
 };
 
 // SSBOs
@@ -57,7 +58,7 @@ float samplePointShadow(vec3 sampleCoord, uint lightIdx) {
 
 // @param sampleLightCoord: Homogeneous coordinates of fragment sample tranformed by viewProjection of shadow-casting light
 // @param lightIdx: Index of the area light in the SSBO/shadow map
-float sampleAreaShadow(vec4 sampleLightCoord, uint lightIdx) {
+float sampleAreaShadow(vec4 sampleLightCoord, uint lightIdx, float falloff) {
     // Divide by w because sampleLightCoord are homogeneous coordinates
     sampleLightCoord.xyz /= sampleLightCoord.w;
 
@@ -72,7 +73,12 @@ float sampleAreaShadow(vec4 sampleLightCoord, uint lightIdx) {
     vec4 texcoord;
     texcoord.xyw    = sampleLightCoord.xyz;
     texcoord.z      = lightIdx;
-    return texture(areaShadowTexArr, texcoord);
+    float dist = sqrt(pow(sampleLightCoord.x - 0.5, 2) + pow(sampleLightCoord.y - 0.5, 2));
+    // float dist = 1;
+    dist = 1.0 - dist;
+    dist = max(0.0, dist);
+    dist = pow(dist, falloff);
+    return texture(areaShadowTexArr, texcoord) != 0.0 ? dist : 0.f;
 }
 
 /*****************************************************************************************************/
@@ -190,10 +196,11 @@ void main() {
         AreaLight light     = areaLightsData[lightIdx];
         vec3 lightColor     = light.color.rgb;
         vec3 lightPosition  = light.position.xyz;
-
+        
+        // dist = pow(dist, light.falloff.x);
         vec4 fragLightCoord     = light.viewProjection * vec4(fragPos, 1.0);
-        float successFraction   = sampleAreaShadow(fragLightCoord, lightIdx);
-        if (successFraction != 0.0) { fragColor.rgb += computeReflectance(fragPos, fragNormal, fragAlbedo, metallic, roughness, lightPosition, lightColor, positionToCamera, F0); }
+        float successFraction   = sampleAreaShadow(fragLightCoord, lightIdx, light.falloff.x);
+        if (successFraction != 0.0) { fragColor.rgb += successFraction*computeReflectance(fragPos, fragNormal, fragAlbedo, metallic, roughness, lightPosition, lightColor, positionToCamera, F0); }
     }
     
     // Ambient lighting

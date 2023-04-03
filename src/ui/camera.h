@@ -20,7 +20,7 @@ public:
            const glm::vec3& position, const glm::vec3& forward);
 
     void updateInput();
-    void updateInput(MeshTree* mesh);
+    void updateInput(MeshTree* mesh, MeshTree* root);
     void setUserInteraction(bool enabled);
     bool* update;
     glm::vec3 cameraPos() const;

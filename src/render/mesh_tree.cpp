@@ -1,4 +1,6 @@
 #include "mesh_tree.h"
+#include <iostream>
+#include <glm/gtx/quaternion.hpp>
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtx/transform.hpp>
 DISABLE_WARNINGS_POP()
@@ -44,6 +46,7 @@ MeshTree::MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm
     this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
     this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->hitBox = makeHitBox(*msh, allowCollision);
+    this->self = std::shared_ptr<MeshTree>(this);
 }
 
 MeshTree::MeshTree(){
@@ -56,6 +59,7 @@ MeshTree::MeshTree(){
     this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
     this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->mesh = nullptr;
+    this->self = std::shared_ptr<MeshTree>(this);
 }
 
 MeshTree::MeshTree(Mesh* msh, bool allowCollision) {
@@ -69,20 +73,26 @@ MeshTree::MeshTree(Mesh* msh, bool allowCollision) {
     this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
     this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->hitBox = makeHitBox(*msh, allowCollision);
+    this->self = std::shared_ptr<MeshTree>(this);
 }
 
-void MeshTree::addChild(MeshTree* child){
-    child->parent = this;
-    this->children.push_back(child);
+void MeshTree::addChild(std::shared_ptr<MeshTree> child){
+    child.get()->parent = std::weak_ptr<MeshTree>(self);
+    this->children.push_back(std::weak_ptr<MeshTree>(child));
 }
 
 glm::mat4 MeshTree::modelMatrix() {
     glm::mat4 currTransform;
 
-    if (parent == nullptr)
+    if (is_root)
         currTransform = glm::identity<glm::mat4>();
-    else
-        currTransform = parent->modelMatrix();
+    else{
+        if(parent.expired()){
+            return glm::identity<glm::mat4>();
+        }
+        std::shared_ptr parentPtr = parent.lock();
+        currTransform = parentPtr.get()->modelMatrix();
+    }
 
     // Translate
     
@@ -93,9 +103,16 @@ glm::mat4 MeshTree::modelMatrix() {
 
 
     currTransform = glm::translate(currTransform, transform.translate);
+    if(al != nullptr){
+        al->position = currTransform*glm::vec4(0.f, 0.f, 0.f, 1.f);
+        al->forwardown = glm::normalize(currTransform*glm::vec4(-1.f, 0.f, 0.f, 1.f));
+        std::cout<<al->forwardown.x<<" "<<al->forwardown.y<<" "<<al->forwardown.z<<std::endl;
+    }
     currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.w), glm::vec3(transform.selfRotate.x, transform.selfRotate.y, transform.selfRotate.z));
 
 
+    
+    
     // Scale
     return glm::scale(currTransform, transform.scale);
 }
@@ -123,21 +140,24 @@ static MeshTree* collidesWith(MeshTree* root, MeshTree* toCheck) {
     if (root->collide(toCheck))
         return root;
 
-    for (MeshTree* child : root->children) {
-        if (collidesWith(child, toCheck) != nullptr)
-            return child;
+    for ( size_t i = 0; i < root->children.size(); i++) {
+        std::weak_ptr<MeshTree> child = root->children.at(i);
+        if(child.expired()){
+            root->children.erase(root->children.begin()+i);
+            i--;
+            continue;
+        }
+        MeshTree* childp = child.lock().get();
+        if (collidesWith(childp, toCheck) != nullptr)
+            return childp;
     }
 
     return nullptr;
 }
 
 // Returns true if translation succeeded
-bool MeshTree::tryTranslation(glm::vec3 translation) {
+bool MeshTree::tryTranslation(glm::vec3 translation, MeshTree* root) {
     this->transform.translate += translation;
-
-    MeshTree *root = this;
-    while (root->parent != nullptr)
-        root = root->parent;
 
     MeshTree* other = collidesWith(root, this);
 
@@ -156,4 +176,8 @@ bool MeshTree::tryTranslation(glm::vec3 translation) {
     }
 
     return false;
+}
+
+MeshTree::~MeshTree(){
+
 }

@@ -26,7 +26,6 @@ private:
     // Mesh tab
     void addMesh();
     void drawMaterialControls();
-    void drawMeshControls();
     void drawMeshTab();
 
     // Light tab
