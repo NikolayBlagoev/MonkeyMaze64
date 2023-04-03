@@ -254,7 +254,8 @@ int main() {
     std::thread worker(worker_thread);
 
     glm::vec3 playerPos = glm::vec3(0.0f, -0.1f, 1.0f);
-    glm::vec3 playerCameraPos = playerPos + glm::vec3(0.0f, 1.5f, 1.5f);
+    glm::vec3 playerMiddleOffset = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 playerCameraPos = playerPos + glm::vec3(0.0f, 1.0f, 1.5f) + playerMiddleOffset;
 
     RenderConfig renderConfig;
     Window m_window("Final Project", glm::ivec2(utils::WIDTH, utils::HEIGHT), OpenGLVersion::GL46);
@@ -555,7 +556,7 @@ int main() {
         m_window.updateInput();
         if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
             if (renderConfig.controlPlayer)
-                currentCamera.updateInput(playerDragon, scene.root);
+                currentCamera.updateInput(playerDragon, scene.root, playerMiddleOffset);
             else
                 currentCamera.updateInput();
         }

@@ -88,7 +88,7 @@ void Camera::updateInput() {
     } else { m_prevCursorPos = m_pWindow->getCursorPos(); }
 }
 
-void Camera::updateInput(MeshTree *mesh, MeshTree* root) {
+void Camera::updateInput(MeshTree *mesh, MeshTree* root, glm::vec3 meshMiddleOffset) {
     if (m_userInteraction) {
         glm::vec3 right = glm::normalize(glm::cross(m_forward, m_up)) * m_renderConfig.moveSpeed;
         glm::vec3 forward = m_forward * m_renderConfig.moveSpeed;
@@ -136,6 +136,13 @@ void Camera::updateInput(MeshTree *mesh, MeshTree* root) {
             }
         }
 
+        if (m_pWindow->isKeyPressed(GLFW_KEY_LEFT_BRACKET)) {
+            m_position -= m_forward * 0.1f;
+        }
+        if (m_pWindow->isKeyPressed(GLFW_KEY_RIGHT_BRACKET)) {
+            m_position += m_forward * 0.1f;
+        }
+
         // Mouse movement
         const glm::dvec2 cursorPos = m_pWindow->getCursorPos();
         glm::vec2 delta = m_renderConfig.lookSpeed * glm::vec2(m_prevCursorPos - cursorPos);
@@ -146,9 +153,8 @@ void Camera::updateInput(MeshTree *mesh, MeshTree* root) {
         m_prevCursorPos = cursorPos;
         if (m_pWindow->isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
 
-            // std::cout << delta.x << " " << delta.y  << std::endl;
-
             glm::vec3 objectPos = mesh->modelMatrix() * glm::vec4(glm::vec3(0.0f), 1.0f);
+            objectPos += meshMiddleOffset;
             glm::vec3 vecToObject = objectPos - m_position;
             // move to object
             m_position = objectPos;

@@ -88,16 +88,20 @@ void GPUMesh::moveInto(GPUMesh&& other) {
     m_metallic      = other.m_metallic;
     m_roughness     = other.m_roughness;
     m_ao            = other.m_ao;
+    m_displacement  = other.m_displacement;
+    isHeight        = other.isHeight;
 
-    other.m_numIndices  = 0;
-    other.m_ibo         = INVALID;
-    other.m_vbo         = INVALID;
-    other.m_vao         = INVALID;
-    other.m_albedo      = std::weak_ptr<Texture>();
-    other.m_normal      = std::weak_ptr<Texture>();
-    other.m_metallic    = std::weak_ptr<Texture>();
-    other.m_roughness   = std::weak_ptr<Texture>();
-    other.m_ao          = std::weak_ptr<Texture>();
+    other.m_numIndices      = 0;
+    other.m_ibo             = INVALID;
+    other.m_vbo             = INVALID;
+    other.m_vao             = INVALID;
+    other.m_albedo          = std::weak_ptr<Texture>();
+    other.m_normal          = std::weak_ptr<Texture>();
+    other.m_metallic        = std::weak_ptr<Texture>();
+    other.m_roughness       = std::weak_ptr<Texture>();
+    other.m_ao              = std::weak_ptr<Texture>();
+    other.m_displacement    = std::weak_ptr<Texture>();
+    isHeight                = true;
 }
 
 void GPUMesh::freeGpuMemory() {
