@@ -124,9 +124,11 @@ void LightManager::removePointLight(size_t idx) {
 
 std::vector<PointLightShader> LightManager::createPointLightsShaderData() {
     const glm::mat4 projection = m_renderConfig.pointShadowMapsProjectionMatrix();
-    std::vector<PointLightShader> shaderData;
-    for (const PointLight& light : pointLights) { shaderData.push_back({ glm::vec4(light.position, 1.0f),
-                                                                         glm::vec4(light.color * light.intensityMultiplier, 1.0f) }); }
+    std::vector<PointLightShader> shaderData(pointLights.size());
+    for (size_t lightIdx = 0UL; lightIdx < pointLights.size(); lightIdx++) {
+        const PointLight& light = pointLights[lightIdx]; 
+        shaderData[lightIdx]    = { glm::vec4(light.position, 1.0f), glm::vec4(light.color * light.intensityMultiplier, 1.0f) };
+    }
     return shaderData;
 }
 
@@ -167,13 +169,13 @@ void LightManager::removeAreaLight(size_t idx) {
 
 std::vector<AreaLightShader> LightManager::createAreaLightsShaderData() {
     const glm::mat4 projection = m_renderConfig.areaShadowMapsProjectionMatrix();
-    std::vector<AreaLightShader> shaderData;
-    for (AreaLight* light : areaLights) {
-        glm::mat4 viewProjection = projection * light->viewMatrix();
-        shaderData.push_back({ glm::vec4(light->position, 1.0f),
-                               glm::vec4(light->color * light->intensityMultiplier, 1.0f),
-                               viewProjection,
-                               glm::vec4(light->falloff, 1.0f) });
+    std::vector<AreaLightShader> shaderData(areaLights.size());
+    for (size_t lightIdx = 0UL; lightIdx < areaLights.size(); lightIdx++) {
+        const AreaLight* light  = areaLights[lightIdx]; 
+        shaderData[lightIdx]    = { glm::vec4(light->position, 1.0f),
+                                    glm::vec4(light->color * light->intensityMultiplier, 1.0f),
+                                    projection * light->viewMatrix(),
+                                    glm::vec4(light->falloff, 0.0f) };
     }
     return shaderData;
 }
