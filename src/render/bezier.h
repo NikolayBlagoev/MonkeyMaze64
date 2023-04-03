@@ -122,20 +122,20 @@ class CompositeBezier4d : public BezierCurve4dGeneral{
 };
 class BezierCombo3d {
     public:
-        std::weak_ptr<glm::vec3> to_move;
-        
+        glm::vec3* to_move;
+        std::weak_ptr<MeshTree> obj;
         BezierCurve3d* curve;
-        BezierCombo3d(BezierCurve3d* curve, std::weak_ptr<glm::vec3> to_move) : curve(curve), to_move(to_move){
+        BezierCombo3d(BezierCurve3d* curve,glm::vec3* to_move, std::weak_ptr<MeshTree> obj) : curve(curve), to_move(to_move), obj(obj){
 
         };
         bool move(float t){
-            if(to_move.expired()){
+            if(obj.expired()){
                 
                 free(curve);
                 return false;
             }
             glm::vec3 ret = curve->pos_t(t);
-            *(to_move.lock().get()) = ret;
+            *(to_move) = ret;
             return true;
         };
 };
@@ -144,12 +144,13 @@ class BezierCombo3dcomp {
         
         
         CompositeBezier3d* curve;
-        std::weak_ptr<glm::vec3> to_move;
-        BezierCombo3dcomp(CompositeBezier3d* curve, std::weak_ptr<glm::vec3> to_move) : curve(curve), to_move(to_move) {
+        glm::vec3* to_move;
+        std::weak_ptr<MeshTree> obj;
+        BezierCombo3dcomp(CompositeBezier3d* curve, glm::vec3* to_move, std::weak_ptr<MeshTree> obj) : curve(curve), to_move(to_move), obj(obj) {
 
         };
         bool move(float t){
-            if(to_move.expired()){
+            if(obj.expired()){
                 for(int i = 0; i < curve->curves.size(); i++){
                     BezierCurve3d* tmp = curve->curves.at(i);
                     free(tmp);
@@ -158,38 +159,40 @@ class BezierCombo3dcomp {
                 return false;
             }
             glm::vec3 ret = curve->pos_t(t);
-            *(to_move.lock().get()) = ret;
+            *(to_move) = ret;
             return true;
         };
 };
 class BezierCombo4d {
     public:
-        std::weak_ptr<glm::vec4> to_move;
+        glm::vec4* to_move;
+        std::weak_ptr<MeshTree> obj;
         int choice = 0;
         BezierCurve4d* curve;
-        BezierCombo4d(BezierCurve4d* curve, std::weak_ptr<glm::vec4> to_move) : curve(curve), to_move(to_move){
+        BezierCombo4d(BezierCurve4d* curve, glm::vec4* to_move, std::weak_ptr<MeshTree> obj) : curve(curve), to_move(to_move), obj(obj){
 
         };
         bool move(float t){
-            if(to_move.expired()){
+            if(obj.expired()){
                 free(curve);
                 return false;
             }
             glm::vec4 ret = curve->pos_t(t);
-            *(to_move.lock().get()) = BezierCurve4d::qToangl(ret);
+            *(to_move) = BezierCurve4d::qToangl(ret);
             return true;
         };
 };
 
 class BezierCombo4dcomp {
     public:
-        std::weak_ptr<glm::vec4> to_move;
+        glm::vec4* to_move;
+        std::weak_ptr<MeshTree> obj;
         CompositeBezier4d* curve;
-        BezierCombo4dcomp(CompositeBezier4d* curve, std::weak_ptr<glm::vec4> to_move) : curve(curve), to_move(to_move){
+        BezierCombo4dcomp(CompositeBezier4d* curve, glm::vec4* to_move, std::weak_ptr<MeshTree> obj) : curve(curve), to_move(to_move), obj(obj){
 
         };
         bool move(float t){
-            if(to_move.expired()){
+            if(obj.expired()){
                 for(int i = 0; i < curve->curves.size(); i++){
                     BezierCurve4d* tmp = curve->curves.at(i);
                     free(tmp);
@@ -198,7 +201,7 @@ class BezierCombo4dcomp {
                 return false;
             }
             glm::vec4 ret = curve->pos_t(t);
-            *(to_move.lock().get()) = BezierCurve4d::qToangl(ret);
+            *(to_move) = BezierCurve4d::qToangl(ret);
             return true;
         };
 };

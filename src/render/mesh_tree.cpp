@@ -4,7 +4,7 @@
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtx/transform.hpp>
 DISABLE_WARNINGS_POP()
-
+std::unordered_map<MeshTree*, std::shared_ptr<MeshTree>> MemoryManager::objs;
 static HitBox makeHitBox(Mesh& cpuMesh, bool allowCollision) {
     std::array<std::array<float, 3>, 2> minMax{};
 
@@ -38,47 +38,51 @@ static HitBox makeHitBox(Mesh& cpuMesh, bool allowCollision) {
     return {allowCollision, points};
 }
 
-MeshTree::MeshTree(Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision) {
+MeshTree::MeshTree(std::string tag, Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision) {
     this->mesh = new GPUMesh(*msh);
     this->transform = {off, rots, rotp, scl};
-    this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
-    this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
-    this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
-    this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
+    // this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
+    // this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
+    // this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
+    // this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->hitBox = makeHitBox(*msh, allowCollision);
-    this->self = std::shared_ptr<MeshTree>(this);
+    
+    this->tag = tag;
 }
 
-MeshTree::MeshTree(){
+MeshTree::MeshTree(std::string tag){
     this->transform = {glm::vec3(0.f),
                        glm::vec4(0.f,1.f,0.f,0.f),
                        glm::vec4(0.f,1.f,0.f,0.f),
                        glm::vec3(1.f)};
-    this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
-    this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
-    this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
-    this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
+    // this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
+    // this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
+    // this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
+    // this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->mesh = nullptr;
-    this->self = std::shared_ptr<MeshTree>(this);
+    
+    this->tag = tag;
 }
 
-MeshTree::MeshTree(Mesh* msh, bool allowCollision) {
+MeshTree::MeshTree(std::string tag, Mesh* msh, bool allowCollision) {
     this->transform = {glm::vec3(0.f),
                        glm::vec4(0.f,1.f,0.f,0.f),
                        glm::vec4(0.f,1.f,0.f,0.f),
                        glm::vec3(1.f)};
     this->mesh = new GPUMesh(*msh);
-    this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
-    this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
-    this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
-    this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
+    // this->selfRotate= std::shared_ptr<glm::vec4>(&(transform.selfRotate));
+    // this->rotateParent= std::shared_ptr<glm::vec4>(&(transform.rotateParent));
+    // this->translate= std::shared_ptr<glm::vec3>(&(transform.translate));
+    // this->scale= std::shared_ptr<glm::vec3>(&(transform.scale));
     this->hitBox = makeHitBox(*msh, allowCollision);
-    this->self = std::shared_ptr<MeshTree>(this);
+    
+    this->tag = tag;
 }
 
 void MeshTree::addChild(std::shared_ptr<MeshTree> child){
-    child.get()->parent = std::weak_ptr<MeshTree>(self);
-    this->children.push_back(std::weak_ptr<MeshTree>(child));
+    // std::cout<<MemoryManager::objs[this]<<std::endl;
+    child.get()->parent = std::weak_ptr<MeshTree>(shared_from_this());
+    this->children.push_back(child);
 }
 
 glm::mat4 MeshTree::modelMatrix() {
@@ -88,6 +92,7 @@ glm::mat4 MeshTree::modelMatrix() {
         currTransform = glm::identity<glm::mat4>();
     else{
         if(parent.expired()){
+            std::cout<<"WARNING! EXPIRED PARENT!!"<<std::endl;
             return glm::identity<glm::mat4>();
         }
         std::shared_ptr parentPtr = parent.lock();
@@ -178,5 +183,20 @@ bool MeshTree::tryTranslation(glm::vec3 translation, MeshTree* root) {
 }
 
 MeshTree::~MeshTree(){
+    
+    std::cout<<this->tag<<std::endl;
 
+}
+
+void MeshTree::clean(LightManager& lmngr){
+    for(size_t i = 0; i < children.size(); i++){
+        if(!children[i].expired()){
+            MeshTree* child = children[i].lock().get();
+            MemoryManager::removeEl(child);
+            
+        }
+    }
+    if(al != nullptr){
+        lmngr.removeByReference(al);
+    }
 }
