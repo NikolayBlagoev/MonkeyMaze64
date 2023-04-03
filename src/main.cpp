@@ -98,8 +98,9 @@ void worker_thread()
             gen->assign_all(&(gen->dq));
             std::cout<<"WE GOOOD\n";
             ready_ = false;
-            processed_ = true;
+            
             boardCopy = gen->board;
+            processed_ = true;
             lk.unlock();
             cv.notify_one();
         }
@@ -424,7 +425,7 @@ int main() {
             boardRoot = new MeshTree("boardoot");
             MemoryManager::addEl(boardRoot);
             scene.root->addChild(boardRoot->shared_from_this());
-
+            
             boardRoot->transform.translate = offsetBoard;
             b = new Board(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras});
             for(int i = 0; i < 7; i ++){
@@ -433,9 +434,10 @@ int main() {
             }
             
         }
-        // std::cout<<abs(playerPos.x - prev_pos.x)<<std::endl;
-        if(abs(playerPos.x - prev_pos.x) >= 2*factorx){
-            if(playerPos.x < prev_pos.x){
+        // std::cout<<fabs(playerPos.x - prev_pos.x)<<std::endl;
+        if(fabs(playerPos.z - prev_pos.z) >= 2*factory){
+            if(playerPos.z < prev_pos.z){
+                std::cout<<"LEFt"<<std::endl;
                 dir = 4;
                 b->move_l(lightManager);
                 MemoryManager::removeEl(boardRoot);
@@ -443,11 +445,27 @@ int main() {
                 boardRoot = new MeshTree("boardroot");
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
-                offsetBoard.x -= 2*factorx;
+                offsetBoard.z -=2*factory;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
                 b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras},
                 0, 7, 0, 2);
+                for(int i = 0; i < 7; i ++){
+                    for(int j = 0; j < 7; j++){
+                        
+                        std::cout<<b->board[i][j]->tag<<"\t";
+                        boardRoot->addChild(b->board[i][j]->shared_from_this());
+                    }
+                    std::cout<<std::endl;
+                }
+
+                for(int i = 0; i < 7; i ++){
+                    for(int j = 0; j < 7; j++){
+                        std::cout<<boardCopy[i][j]->tileType<<"\t";
+                        
+                    }
+                    std::cout<<std::endl;
+                }
                 prev_pos = playerPos;
             }else{
                 dir = 2;
@@ -457,11 +475,75 @@ int main() {
                 boardRoot = new MeshTree("boardroot");
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
-                offsetBoard.x += 2*factorx;
+                offsetBoard.z +=2*factory;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
                 b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras},
                 0, 7, 5, 7);
+                for(int i = 0; i < 7; i ++){
+                    for(int j = 0; j < 7; j++){
+                        std::cout<<boardCopy[i][j]->tileType<<"\t";
+                        boardRoot->addChild(b->board[i][j]->shared_from_this());
+                    }
+                    std::cout<<std::endl;
+                }
+                prev_pos = playerPos;
+
+            }
+        }
+
+        if(fabs(playerPos.x - prev_pos.x) >= 2*factorx){
+            if(playerPos.x > prev_pos.x){
+                std::cout<<"down"<<std::endl;
+                dir = 3;
+                b->move_d(lightManager);
+                MemoryManager::removeEl(boardRoot);
+            
+                boardRoot = new MeshTree("boardroot");
+                MemoryManager::addEl(boardRoot);
+                scene.root->addChild(boardRoot->shared_from_this());
+                offsetBoard.x += 2*factorx;
+                boardRoot->transform.translate = offsetBoard;
+                signalChange();
+                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras},
+                5, 7, 0, 7);
+                for(int i = 0; i < 7; i ++){
+                    for(int j = 0; j < 7; j++){
+                        
+                        std::cout<<b->board[i][j]->tag<<"\t";
+                        boardRoot->addChild(b->board[i][j]->shared_from_this());
+                    }
+                    std::cout<<std::endl;
+                }
+
+                for(int i = 0; i < 7; i ++){
+                    for(int j = 0; j < 7; j++){
+                        std::cout<<boardCopy[i][j]->tileType<<"\t";
+                        
+                    }
+                    std::cout<<std::endl;
+                }
+                prev_pos = playerPos;
+            }else{
+                dir = 1;
+                b->move_u(lightManager);
+                MemoryManager::removeEl(boardRoot);
+            
+                boardRoot = new MeshTree("boardroot");
+                MemoryManager::addEl(boardRoot);
+                scene.root->addChild(boardRoot->shared_from_this());
+                offsetBoard.x -=2*factorx;
+                boardRoot->transform.translate = offsetBoard;
+                signalChange();
+                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras},
+                0, 2, 0, 7);
+                for(int i = 0; i < 7; i ++){
+                    for(int j = 0; j < 7; j++){
+                        std::cout<<boardCopy[i][j]->tileType<<"\t";
+                        boardRoot->addChild(b->board[i][j]->shared_from_this());
+                    }
+                    std::cout<<std::endl;
+                }
                 prev_pos = playerPos;
 
             }

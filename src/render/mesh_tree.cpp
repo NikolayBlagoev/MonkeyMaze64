@@ -92,6 +92,7 @@ glm::mat4 MeshTree::modelMatrix() {
         currTransform = glm::identity<glm::mat4>();
     else{
         if(parent.expired()){
+            std::cout<<"WARNING! EXPIRED PARENT!!"<<std::endl;
             return glm::identity<glm::mat4>();
         }
         std::shared_ptr parentPtr = parent.lock();

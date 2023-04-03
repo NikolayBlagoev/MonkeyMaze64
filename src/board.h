@@ -1,5 +1,6 @@
 #include <render/mesh_tree.h>
 #include <render/bezier.h>
+
 struct Pass{
     Mesh* crossing;
     Mesh* room;
@@ -29,7 +30,7 @@ class Board{
         for(int i = startI; i < stopI; i ++){
                 // glm::vec3 offset(0.f,10.f*i,0.f);
                 for(int j = startY; j < stopY; j++){
-              
+                    // std::cout<<i<<" L "<<j<<std::endl;
                     if(boardCopy[i][j]->tileType == 1 ){
                         MeshTree* crossingTile = new MeshTree("cross", p.crossing, glm::vec3(factorx*i, 0.f, factory*j), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(0.3f));
                         board[i][j] = crossingTile;
@@ -99,10 +100,19 @@ class Board{
                     } 
                 }
             }
+            fix_translations();
+    }
+    void fix_translations(){
+        for(int i = 0; i < 7; i ++){
+                // glm::vec3 offset(0.f,10.f*i,0.f);
+                for(int j = 0; j < 7; j++){
+                    board[i][j]->transform.translate =  glm::vec3(factorx*i, 0.f, factory*j);
+                }
+        }
     }
     void move_l(LightManager& lightManager){
         for(int i = 0; i < 7; i ++){
-            for(int j = 1; j >= 0 ; j--){
+            for(int j = 6; j >= 5 ; j--){
                 if(board[i][j]->al!=nullptr){}
                 board[i][j]->clean(lightManager);
                 MemoryManager::removeEl(board[i][j]);
@@ -118,7 +128,7 @@ class Board{
 
     void move_d(LightManager& lightManager){
         for(int j = 0; j < 7; j ++){
-            for(int i = 5; i < 7; i++){
+            for(int i = 0; i < 2; i++){
                 if(board[i][j]->al!=nullptr){}
                 board[i][j]->clean(lightManager);
                 MemoryManager::removeEl(board[i][j]);
@@ -135,7 +145,7 @@ class Board{
 
     void move_r(LightManager& lightManager){
         for(int i = 0; i < 7; i ++){
-            for(int j = 5; j < 7; j++){
+            for(int j = 0; j < 2; j++){
                 if(board[i][j]->al!=nullptr){}
                 board[i][j]->clean(lightManager);
                 MemoryManager::removeEl(board[i][j]);
@@ -152,7 +162,7 @@ class Board{
 
     void move_u(LightManager& lightManager){
         for(int j = 0; j < 7; j ++){
-            for(int i = 1; i >= 0 ; i--){
+            for(int i = 6; i >= 5; i--){
                 if(board[i][j]->al!=nullptr){}
                 board[i][j]->clean(lightManager);
                 MemoryManager::removeEl(board[i][j]);
