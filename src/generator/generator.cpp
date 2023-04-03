@@ -312,11 +312,9 @@ void Generator::constrain(Defined* nd, int opts){
                     if((i >= 1 && i <= 4) || i>=14){
                         float res = exp(-0.2f*(rand()%10));
                         if( true || res > acc_cam ){
-                            std::cout<<"ADDING CAMERA "<<res << " "<<acc_cam<<std::endl;
                             nd->objs.push_back(new ProcObj(0));
                             acc_cam = 1.f;
                         }else{
-                            std::cout<<"NOT ADDING CAMERA "<<res << " "<<acc_cam<<std::endl;
                             acc_cam -= 0.1f;
                         }
                     }
@@ -325,11 +323,9 @@ void Generator::constrain(Defined* nd, int opts){
                     if((i >= 1 && i <= 4) || i == 0){
                         float res = exp(-0.2f*(rand()%20));
                         if( true || res > acc_head ){
-                            std::cout<<"ADDING HEAD "<<res << " "<<acc_head<<std::endl;
                             nd->objs.push_back(new ProcObj(1));
                             acc_head = 1.f;
                         }else{
-                            std::cout<<"NOT ADDING HEAD "<<res << " "<<acc_head<<std::endl;
                             acc_head -= 0.05f;
                         }
                     }
@@ -447,7 +443,6 @@ void Generator::instantiate_terr(){
     for(int i = 0; i < 7; i ++){
         board[i] = new Defined*[7];
     }
-    // board[0][0] = 
     Defined* tempt[7][7] =   {  
         {new Defined(), new Defined(), new Defined(), new Defined(), new Defined(), new Defined(), new Defined()},
         {new Defined(), new Defined(), new Defined(), new Defined(10), new Defined(), new Defined(), new Defined()},
@@ -492,7 +487,6 @@ void Generator::instantiate_terr(){
     int max = 100000;
     Defined* max_node = nullptr;
     while(!dq.empty()){
-        std::cout<<"Constraining"<<std::endl;
         Defined* curr = dq.front();
         dq.pop_front();
         if(curr == nullptr) continue;
@@ -527,38 +521,6 @@ void Generator::instantiate_terr(){
         }
 
     }
-    
     assign_all(&dq);
-    
-    
-    
-    // while(true){
-    //     visualise(board, 7,7);
-    //     int inp = 0;
-        
-
-    //     if(inp<1 || inp > 4) continue;
-    //     if(inp == 1){
-    //         move_u(board,&dq);
-    //         move_u(board,&dq);
-    //         assign_all(&dq);
-    //     }else if(inp == 2){
-    //         move_r(board,&dq);
-    //         move_r(board,&dq);
-    //         assign_all(&dq);
-    //     }else if(inp == 3){
-    //         move_d(board,&dq);
-    //         move_d(board,&dq);
-    //         assign_all(&dq);
-    //     }else if(inp == 4){
-    //         move_l(board,&dq);
-    //         move_l(board,&dq);
-    //         assign_all(&dq);
-    //     }
-        
-    // }
-    // std::cout<<std::endl;
-    // std::cout<<max;
-    
 }
 

@@ -1,19 +1,21 @@
 #ifndef _MESH_TREE_H_
 #define _MESH_TREE_H_
 
-#include "mesh.h"
-#include "utils/hitBox.h"
+
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 DISABLE_WARNINGS_POP()
+#include <gameplay/enemy_camera.h>
+#include <render/lighting.h>
+#include <render/mesh.h>
+#include <utils/hitBox.h>
+
 #include <filesystem>
 #include <vector>
-#include <camera.h>
-#include "lighting.h"
-#include <string.h>
+#include <string>
 #include <unordered_map>
 
 struct MeshTransform {

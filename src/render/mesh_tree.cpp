@@ -80,7 +80,6 @@ MeshTree::MeshTree(std::string tag, Mesh* msh, bool allowCollision) {
 }
 
 void MeshTree::addChild(std::shared_ptr<MeshTree> child){
-    // std::cout<<MemoryManager::objs[this]<<std::endl;
     child.get()->parent = std::weak_ptr<MeshTree>(shared_from_this());
     this->children.push_back(child);
 }
@@ -92,7 +91,7 @@ glm::mat4 MeshTree::modelMatrix() const {
         currTransform = glm::identity<glm::mat4>();
     else{
         if(parent.expired()){
-            std::cout<<"WARNING! EXPIRED PARENT!!"<<std::endl;
+            std::cerr << "WARNING! EXPIRED PARENT!!" << std::endl;
             return glm::identity<glm::mat4>();
         }
         std::shared_ptr parentPtr = parent.lock();
@@ -182,11 +181,7 @@ bool MeshTree::tryTranslation(glm::vec3 translation, MeshTree* root) {
     return false;
 }
 
-MeshTree::~MeshTree(){
-    
-    std::cout<<this->tag<<std::endl;
-
-}
+MeshTree::~MeshTree() { std::cout<<this->tag<<std::endl; }
 
 void MeshTree::clean(LightManager& lmngr){
     for(size_t i = 0; i < children.size(); i++){

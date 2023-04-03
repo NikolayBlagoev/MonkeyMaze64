@@ -6,6 +6,8 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 #include <framework/window.h>
 
+#include <gameplay/enemy_camera.h>
+#include <generator/board.hpp>
 #include <generator/generator.h>
 #include <render/bezier.h>
 #include <render/config.h>
@@ -19,8 +21,6 @@ DISABLE_WARNINGS_POP()
 #include <ui/menu.h>
 #include <utils/constants.h>
 #include <utils/render_utils.hpp>
-#include <board.h>
-#include <camera.h>
 
 #include <mutex>
 #include <condition_variable>
@@ -50,7 +50,6 @@ bool processed = false;
 Generator* gen =  new Generator();
 
 void signalChange(){
-    std::cout<<"Change\n";
     {
         ready_ = true;
         std::unique_lock<std::mutex> lk(m);
@@ -92,7 +91,6 @@ void worker_thread()
                 gen->move_l(gen->board, &(gen->dq));
             }
             gen->assign_all(&(gen->dq));
-            std::cout<<"WE GOOOD\n";
             ready_ = false;
             
             boardCopy = gen->board;
