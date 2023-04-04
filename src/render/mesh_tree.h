@@ -58,7 +58,8 @@ public:
     std::vector<std::weak_ptr<MeshTree>> children;
 
     // External objects manipulated by node
-    AreaLight* al { nullptr };
+    AreaLight*  al { nullptr };
+    PointLight* pl { nullptr };
 };
 
 class MemoryManager {

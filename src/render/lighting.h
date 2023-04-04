@@ -81,10 +81,11 @@ public:
     void wipeFramebuffers();
 
     // Point light access and modification
-    void addPointLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier = 1.0f);
+    PointLight* addPointLight(const glm::vec3& position, const glm::vec3& color, float intensityMultiplier = 1.0f);
     void removePointLight(size_t idx);
+    void removeByReference(PointLight* pl);
     size_t numPointLights() const { return pointLights.size(); }
-    PointLight& pointLightAt(size_t idx) { return pointLights[idx]; }
+    PointLight& pointLightAt(size_t idx) { return *pointLights[idx]; }
     
 
     // Area light access and modification
@@ -103,7 +104,7 @@ private:
     // Point lights
     GLuint ssboPointLights      { INVALID };
     GLuint pointShadowTexArr    { INVALID };
-    std::vector<PointLight> pointLights;
+    std::vector<PointLight*> pointLights;
     std::vector<PointLightShader> createPointLightsShaderData();
 
     // Area lights
