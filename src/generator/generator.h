@@ -12,7 +12,7 @@ class Generator {
         void connect(Defined* a, Defined* b, int dir);
         int remove_options(Defined* node, int mm, int mx);
         void constrain(Defined* nd, int opts);
-
+        void remove_head(int y, int x);
         void move_l(Defined*** board, std::deque <Defined*> *dq);
         void move_d(Defined*** board, std::deque <Defined*> *dq);
         void move_r(Defined*** board, std::deque <Defined*> *dq);

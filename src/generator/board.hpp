@@ -182,7 +182,7 @@ public:
 
     void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* camera, Mesh* stand2, Mesh* stand1, Mesh* suzanne, BezierCurveManager& rndrr, LightManager& lightManager, std::vector<std::weak_ptr<EnemyCamera>>& cameras){
         for(int i = 0; i < roomTile->objs.size(); i++){
-            if(roomTile->objs.at(i)->type == SpecialObjType::Collectible){
+            if(roomTile->objs.at(i)->type == SpecialObjType::EnemyCamera){
                 MeshTree* ret = new MeshTree("stand1", stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec3(1.f));
                 MemoryManager::addEl(ret);
                 MeshTree* stand2m = new MeshTree("stand2",stand2, glm::vec3(0.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(1.f));
@@ -202,7 +202,7 @@ public:
                 aperturem->al->falloff = utils::CONSTANT_AREA_LIGHT_FALLOFF;
                 aperturem->al->intensityMultiplier = 2.f;
                 aperturem->al->externalRotationControl = true;
-            }else if(roomTile->objs.at(i)->type == SpecialObjType::EnemyCamera){
+            }else if(roomTile->objs.at(i)->type == SpecialObjType::Collectible){
                 MeshTree* ret = new MeshTree("suzanne", suzanne, glm::vec3(-3.f, 2.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(1.f));
                 MemoryManager::addEl(ret);
                 room->addChild(ret->shared_from_this());
