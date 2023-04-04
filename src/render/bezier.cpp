@@ -24,7 +24,7 @@ Type BezierComposite<Type>::positionAtTime(float t) {
     if (t > total)  { m_curves.back().controlP3; }
     
     for (BezierCurve<Type>& curve : m_curves){
-        if (curve.totalTime < 0.0f) { return curve.positionAtTime(t); }
+        if (t - curve.totalTime < 0.0f) { return curve.positionAtTime(t); }
         t -= curve.totalTime;
     }
     return Type { 0.0f };
