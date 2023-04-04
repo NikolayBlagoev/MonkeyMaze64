@@ -25,7 +25,7 @@ void main() {
     // Combine post-processing results
     vec3 hdrColor = texture(hdrBuffer, bufferCoords).rgb;
     if (enableBloom)    { hdrColor += texture(bloomFilter, bufferCoords).rgb; }
-    if (enableSSAO)     { hdrColor -= occlussionCoefficient * hdrColor * texture(ssaoFilter, bufferCoords).r; }
+    if (enableSSAO)     { hdrColor -= occlussionCoefficient * hdrColor * (1.0 - texture(ssaoFilter, bufferCoords).r); }
     
     if (hdr) {
         // vec3 result = hdrColor / (hdrColor + vec3(1.0));     // Reinhard tone mapping

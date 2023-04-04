@@ -64,9 +64,9 @@ void signalChange(){
 
     }
 }
-float eulerdistance(glm::vec4 a, glm::vec4 b){
-    return sqrt(pow(a.x-b.x, 2) + pow(a.y-b.y, 2) + pow(a.z-b.z, 2));
-}
+
+float eulerDistance(glm::vec4 a, glm::vec4 b) { return sqrtf(pow(a.x - b.x, 2.0f) + pow(a.y - b.y, 2.0f) + pow(a.z - b.z, 2.0f)); }
+
 void worker_thread()
 {
     
@@ -319,13 +319,13 @@ int main(int argc, char* argv[]) {
             MeshTree* headMesh = head.lock().get();
             glm::vec4 monkeyPose = headMesh->modelMatrix()*glm::vec4(0.f, 0.f, 0.f, 1.f);
             monkeyPose = monkeyPose/monkeyPose.w;
-            float dist = eulerdistance(monkeyPose,  glm::vec4(playerPos, 1.f));
+            float dist = eulerDistance(monkeyPose,  glm::vec4(playerPos, 1.f));
             
-            if ( dist< 1.f) { 
+            if (dist < 1.0f) { 
                 std::cout<<"COLLIDE!!"<<std::endl;
-                int tileX = floor((playerPos.z - offsetBoard.z)/factorx);
-                int tileY = floor((playerPos.x - offsetBoard.x)/factory);
-                std::cout<<tileX<< " " <<tileY<<std::endl;
+                int32_t tileX = static_cast<int32_t>(floor((playerPos.z - offsetBoard.z) / factorx));
+                int32_t tileY = static_cast<int32_t>(floor((playerPos.x - offsetBoard.x) / factory));
+                std::cout << tileX << " " << tileY << std::endl;
                 MemoryManager::removeEl(headMesh);
                 dir = 100 + tileY * 10 + tileX;
                 signalChange();
