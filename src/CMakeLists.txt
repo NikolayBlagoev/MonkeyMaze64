@@ -2,6 +2,7 @@ target_sources(FinalProject
 	PRIVATE
         "${CMAKE_CURRENT_LIST_DIR}/generator/generator.cpp"
 
+        "${CMAKE_CURRENT_LIST_DIR}/render/bezier.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/bloom.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/deferred.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/render/lighting.cpp"

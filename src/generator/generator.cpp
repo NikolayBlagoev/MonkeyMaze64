@@ -6,208 +6,191 @@
 #include <cstdlib>
 #include <cmath>
 #include "generator.h"
+
 const bool opens[18][4] = {
-    //1:
+    // 1:
     {
-        //up:
+        // up:
         true,
-        //right:
+        // right:
         true,
-        //down:
+        // down:
         true,
-        //left:
+        // left:
         true
-        
-        
+
     },
-    //2:
-     {
-        //up:
-        false,
-        //right:
-        false,
-        //down:
-        true,
-        //left:
-        false
-    },
-    //3:
-     {
-        //up:
-        false,
-        //right:
-        false,
-        //down:
-        false,
-        //left:
-        true
-    },
-    //4:
+    // 2:
     {
-        //up:
+        // up:
+        false,
+        // right:
+        false,
+        // down:
         true,
-        //right:
+        // left:
+        false},
+    // 3:
+    {
+        // up:
         false,
-        //down:
+        // right:
         false,
-        //left:
-        false
+        // down:
+        false,
+        // left:
+        true},
+    // 4:
+    {
+        // up:
+        true,
+        // right:
+        false,
+        // down:
+        false,
+        // left:
+        false},
+    // 5:
+    {
+        // up:
+        false,
+        // right:
+        true,
+        // down:
+        false,
+        // left:
+        false},
+    // 6:
+    {
+        // up:
+        false,
+        // right:
+        false,
+        // down:
+        false,
+        // left:
+        false},
+    // 7:
+    {
+        // up:
+        true,
+        // right:
+        false,
+        // down:
+        true,
+        // left:
+        false},
+    // 8:
+    {
+        // up:
+        false,
+        // right:
+        true,
+        // down:
+        false,
+        // left:
+        true},
+    // 9:
+    {
+        // up:
+        true,
+        // right:
+        false,
+        // down:
+        true,
+        // left:
+        false},
+    // 10:
+    {
+        // up:
+        false,
+        // right:
+        true,
+        // down:
+        false,
+        // left:
+        true},
+    // 11:
+    {
+        // up:
+        false,
+        // right:
+        true,
+        // down:
+        true,
+        // left:
+        false},
+    // 12:
+    {
+        // up:
+        false,
+        // right:
+        false,
+        // down:
+        true,
+        // left:
+        true},
+    // 13:
+    {
+        // up:
+        true,
+        // right:
+        false,
+        // down:
+        false,
+        // left:
+        true},
+    // 14:
+    {
+        // up:
+        true,
+        // right:
+        true,
+        // down:
+        false,
+        // left:
+        false},
+    // 15:
+    {
+        // up:
+        false,
+        // right:
+        true,
+        // down:
+        true,
+        // left:
+        true,
     },
-    //5:
-     {
-        //up:
+    // 16:
+    {
+        // up:
+        true,
+        // right:
         false,
-        //right:
+        // down:
         true,
-        //down:
+        // left:
+        true},
+    // 17:
+    {
+        // up:
+        true,
+        // right:
+        true,
+        // down:
         false,
-        //left:
-        false
-    },
-    //6:
-     {
-        //up:
-        false,
-        //right:
-        false,
-        //down:
-        false,
-        //left:
-        false
-    },
-    //7:
-     {
-        //up:
+        // left:
+        true},
+    // 18:
+    {
+        // up:
         true,
-        //right:
-        false,
-        //down:
+        // right:
         true,
-        //left:
-        false
-    },
-    //8:
-     {
-        //up:
-        false,
-        //right:
+        // down:
         true,
-        //down:
-        false,
-        //left:
-        true
-    },
-    //9:
-     {
-        //up:
-        true,
-        //right:
-        false,
-        //down:
-        true,
-        //left:
-        false
-    },
-    //10:
-     {
-        //up:
-        false,
-        //right:
-        true,
-        //down:
-        false,
-        //left:
-        true
-    },
-    //11:
-     {
-        //up:
-        false,
-        //right:
-        true,
-        //down:
-        true,
-        //left:
-        false
-    },
-    //12:
-     {
-        //up:
-        false,
-        //right:
-        false,
-        //down:
-        true,
-        //left:
-        true
-    },
-    //13:
-     {
-        //up:
-        true,
-        //right:
-        false,
-        //down:
-        false,
-        //left:
-        true
-    },
-    //14:
-     {
-        //up:
-        true,
-        //right:
-        true,
-        //down:
-        false,
-        //left:
-        false
-    },
-    //15:
-     {
-        //up:
-        false,
-        //right:
-        true,
-        //down:
-        true,
-        //left:
-        true,
-    },
-    //16:
-     {
-        //up:
-        true,
-        //right:
-        false,
-        //down:
-        true,
-        //left:
-        true
-    },
-    //17:
-     {
-        //up:
-        true,
-        //right:
-        true,
-        //down:
-        false,
-        //left:
-        true
-    },
-    //18:
-     {
-        //up:
-        true,
-        //right:
-        true,
-        //down:
-        true,
-        //left:
-        false
-    }
-}; 
+        // left:
+        false}};
 
 void Generator::visualise(Defined*** board, int y, int x){
     for (int i = 0; i < y; i ++){
@@ -217,6 +200,7 @@ void Generator::visualise(Defined*** board, int y, int x){
         std::cout<<std::endl;
     }
 }
+
 void Generator::connect(Defined* a, Defined* b, int dir){
     if(dir == 0){
         a->up = b;

@@ -279,18 +279,16 @@ int main(int argc, char* argv[]) {
    
     // Init Bezier curves
     std::chrono::high_resolution_clock timer; 
-    BezierCurve3d b3d                               = BezierCurve3d(glm::vec3(0.f), glm::vec3(1.f , 1.f, 0.f), glm::vec3(-1.f , 2.f, 0.f), glm::vec3(0.f, 3.f, 0.f), 10.f);
-    BezierCurve3d b3d2                              = BezierCurve3d(glm::vec3(0.f, 3.f, 0.f), glm::vec3(-1.f , 2.f, 0.f), glm::vec3(1.f , 1.f, 0.f), glm::vec3(0.f), 10.f);
-    BezierCurve4d b4d                               = BezierCurve4d(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
-    CompositeBezier3d b3c                           = CompositeBezier3d({&b3d,&b3d2}, true, 20.f);
+    BezierCurve<glm::vec3> b3d                      = BezierCurve<glm::vec3>(glm::vec3(0.f), glm::vec3(1.f , 1.f, 0.f), glm::vec3(-1.f , 2.f, 0.f), glm::vec3(0.f, 3.f, 0.f), 10.f);
+    BezierCurve<glm::vec3> b3d2                     = BezierCurve<glm::vec3>(glm::vec3(0.f, 3.f, 0.f), glm::vec3(-1.f , 2.f, 0.f), glm::vec3(1.f , 1.f, 0.f), glm::vec3(0.f), 10.f);
+    BezierCurve<glm::vec4> b4d                      = BezierCurve<glm::vec4>(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
+    BezierComposite<glm::vec3> b3c                  = BezierComposite<glm::vec3>({b3d, b3d2}, true, 20.f);
     std::chrono::time_point millisec_since_epoch    = timer.now();
-    BezierCurveRenderer rndrr                       = BezierCurveRenderer(millisec_since_epoch);
-    b3c.start_time                                  = millisec_since_epoch;
-    b4d.prev_time                                   = millisec_since_epoch;
+    BezierCurveManager rndrr                        = BezierCurveManager(millisec_since_epoch);
 
-    bool prev_motion = motion;
-    std::chrono::time_point start_motion = millisec_since_epoch;
-    glm::vec3 prev_pos = playerPos;
+    bool prev_motion                        = motion;
+    std::chrono::time_point start_motion    = millisec_since_epoch;
+    glm::vec3 prev_pos                      = playerPos;
 
     boardRoot = new MeshTree("boardoot");
     MemoryManager::addEl(boardRoot);
@@ -308,7 +306,7 @@ int main(int argc, char* argv[]) {
         playerPos = (playerDragon->transform.translate);
         Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
         std::chrono::time_point curr_frame = timer.now();
-        rndrr.do_moves(curr_frame);
+        rndrr.timeStep(curr_frame);
         makeCameraMoves();
         float delta = std::chrono::duration<float>(curr_frame - millisec_since_epoch).count();
         int rem = static_cast<int>(floor(delta / 0.4f));
