@@ -11,7 +11,7 @@ DISABLE_WARNINGS_POP()
 #include <gameplay/enemy_camera.h>
 #include <render/lighting.h>
 #include <render/mesh.h>
-#include <utils/hitBox.h>
+#include <utils/hitbox.hpp>
 
 #include <filesystem>
 #include <vector>
@@ -27,54 +27,48 @@ struct MeshTransform {
 
 class MeshTree : public std::enable_shared_from_this<MeshTree> {
 public:
-    MeshTree(std::string tag, Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl)
-        : MeshTree(tag, msh, off, rots, rotp, scl, true) {}
-    MeshTree(std::string tag, Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision);
-    MeshTree(std::string tag);
+    MeshTree(std::string tag, 
+             Mesh* msh              = nullptr,
+             glm::vec3 off          = glm::vec3(0.0f), 
+             glm::vec4 rots         = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+             glm::vec4 rotp         = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+             glm::vec3 scl          = glm::vec3(1.0f),
+             bool allowCollision    = false);
     ~MeshTree();
-    MeshTree(std::string tag, Mesh* msh)
-        : MeshTree(tag, msh, true) {}
-    MeshTree(std::string tag, Mesh* msh, bool allowCollision);
+
     void clean(LightManager& lmngr);
     void addChild(std::shared_ptr<MeshTree> child);
     glm::mat4 modelMatrix() const;
+
     HitBox getTransformedHitBox();
     glm::vec3 getTransformedHitBoxMiddle();
     bool collide(MeshTree* other);
-    
     bool tryTranslation(glm::vec3 translation, MeshTree* root);
 
 public:
-    GPUMesh* mesh;
+    // Intrinsic properties
     std::string tag;
     MeshTransform transform;
+    GPUMesh* mesh { nullptr };
     HitBox hitBox;
-    // std::shared_ptr<CameraObj> camera;
-    // MeshTree* parent { nullptr };
+
+    // Tree hierarchy management
     bool is_root = false;
     std::weak_ptr<MeshTree> parent;
-    // std::shared_ptr<MeshTree> self;
     std::vector<std::weak_ptr<MeshTree>> children;
-    // std::shared_ptr<glm::vec4> selfRotate;
-    // std::shared_ptr<glm::vec4> rotateParent;
-    // std::shared_ptr<glm::vec3> translate;
-    // std::shared_ptr<glm::vec3> scale;
+
+    // External objects manipulated by node
     AreaLight* al { nullptr };
 };
 
 class MemoryManager {
-    public:
-    MemoryManager(){
+public:
+    MemoryManager(){};
 
-    };
+    static void addEl(MeshTree* el){ objs[el] = std::shared_ptr<MeshTree> (el); }
+    static void removeEl(MeshTree* el) { objs.erase(el); };
+
     static std::unordered_map<MeshTree*, std::shared_ptr<MeshTree>> objs;
-    static void addEl(MeshTree* el){
-        objs[el] = std::shared_ptr<MeshTree> (el);
-    }
-    static void removeEl(MeshTree* el){
-        objs.erase(el);
-    };
-    
 };
 
 #endif

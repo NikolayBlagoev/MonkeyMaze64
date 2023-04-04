@@ -1,25 +1,33 @@
-#pragma once
+#ifndef _NODE_H_
+#define _NODE_H_
 
-
+#include <framework/disable_all_warnings.h>
+DISABLE_WARNINGS_PUSH()
 #include <glm/vec3.hpp>
+DISABLE_WARNINGS_POP()
 
-
+#include <array>
 #include <vector>
-class ProcObj{
-    public:
-        ProcObj(int tt,  glm::vec3 scale, glm::vec3 selfRotate, glm::vec3 rotateParent, glm::vec3 translate) : type(tt), scale(scale), 
-        selfRotate(selfRotate), rotateParent(rotateParent), translate(translate){
 
-        };
-        ProcObj(int tt) : type(tt){
-            
-        }
-        int type = 0;
+enum class SpecialObjType { Collectible, EnemyCamera };
+
+class ProcObj {
+    public:
+        ProcObj(SpecialObjType tt, glm::vec3 scale, glm::vec3 selfRotate, glm::vec3 rotateParent, glm::vec3 translate)
+        : type(tt)
+        , scale(scale)
+        , selfRotate(selfRotate)
+        , rotateParent(rotateParent)
+        , translate(translate)
+        {};
+        ProcObj(SpecialObjType tt) : type(tt)
+        {};
+
+        SpecialObjType type { SpecialObjType::Collectible };
         glm::vec3 scale;
-        glm::vec3 selfRotate; // Angles in degrees
+        glm::vec3 selfRotate;   // Angles in degrees
         glm::vec3 rotateParent; // Angles in degrees
         glm::vec3 translate;
-
 };
 
 class Defined {
@@ -28,34 +36,24 @@ class Defined {
         Defined* down;
         Defined* right;
         Defined* left;
+
         int tileType;
-        bool constrained = false;
-        bool empt = true;
-        bool possible[18] = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
         std::vector<ProcObj*> objs;
-        Defined(Defined* up, Defined* down, Defined* left, Defined* right, int tt) : up(up), down(down), left(left), right(right), tileType(tt){
-            // up = upn;
-            // this->down = down;
-            // this->left = left;
-            // this->up = up;
-            // this->tileType = tt;
-           
-            this->empt = false;
-        }
-        Defined(int tt) : up(nullptr), down(nullptr), left(nullptr), right(nullptr), tileType(tt){
-            this->empt = false;
-        }
-        Defined() : up(nullptr), down(nullptr), left(nullptr), right(nullptr), tileType(-1){
-            // up = upn;
-            // this->down = down;
-            // this->left = left;
-            // this->up = up;
-            // this->tileType = tt;
-            
-            this->empt = true;
-        }
+        bool constrained                = false;
+        bool empty                      = true;
+        std::array<bool, 18UL> possible = {true, true, true, true, true, true,
+                                           true, true, true, true, true, true,
+                                           true, true, true, true, true, true};
 
-        
+        Defined(Defined* up, Defined* down, Defined* left, Defined* right, int tt, bool empty = false)
+        : up(up)
+        , down(down)
+        , left(left)
+        , right(right)
+        , tileType(tt)
+        , empty(empty)
+        {}
+        Defined(int tt) : Defined(nullptr, nullptr, nullptr, nullptr, tt) {}
+        Defined()       : Defined(nullptr, nullptr, nullptr, nullptr, -1, true) {}
 };
-
-
+#endif

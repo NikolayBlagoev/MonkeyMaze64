@@ -18,9 +18,9 @@ struct Pass {
     Mesh* stand2;
     Mesh* stand1;
     Mesh* suzanne;
-    BezierCurveRenderer& rndrr;
+    BezierCurveManager& rndrr;
     LightManager& lightManager;
-    std::vector<std::weak_ptr<CameraObj>>& cameras;
+    std::vector<std::weak_ptr<EnemyCamera>>& cameras;
 };
 
 class Board {
@@ -180,9 +180,9 @@ public:
         
     }
 
-    void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* camera, Mesh* stand2, Mesh* stand1, Mesh* suzanne, BezierCurveRenderer& rndrr, LightManager& lightManager, std::vector<std::weak_ptr<CameraObj>>& cameras){
+    void addObjectsRoom(MeshTree* room, Defined* roomTile, Mesh* aperture, Mesh* camera, Mesh* stand2, Mesh* stand1, Mesh* suzanne, BezierCurveManager& rndrr, LightManager& lightManager, std::vector<std::weak_ptr<EnemyCamera>>& cameras){
         for(int i = 0; i < roomTile->objs.size(); i++){
-            if(roomTile->objs.at(i)->type == 0){
+            if(roomTile->objs.at(i)->type == SpecialObjType::Collectible){
                 MeshTree* ret = new MeshTree("stand1", stand1, glm::vec3(-9.9f, 9.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 90.f), glm::vec3(1.f));
                 MemoryManager::addEl(ret);
                 MeshTree* stand2m = new MeshTree("stand2",stand2, glm::vec3(0.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(1.f));
@@ -194,7 +194,7 @@ public:
                 MeshTree* aperturem = new MeshTree("ap",aperture, glm::vec3(0.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(1.f));
                 MemoryManager::addEl(aperturem);
                 cameram->addChild(aperturem->shared_from_this());
-                CameraObj* cam = new CameraObj(&(cameram->transform.selfRotate), &(stand2m->transform.selfRotate));
+                EnemyCamera* cam = new EnemyCamera(&(cameram->transform.selfRotate), &(stand2m->transform.selfRotate));
                 room->addChild(ret->shared_from_this());
 
                 
@@ -202,22 +202,22 @@ public:
                 aperturem->al->falloff = utils::CONSTANT_AREA_LIGHT_FALLOFF;
                 aperturem->al->intensityMultiplier = 2.f;
                 aperturem->al->externalRotationControl = true;
-            }else if(roomTile->objs.at(i)->type == 1){
+            }else if(roomTile->objs.at(i)->type == SpecialObjType::EnemyCamera){
                 MeshTree* ret = new MeshTree("suzanne", suzanne, glm::vec3(-3.f, 2.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(1.f));
                 MemoryManager::addEl(ret);
                 room->addChild(ret->shared_from_this());
 
-                BezierCurve3d* b3d = new BezierCurve3d(glm::vec3(-3.f, 2.f, 0.f), glm::vec3(-3.3f , 3.f, 0.f), glm::vec3(-2.7f , 4.f, 0.f), glm::vec3(-3.f, 5.f, 0.f), 10.f);
-                BezierCurve3d* b3d2 = new BezierCurve3d(glm::vec3(-3.f, 5.f, 0.f), glm::vec3(-2.7f , 4.f, 0.f), glm::vec3(-3.3f , 3.f, 0.f), glm::vec3(-3.f, 2.f, 0.f), 10.f);
-                CompositeBezier3d* b3c = new CompositeBezier3d({b3d,b3d2}, true, 20.f);
-                BezierCombo3dcomp* combo = new BezierCombo3dcomp(b3c,&(ret->transform.translate), ret->shared_from_this());
-                rndrr.add3dcomp(combo);
+                BezierCurve<glm::vec3> b3d              = BezierCurve<glm::vec3>(glm::vec3(-3.f, 2.f, 0.f), glm::vec3(-3.3f , 3.f, 0.f), glm::vec3(-2.7f , 4.f, 0.f), glm::vec3(-3.f, 5.f, 0.f), 10.f);
+                BezierCurve<glm::vec3> b3d2             = BezierCurve<glm::vec3>(glm::vec3(-3.f, 5.f, 0.f), glm::vec3(-2.7f , 4.f, 0.f), glm::vec3(-3.3f , 3.f, 0.f), glm::vec3(-3.f, 2.f, 0.f), 10.f);
+                BezierComposite<glm::vec3> b3c          = BezierComposite<glm::vec3>({b3d, b3d2}, true, 20.f);
+                BezierComboComposite<glm::vec3> combo   = BezierComboComposite<glm::vec3>(b3c, &ret->transform.translate, ret->shared_from_this());
+                rndrr.add3dComposite(combo);
 
-                BezierCurve4d* b4d = new BezierCurve4d(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
-                BezierCurve4d* b4d2 = new BezierCurve4d(glm::vec4(0.f , 1.f, 0.f, 0.f) , glm::vec4(0.f , -0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , -0.3826834f, 0.f, 0.9238795f),  glm::vec4(0.f, -0.0005f, 0.f, 0.9999999f), 10.f);
-                CompositeBezier4d* b4c = new CompositeBezier4d({b4d, b4d2}, true, 20.f);
-                BezierCombo4dcomp* combo2 = new BezierCombo4dcomp(b4c,&(ret->transform.selfRotate), ret->shared_from_this());
-                rndrr.add4dcomp(combo2);
+                BezierCurve<glm::vec4> b4d              = BezierCurve<glm::vec4>(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
+                BezierCurve<glm::vec4> b4d2             = BezierCurve<glm::vec4>(glm::vec4(0.f , 1.f, 0.f, 0.f) , glm::vec4(0.f , -0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , -0.3826834f, 0.f, 0.9238795f),  glm::vec4(0.f, -0.0005f, 0.f, 0.9999999f), 10.f);
+                BezierComposite<glm::vec4> b4c          = BezierComposite<glm::vec4>({b4d, b4d2}, true, 20.f);
+                BezierComboComposite<glm::vec4> combo2  = BezierComboComposite<glm::vec4>(b4c, &ret->transform.selfRotate, ret->shared_from_this());
+                rndrr.add4dComposite(combo2);
             }
         }
     }
