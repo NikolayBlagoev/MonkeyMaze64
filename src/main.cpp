@@ -224,7 +224,7 @@ int main(int argc, char* argv[]) {
     monkeyPoses.emplace_back(defaultMonkeyPose);
 
     for (int i = 1; i < 16; ++i) {
-        auto fileName = std::format("monkeypose{}.obj", i * 2);
+        auto fileName = "monkeypose" + std::to_string(i * 2)+ ".obj";
         Mesh cpuMesh = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / fileName));
         monkeyPoses.emplace_back(cpuMesh);
     }

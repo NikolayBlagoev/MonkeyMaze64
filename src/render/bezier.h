@@ -19,7 +19,7 @@ DISABLE_WARNINGS_POP()
 template<typename Type>
 class BezierCurveBase {
 public:
-    template<typename Type>
+    // template<typename Type>
     Type positionAtTime(float t) const { return Type { 0.0f }; }
 };
 
