@@ -74,6 +74,7 @@ HitBox MeshTree::getTransformedHitBox() {
 glm::vec3 MeshTree::getTransformedHitBoxMiddle() { return modelMatrix() * glm::vec4(this->hitBox.getMiddle(), 1); }
 
 bool MeshTree::collide(MeshTree *other) {
+    if(other == nullptr || other == this) return false;
     return ((this->hitBox.allowCollision && other->hitBox.allowCollision) &&
              this->getTransformedHitBox().collides(other->getTransformedHitBox()));
 }

@@ -306,7 +306,7 @@ void Generator::constrain(Defined* nd, int opts){
 
                     if((i >= 1 && i <= 4) || i == 0){
                         float res = exp(-0.2f*(rand()%20));
-                        if( true || res > acc_head ){
+                        if( true || ( res > acc_head && heads < 7)){
                             nd->objs.push_back(new ProcObj(SpecialObjType::Collectible));
                             acc_head = 1.f;
                         }else{
@@ -517,5 +517,7 @@ void Generator::remove_head(int y, int x){
             i--;
         }
     }
+    heads ++;
+    std::cout<<"CLEARED HEAD"<<std::endl;
     
 }

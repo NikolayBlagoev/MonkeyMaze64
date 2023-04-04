@@ -64,7 +64,9 @@ void signalChange(){
 
     }
 }
-
+float eulerdistance(glm::vec4 a, glm::vec4 b){
+    return sqrt(pow(a.x-b.x, 2) + pow(a.y-b.y, 2) + pow(a.z-b.z, 2));
+}
 void worker_thread()
 {
     
@@ -297,7 +299,7 @@ int main(int argc, char* argv[]) {
     scene.root->addChild(boardRoot->shared_from_this());
     
     boardRoot->transform.translate = offsetBoard;
-    b = new Board(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras});
+    b = new Board(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras, monkeyHeads});
     for(int i = 0; i < 7; i ++){
         for(int j = 0; j < 7; j++)
             boardRoot->addChild(b->board[i][j]->shared_from_this());
@@ -306,17 +308,27 @@ int main(int argc, char* argv[]) {
     // Main loop
     while (!m_window.shouldClose()) {
         playerPos = (player->transform.translate);
-        // for (size_t childIdx = 0; childIdx < monkeyHeads.size(); childIdx++) {
-        //     std::weak_ptr<MeshTree> head = monkeyHeads.at(childIdx);
-        //     if (head.expired()) { 
-        //         monkeyHeads.erase(monkeyHeads.begin() + childIdx);
-        //         continue; 
-        //     }
-        //     MeshTree* headMesh = head.lock().get();
-        //     if (MeshTree::collidesWith(headMesh, player) != nullptr) { 
-        //         std::cout<<"COLLIDE!!";
-        //     }
-        // }
+        for (size_t childIdx = 0; childIdx < monkeyHeads.size(); childIdx++) {
+            std::weak_ptr<MeshTree> head = monkeyHeads.at(childIdx);
+            if (head.expired()) { 
+                monkeyHeads.erase(monkeyHeads.begin() + childIdx);
+                continue; 
+            }
+            MeshTree* headMesh = head.lock().get();
+            glm::vec4 monkeyPose = headMesh->modelMatrix()*glm::vec4(0.f, 0.f, 0.f, 1.f);
+            monkeyPose = monkeyPose/monkeyPose.w;
+            float dist = eulerdistance(monkeyPose,  glm::vec4(playerPos, 1.f));
+            
+            if ( dist< 1.f) { 
+                std::cout<<"COLLIDE!!"<<std::endl;
+                int tileX = floor((playerPos.z - offsetBoard.z)/factorx);
+                int tileY = floor((playerPos.x - offsetBoard.x)/factory);
+                std::cout<<tileX<< " " <<tileY<<std::endl;
+                MemoryManager::removeEl(headMesh);
+                dir = 100 + tileY * 10 + tileX;
+                signalChange();
+            }
+        }
         Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
         std::chrono::time_point curr_frame = timer.now();
         rndrr.timeStep(curr_frame);
@@ -358,7 +370,7 @@ int main(int argc, char* argv[]) {
                 offsetBoard.z -=2*factory;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
-                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras},
+                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras, monkeyHeads},
                 0, 7, 0, 2);
                 for(int i = 0; i < 7; i ++){
                     for(int j = 0; j < 7; j++){
@@ -388,7 +400,7 @@ int main(int argc, char* argv[]) {
                 offsetBoard.z +=2*factory;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
-                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras},
+                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras, monkeyHeads},
                 0, 7, 5, 7);
                 for(int i = 0; i < 7; i ++){
                     for(int j = 0; j < 7; j++){
@@ -415,7 +427,7 @@ int main(int argc, char* argv[]) {
                 offsetBoard.x += 2*factorx;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
-                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras},
+                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras, monkeyHeads},
                 5, 7, 0, 7);
                 for(int i = 0; i < 7; i ++){
                     for(int j = 0; j < 7; j++){
@@ -445,7 +457,7 @@ int main(int argc, char* argv[]) {
                 offsetBoard.x -=2*factorx;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
-                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras},
+                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras, monkeyHeads},
                 0, 2, 0, 7);
                 for(int i = 0; i < 7; i ++){
                     for(int j = 0; j < 7; j++){

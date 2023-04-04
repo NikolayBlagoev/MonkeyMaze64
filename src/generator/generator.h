@@ -28,6 +28,7 @@ class Generator {
         float acc_head = 1.f;
         float acc_vase = 1.f;
         float acc_box = 1.f;
+        int heads = 0;
 };
 
 #endif
