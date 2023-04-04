@@ -84,7 +84,14 @@ MeshTree* MeshTree::collidesWith(MeshTree* root, MeshTree* toCheck) {
 
     for (size_t childIdx = 0; childIdx < root->children.size(); childIdx++) {
         std::weak_ptr<MeshTree> child = root->children.at(childIdx);
-        if (child.expired()) { continue; }
+        
+        // Remove child if it has been free'd
+        if (child.expired()) { 
+            root->children.erase(root->children.begin() + childIdx);
+            childIdx--;
+            continue;
+        }
+
         MeshTree* childLock = child.lock().get();
         if (collidesWith(childLock, toCheck) != nullptr) { return childLock; }
     }
