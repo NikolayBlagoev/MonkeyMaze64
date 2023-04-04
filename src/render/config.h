@@ -52,12 +52,12 @@ struct RenderConfig {
 
     // SSAO
     bool enableSSAO                 { true };
-    int32_t ssaoSamples             { 32 };
-    int32_t ssaoKernelLength        { 4 }; // Ideally, should evenly divide both axes of the render resolution
+    int32_t ssaoSamples             { 32 };     // Can causes performance explosions at higher values
+    int32_t ssaoKernelLength        { 4 };      // Must be even
     float ssaoRadius                { 0.5f };
-    float ssaoBias                  { 0.025f };
+    float ssaoBias                  { 0.025f }; 
     float ssaoPower                 { 1.0f };
-    float ssaoOcclussionCoefficient { 0.3f };
+    float ssaoOcclussionCoefficient { 0.70f };
 
     // Particles
     float velocityDeviation { 0.001f };

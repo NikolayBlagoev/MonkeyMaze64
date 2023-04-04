@@ -294,12 +294,12 @@ void Menu::drawParallaxControls() {
 
 void Menu::drawSSAOControls() {
     ImGui::Checkbox("Enable SSAO", &m_renderConfig.enableSSAO);
-    if (ImGui::SliderInt("Samples", &m_renderConfig.ssaoSamples, 1, 128))           { m_deferredRenderer.ssaoRegenSamples(); }
-    if (ImGui::SliderInt("Kernel length", &m_renderConfig.ssaoKernelLength, 1, 16)) { m_deferredRenderer.ssaoRegenRandomRotation(); }
+    if (ImGui::SliderInt("Samples", &m_renderConfig.ssaoSamples, 1, 128))               { m_deferredRenderer.ssaoRegenSamples(); }
+    if (ImGui::DragInt("Kernel length", &m_renderConfig.ssaoKernelLength, 2, 2, 16))    { m_deferredRenderer.ssaoRegenRandomRotation(); }
     ImGui::SliderFloat("Radius", &m_renderConfig.ssaoRadius, 0.01f, 1.0f);
     ImGui::SliderFloat("Bias", &m_renderConfig.ssaoBias, 0.001f, 0.1f);
-    ImGui::DragFloat("Power", &m_renderConfig.ssaoPower, 0.1f, 0.1f, 10.0f);
-    ImGui::DragFloat("Occlussion coeff.", &m_renderConfig.ssaoOcclussionCoefficient, 0.05f, 0.01f, 1.0f);
+    ImGui::SliderFloat("Power", &m_renderConfig.ssaoPower, 0.1f, 2.0f);
+    ImGui::DragFloat("Occlussion coeff.", &m_renderConfig.ssaoOcclussionCoefficient, 0.1f, 0.5f, 2.0f);
 }
 
 void Menu::drawRenderTab() {

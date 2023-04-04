@@ -30,7 +30,7 @@ void main() {
 
     // Get input from textures
     vec3 fragPos    = texture(gPosition, texCoords).xyz;
-    vec3 normal     = normalize(texture(gNormal, texCoords).rgb);
+    vec3 normal     = texture(gNormal, texCoords).rgb; // Assume that G-buffer normals are normalized
     vec3 randomVec  = normalize(texture(noiseTex, texCoords * noiseScale).xyz);
 
     // Create TBN change-of-basis matrix: from tangent-space to view-space
