@@ -50,6 +50,7 @@ private:
     void drawHdrControls();
     void drawBloomControls();
     void drawParallaxControls();
+    void drawSSAOControls();
     void drawRenderTab();
     /******************************/ 
 

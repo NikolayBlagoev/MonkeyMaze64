@@ -4,11 +4,10 @@
 #include <utils/constants.h>
 #include <utils/render_utils.hpp>
 
-BloomFilter::BloomFilter(RenderConfig& renderConfig)
-    : m_renderConfig(renderConfig) {
-        initBuffers();
-        initTextures();
-        initShaders();
+BloomFilter::BloomFilter(const RenderConfig& renderConfig) : m_renderConfig(renderConfig) {
+    initBuffers();
+    initTextures();
+    initShaders();
 }
 
 BloomFilter::~BloomFilter() {
@@ -74,9 +73,9 @@ void BloomFilter::extractBrightRegions(GLuint hdrTex) {
     // Bind HDR texture
     glActiveTexture(GL_TEXTURE0 + utils::POST_PROCESSING_TEX_START_IDX);
     glBindTexture(GL_TEXTURE_2D, hdrTex);
-
-    // Set uniforms and render
     glUniform1i(0, utils::POST_PROCESSING_TEX_START_IDX);
+
+    // Set uniform(s) and render
     glUniform1f(1, m_renderConfig.bloomBrightThreshold);
     utils::renderQuad();
 }

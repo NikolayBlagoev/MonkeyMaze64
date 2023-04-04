@@ -50,6 +50,15 @@ struct RenderConfig {
     float bloomBrightThreshold  { 1.0f };
     uint32_t bloomIterations    { 5U };
 
+    // SSAO
+    bool enableSSAO                 { true };
+    int32_t ssaoSamples             { 32 };     // Can causes performance explosions at higher values
+    int32_t ssaoKernelLength        { 4 };      // Must be even
+    float ssaoRadius                { 0.5f };
+    float ssaoBias                  { 0.025f }; 
+    float ssaoPower                 { 1.0f };
+    float ssaoOcclussionCoefficient { 0.70f };
+
     // Particles
     float velocityDeviation { 0.001f };
     float colorDeviation    { 0.1f };

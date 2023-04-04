@@ -292,6 +292,16 @@ void Menu::drawParallaxControls() {
     ImGui::InputFloat("Max depth layers", &m_renderConfig.maxDepthLayers, 1.0f, 2.0f, "%.0f");
 }
 
+void Menu::drawSSAOControls() {
+    ImGui::Checkbox("Enable SSAO", &m_renderConfig.enableSSAO);
+    if (ImGui::SliderInt("Samples", &m_renderConfig.ssaoSamples, 1, 128))               { m_deferredRenderer.ssaoRegenSamples(); }
+    if (ImGui::DragInt("Kernel length", &m_renderConfig.ssaoKernelLength, 2, 2, 16))    { m_deferredRenderer.ssaoRegenRandomRotation(); }
+    ImGui::SliderFloat("Radius", &m_renderConfig.ssaoRadius, 0.01f, 1.0f);
+    ImGui::SliderFloat("Bias", &m_renderConfig.ssaoBias, 0.001f, 0.1f);
+    ImGui::SliderFloat("Power", &m_renderConfig.ssaoPower, 0.1f, 2.0f);
+    ImGui::DragFloat("Occlussion coeff.", &m_renderConfig.ssaoOcclussionCoefficient, 0.1f, 0.5f, 2.0f);
+}
+
 void Menu::drawRenderTab() {
     if (ImGui::BeginTabItem("Rendering")) {
         ImGui::Text("HDR");
@@ -308,6 +318,12 @@ void Menu::drawRenderTab() {
 
         ImGui::Text("Parallax");
         drawParallaxControls();
+
+        ImGui::NewLine();
+        ImGui::Separator();
+
+        ImGui::Text("SSAO");
+        drawSSAOControls();
 
         ImGui::EndTabItem();
     }
