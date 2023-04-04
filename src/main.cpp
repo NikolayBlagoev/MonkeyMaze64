@@ -220,12 +220,12 @@ int main(int argc, char* argv[]) {
     Mesh defaultMonkeyPose = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose0.obj"));
 
     std::vector<GPUMesh> monkeyPoses;
-    monkeyPoses.push_back(defaultMonkeyPose);
+    monkeyPoses.emplace_back(defaultMonkeyPose);
 
     for (int i = 1; i < 16; ++i) {
         auto fileName = std::format("monkeypose{}.obj", i * 2);
         Mesh cpuMesh = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / fileName));
-        monkeyPoses.push_back(GPUMesh(cpuMesh));
+        monkeyPoses.emplace_back(cpuMesh);
     }
 
     MeshTree* bezierDragon = new MeshTree("bezier dragon", &dragonMesh);
