@@ -37,7 +37,7 @@ struct PointLightShader {
     glm::vec4 color;
 };
 
-// TODO: Expand with 1. Ability to use texture to define lighting
+// TODO: Expand with ability to use texture to define lighting
 struct AreaLight {
     static constexpr glm::vec3 s_xAxis { 1.0f, 0.0f, 0.0f };
     static constexpr glm::vec3 s_yAxis { 0.0f, 1.0f, 0.0f };

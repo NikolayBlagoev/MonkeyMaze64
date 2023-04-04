@@ -233,14 +233,14 @@ void Generator::connect(Defined* a, Defined* b, int dir){
     }
 } 
 int Generator::remove_options(Defined* node, int mm, int mx){
-    if(node == nullptr || node->empt){
+    if(node == nullptr || node->empty){
         return 1099;
     }
     int min_node = 99;
     int dir_min = 0;
     Defined* up = node->up;
     
-    if(up != nullptr && up->empt){
+    if(up != nullptr && up->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
             up->possible[i] = up->possible[i] && opens[node->tileType-1][0] == opens[i][2];
@@ -253,7 +253,7 @@ int Generator::remove_options(Defined* node, int mm, int mx){
     }
 
     Defined* right = node->right;
-    if(right != nullptr && right->empt){
+    if(right != nullptr && right->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
             right->possible[i] = right->possible[i] && opens[node->tileType-1][1] == opens[i][3];
@@ -267,7 +267,7 @@ int Generator::remove_options(Defined* node, int mm, int mx){
 
     Defined* down = node->down;
     
-    if(down != nullptr && down->empt){
+    if(down != nullptr && down->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
             down->possible[i] = down->possible[i] && opens[node->tileType-1][2] == opens[i][0];
@@ -281,7 +281,7 @@ int Generator::remove_options(Defined* node, int mm, int mx){
 
 
     Defined* left = node->left;
-    if(left != nullptr && left->empt){
+    if(left != nullptr && left->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
             left->possible[i] = left->possible[i] && opens[node->tileType-1][3] == opens[i][1];
@@ -296,7 +296,7 @@ int Generator::remove_options(Defined* node, int mm, int mx){
 }
 
 void Generator::constrain(Defined* nd, int opts){
-    if(nd == nullptr || !nd->empt){
+    if(nd == nullptr || !nd->empty){
         return;
     }
     bool flag = true;
@@ -312,7 +312,7 @@ void Generator::constrain(Defined* nd, int opts){
                     if((i >= 1 && i <= 4) || i>=14){
                         float res = exp(-0.2f*(rand()%10));
                         if( true || res > acc_cam ){
-                            nd->objs.push_back(new ProcObj(0));
+                            nd->objs.push_back(new ProcObj(SpecialObjType::Collectible));
                             acc_cam = 1.f;
                         }else{
                             acc_cam -= 0.1f;
@@ -323,13 +323,13 @@ void Generator::constrain(Defined* nd, int opts){
                     if((i >= 1 && i <= 4) || i == 0){
                         float res = exp(-0.2f*(rand()%20));
                         if( true || res > acc_head ){
-                            nd->objs.push_back(new ProcObj(1));
+                            nd->objs.push_back(new ProcObj(SpecialObjType::EnemyCamera));
                             acc_head = 1.f;
                         }else{
                             acc_head -= 0.05f;
                         }
                     }
-                    nd->empt = false;
+                    nd->empty = false;
                     nd->tileType = i+1;
                     
                     break;
@@ -425,7 +425,7 @@ void Generator::assign_all(std::deque <Defined*> *dq){
         Defined* curr = dq->front();
         dq->pop_front();
         if(curr == nullptr) continue;
-        if(!curr->empt) continue;
+        if(!curr->empty) continue;
         int count = 0;
         for(int i = 0; i < 18; i ++){
             if(!curr->possible[i]){
@@ -490,7 +490,7 @@ void Generator::instantiate_terr(){
         Defined* curr = dq.front();
         dq.pop_front();
         if(curr == nullptr) continue;
-        if(curr->empt) continue;
+        if(curr->empty) continue;
         if(curr->constrained) continue;
         
         int ret = remove_options(curr,0,0);
@@ -516,7 +516,7 @@ void Generator::instantiate_terr(){
     constrain(max_node, max);
     for (int i = 0; i < 7; i ++){
         for (int j = 0; j < 7; j ++){
-            if(board[i][j]->empt) dq.push_back(board[i][j]);
+            if(board[i][j]->empty) dq.push_back(board[i][j]);
             
         }
 

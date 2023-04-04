@@ -8,9 +8,9 @@ DISABLE_WARNINGS_POP()
 
 #include <vector>
 
-class CameraObj {
+class EnemyCamera {
 public:
-    CameraObj(glm::vec4* cam, glm::vec4* stand) : camera(cam), stand2(stand) {}
+    EnemyCamera(glm::vec4* cam, glm::vec4* stand) : camera(cam), stand2(stand) {}
 
     glm::vec4* camera;
     glm::vec4* stand2;
