@@ -44,18 +44,24 @@ glm::mat4 MeshTree::modelMatrix() const {
     // Rotate relative to parent
     currTransform = glm::rotate(currTransform, glm::radians(transform.rotateParent.w), glm::vec3(transform.rotateParent.x, transform.rotateParent.y, transform.rotateParent.z));
 
-    // Translate (also translate external object(s) if any)
+    // Translate
     currTransform = glm::translate(currTransform, transform.translate);
-    if (al != nullptr) {
-        al->position        = currTransform * glm::vec4(0.f, 0.f, 0.f, 1.f);
-        al->externalForward = glm::normalize(currTransform * glm::vec4(-1.f, 0.f, 0.f, 1.f));
-    }
 
     // Rotate
     currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.w), glm::vec3(transform.selfRotate.x, transform.selfRotate.y, transform.selfRotate.z));
 
     // Scale
-    return glm::scale(currTransform, transform.scale);
+    currTransform = glm::scale(currTransform, transform.scale);
+
+    if (pl != nullptr) {
+        pl->position = currTransform * glm::vec4(0.f, 0.f, 0.f, 1.f);
+    }
+    if (al != nullptr) {
+        al->position        = currTransform * glm::vec4(0.f, 0.f, 0.f, 1.f);
+        al->externalForward = glm::normalize(currTransform * glm::vec4(-1.f, 0.f, 0.f, 1.f));
+    }
+
+    return currTransform;
 }
 
 HitBox MeshTree::getTransformedHitBox() {

@@ -175,6 +175,7 @@ int main(int argc, char* argv[]) {
     glm::vec3 playerPos = glm::vec3(0.0f, -0.1f, 1.0f);
     glm::vec3 playerMiddleOffset = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 playerCameraPos = playerPos + glm::vec3(0.0f, 1.0f, 1.5f) + playerMiddleOffset;
+    glm::vec3 playerLightOffset = glm::vec3(-0.9f, 2.5f, 1.3f);
 
     // Init core objects
     RenderConfig renderConfig;
@@ -223,7 +224,7 @@ int main(int argc, char* argv[]) {
     monkeyPoses.emplace_back(defaultMonkeyPose);
 
     for (int i = 1; i < 16; ++i) {
-        auto fileName = std::format("monkeypose{}.obj", i * 2);
+        auto fileName = "monkeypose" + std::to_string(i * 2)+ ".obj";
         Mesh cpuMesh = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / fileName));
         monkeyPoses.emplace_back(cpuMesh);
     }
@@ -239,6 +240,13 @@ int main(int argc, char* argv[]) {
                                     true);
     MemoryManager::addEl(player);
     scene.addMesh(player->shared_from_this());
+
+    MeshTree* playerLight = new MeshTree("player light");
+    MemoryManager::addEl(playerLight);
+    playerLight->transform.translate = playerLightOffset;
+    playerLight->pl = lightManager.addPointLight(glm::vec3(0.f), glm::vec3(1.0f, 0.5f, 0.0f), 0.3f);
+    player->addChild(playerLight->shared_from_this());
+
     MeshTree* tempMesh = new MeshTree("dragon particle", &dragonMesh, playerPos + glm::vec3(1.0f, 0.0f, 0.0f),
                                    glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
                                    glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),

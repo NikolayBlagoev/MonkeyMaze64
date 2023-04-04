@@ -7,10 +7,10 @@ Type BezierCurve<Type>::positionAtTime(float t) {
     if (t < 0)          { return controlP0; }
     if (t > totalTime)  { return controlP3; }
     t /= totalTime;
-    return  1.0f *   pow(1.0f - t, 3.0f) * 1.0f          * controlP0 +
-            3.0f *   pow(1.0f - t, 2.0f) * t             * controlP1 +
-            3.0f *   (1.0f - t)          * pow(t, 2.0f)  * controlP2 +
-            1.0f *   1.0f                * pow(t, 3.0f)  * controlP3;
+    return  1.0f *   float(pow(1.0f - t, 3.0f)) * 1.0f          * controlP0 +
+            3.0f *   float(pow(1.0f - t, 2.0f)) * t             * controlP1 +
+            3.0f *   (1.0f - t)          * float(pow(t, 2.0f))  * controlP2 +
+            1.0f *   1.0f                * float(pow(t, 3.0f))  * controlP3;
 }
 
 template<typename Type>
