@@ -33,6 +33,13 @@ GLuint SSAOFilter::render(GLuint positionTex, GLuint normalTex, const glm::mat4&
     return computeBlur();
 }
 
+void SSAOFilter::regenRandomRotation() {
+    // Destroy old texture then create a new one and populate it with data
+    glDeleteTextures(1, &randomRotationTex);
+    createRandomRotationTex();
+    generateRandomRotation();
+}
+
 void SSAOFilter::initRender() {
     glCreateFramebuffers(1, &renderBuffer);
 
@@ -73,14 +80,18 @@ void SSAOFilter::initBlur() {
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 }
 
-void SSAOFilter::initSampling() {
-    glCreateBuffers(1, &ssboSamples);
+void SSAOFilter::createRandomRotationTex() {
     glCreateTextures(GL_TEXTURE_2D, 1, &randomRotationTex);
     glTextureStorage2D(randomRotationTex, 1, GL_RGBA32F, static_cast<GLsizei>(m_renderConfig.ssaoKernelLength), static_cast<GLsizei>(m_renderConfig.ssaoKernelLength));
     glTextureParameteri(randomRotationTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(randomRotationTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTextureParameteri(randomRotationTex, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTextureParameteri(randomRotationTex, GL_TEXTURE_WRAP_T, GL_REPEAT);
+}
+
+void SSAOFilter::initSampling() {
+    glCreateBuffers(1, &ssboSamples);
+    createRandomRotationTex();
 }
 
 void SSAOFilter::generateSamples() {

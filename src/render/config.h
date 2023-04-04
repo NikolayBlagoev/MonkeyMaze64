@@ -52,8 +52,8 @@ struct RenderConfig {
 
     // SSAO
     bool enableSSAO                 { true };
-    size_t ssaoSamples              { 32UL };
-    size_t ssaoKernelLength         { 4UL }; // Ideally, should evenly divide both axes of the render resolution
+    int32_t ssaoSamples             { 32 };
+    int32_t ssaoKernelLength        { 4 }; // Ideally, should evenly divide both axes of the render resolution
     float ssaoRadius                { 0.5f };
     float ssaoBias                  { 0.025f };
     float ssaoPower                 { 1.0f };

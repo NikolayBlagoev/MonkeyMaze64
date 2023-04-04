@@ -24,7 +24,11 @@ public:
     ~DeferredRenderer();
 
     void render(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos);
+
+    // External state management
     void initLightingShader();
+    void ssaoRegenSamples() { ssaoFilter.regenSamples(); }
+    void ssaoRegenRandomRotation() { ssaoFilter.regenRandomRotation(); }
 
 private:
     void initGBuffer();

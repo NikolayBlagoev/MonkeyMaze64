@@ -19,10 +19,13 @@ public:
     ~SSAOFilter();
 
     GLuint render(GLuint positionTex, GLuint normalTex, const glm::mat4& projection) const;
+    void regenSamples() { generateSamples(); }
+    void regenRandomRotation();
 
 private:
     void initRender();
     void initBlur();
+    void createRandomRotationTex();
     void initSampling();
     void generateSamples();
     void generateRandomRotation();
