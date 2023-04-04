@@ -39,7 +39,7 @@ public:
     void clean(LightManager& lmngr);
     void addChild(std::shared_ptr<MeshTree> child);
     glm::mat4 modelMatrix() const;
-
+    static MeshTree* collidesWith(MeshTree* root, MeshTree* toCheck);
     HitBox getTransformedHitBox();
     glm::vec3 getTransformedHitBoxMiddle();
     bool collide(MeshTree* other);
@@ -56,7 +56,7 @@ public:
     bool is_root = false;
     std::weak_ptr<MeshTree> parent;
     std::vector<std::weak_ptr<MeshTree>> children;
-
+    
     // External objects manipulated by node
     AreaLight*  al { nullptr };
     PointLight* pl { nullptr };

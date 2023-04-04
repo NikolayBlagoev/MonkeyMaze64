@@ -74,11 +74,12 @@ HitBox MeshTree::getTransformedHitBox() {
 glm::vec3 MeshTree::getTransformedHitBoxMiddle() { return modelMatrix() * glm::vec4(this->hitBox.getMiddle(), 1); }
 
 bool MeshTree::collide(MeshTree *other) {
-    return (!this->hitBox.allowCollision || !other->hitBox.allowCollision) &&
-             this->getTransformedHitBox().collides(other->getTransformedHitBox());
+    if(other == nullptr || other == this) return false;
+    return ((this->hitBox.allowCollision && other->hitBox.allowCollision) &&
+             this->getTransformedHitBox().collides(other->getTransformedHitBox()));
 }
 
-static MeshTree* collidesWith(MeshTree* root, MeshTree* toCheck) {
+MeshTree* MeshTree::collidesWith(MeshTree* root, MeshTree* toCheck) {
     if (root->collide(toCheck)) { return root; }
 
     for (size_t childIdx = 0; childIdx < root->children.size(); childIdx++) {

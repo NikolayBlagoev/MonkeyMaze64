@@ -296,7 +296,7 @@ void Generator::constrain(Defined* nd, int opts){
                     if((i >= 1 && i <= 4) || i>=14){
                         float res = exp(-0.2f*(rand()%10));
                         if( true || res > acc_cam ){
-                            nd->objs.push_back(new ProcObj(SpecialObjType::Collectible));
+                            nd->objs.push_back(new ProcObj(SpecialObjType::EnemyCamera));
                             acc_cam = 1.f;
                         }else{
                             acc_cam -= 0.1f;
@@ -306,8 +306,8 @@ void Generator::constrain(Defined* nd, int opts){
 
                     if((i >= 1 && i <= 4) || i == 0){
                         float res = exp(-0.2f*(rand()%20));
-                        if( true || res > acc_head ){
-                            nd->objs.push_back(new ProcObj(SpecialObjType::EnemyCamera));
+                        if( true || ( res > acc_head && heads < 7)){
+                            nd->objs.push_back(new ProcObj(SpecialObjType::Collectible));
                             acc_head = 1.f;
                         }else{
                             acc_head -= 0.05f;
@@ -508,3 +508,16 @@ void Generator::instantiate_terr(){
     assign_all(&dq);
 }
 
+void Generator::remove_head(int y, int x){
+    for (size_t i = 0; i < board[y][x]->objs.size(); i++)
+    {
+        if(board[y][x]->objs.at(i)->type == SpecialObjType::Collectible){
+            free(board[y][x]->objs.at(i));
+            board[y][x]->objs.erase(board[y][x]->objs.begin()+i);
+            i--;
+        }
+    }
+    heads ++;
+    std::cout<<"CLEARED HEAD"<<std::endl;
+    
+}
