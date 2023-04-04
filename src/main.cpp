@@ -216,38 +216,29 @@ int main(int argc, char* argv[]) {
     Mesh stand1 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "stand1.obj"));
     Mesh suzanne = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "suzanne.obj"));
     Mesh dragonMesh = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj"));
-    Mesh monkeypose0 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose0.obj"));
-    Mesh monkeypose2 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose2.obj"));
-    Mesh monkeypose4 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose4.obj"));
-    Mesh monkeypose6 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose6.obj"));
-    Mesh monkeypose8 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose8.obj"));
-    Mesh monkeypose10 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose10.obj"));
-    Mesh monkeypose12 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose12.obj"));
-    Mesh monkeypose14 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose14.obj"));
-    Mesh monkeypose16 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose16.obj"));
-    Mesh monkeypose18 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose18.obj"));
-    Mesh monkeypose20 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose20.obj"));
-    Mesh monkeypose22 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose22.obj"));
-    Mesh monkeypose24 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose24.obj"));
-    Mesh monkeypose26 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose26.obj"));
-    Mesh monkeypose28 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose28.obj"));
-    Mesh monkeypose30 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose30.obj"));
-    GPUMesh monkeyposes[16] = {GPUMesh(monkeypose0), GPUMesh(monkeypose2), GPUMesh(monkeypose4), GPUMesh(monkeypose6),
-                        GPUMesh(monkeypose8), GPUMesh(monkeypose10), GPUMesh(monkeypose12), GPUMesh(monkeypose14),
-                        GPUMesh(monkeypose16), GPUMesh(monkeypose18), GPUMesh(monkeypose20), GPUMesh(monkeypose22),
-                        GPUMesh(monkeypose24), GPUMesh(monkeypose26), GPUMesh(monkeypose28), GPUMesh(monkeypose30)};
+
+    Mesh defaultMonkeyPose = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose0.obj"));
+
+    std::vector<GPUMesh> monkeyPoses;
+    monkeyPoses.push_back(defaultMonkeyPose);
+
+    for (int i = 1; i < 16; ++i) {
+        auto fileName = std::format("monkeypose{}.obj", i * 2);
+        Mesh cpuMesh = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / fileName));
+        monkeyPoses.push_back(GPUMesh(cpuMesh));
+    }
 
     MeshTree* bezierDragon = new MeshTree("bezier dragon", &dragonMesh);
     MemoryManager::addEl(bezierDragon);
     scene.addMesh(bezierDragon->shared_from_this());
 
-    MeshTree* playerDragon = new MeshTree("player", &monkeypose0, playerPos,
-                                          glm::vec4(0.0f, 1.0f, 0.0f, 180.0f),
-                                          glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
-                                          glm::vec3(0.3f),
-                                          true);
-    MemoryManager::addEl(playerDragon);
-    scene.addMesh(playerDragon->shared_from_this());
+    MeshTree* player = new MeshTree("player", &defaultMonkeyPose, playerPos,
+                                    glm::vec4(0.0f, 1.0f, 0.0f, 180.0f),
+                                    glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                                    glm::vec3(0.3f),
+                                    true);
+    MemoryManager::addEl(player);
+    scene.addMesh(player->shared_from_this());
     MeshTree* tempMesh = new MeshTree("dragon particle", &dragonMesh, playerPos + glm::vec3(1.0f, 0.0f, 0.0f),
                                    glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
                                    glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
@@ -303,7 +294,7 @@ int main(int argc, char* argv[]) {
 
     // Main loop
     while (!m_window.shouldClose()) {
-        playerPos = (playerDragon->transform.translate);
+        playerPos = (player->transform.translate);
         Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
         std::chrono::time_point curr_frame = timer.now();
         rndrr.timeStep(curr_frame);
@@ -316,16 +307,16 @@ int main(int argc, char* argv[]) {
             if(pos > 0.2f){
                 pos = pos - 0.2f;
                 pos = 15.f*pos/0.2f;
-                playerDragon->mesh = &monkeyposes[15 - static_cast<int>(floor(pos))];
+                player->mesh = &monkeyPoses[15 - static_cast<int>(floor(pos))];
             }else{
                 pos = 15.f*pos/0.2f;
-                playerDragon->mesh = &monkeyposes[static_cast<int>(floor(pos))];
+                player->mesh = &monkeyPoses[static_cast<int>(floor(pos))];
                 
             }
             prev_motion = motion;
             motion = false;
         }else{
-            playerDragon->mesh = &monkeyposes[0];
+            player->mesh = &monkeyPoses[0];
         }
 
         // Clear the screen
@@ -450,7 +441,7 @@ int main(int argc, char* argv[]) {
         ImGuiIO io = ImGui::GetIO();
         m_window.updateInput();
         if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
-            if (renderConfig.controlPlayer) { currentCamera.updateInput(playerDragon, scene.root, playerMiddleOffset); }
+            if (renderConfig.controlPlayer) { currentCamera.updateInput(player, scene.root, playerMiddleOffset); }
             else                            { currentCamera.updateInput(); }
         }
 
