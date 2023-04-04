@@ -18,7 +18,7 @@ public:
     SSAOFilter(int32_t renderWidth, int32_t renderHeight, RenderConfig& renderConfig);
     ~SSAOFilter();
 
-    GLuint render(GLuint positionTex, GLuint normalTex, const glm::mat4& projection) const;
+    GLuint render(GLuint positionTex, GLuint normalTex, const glm::mat4& viewProjection) const;
     void regenSamples() { generateSamples(); }
     void regenRandomRotation();
 
@@ -31,7 +31,7 @@ private:
     void generateRandomRotation();
 
     // Render computations
-    void computeSSAO(GLuint positionTex, GLuint normalTex, const glm::mat4& projection) const;
+    void computeSSAO(GLuint positionTex, GLuint normalTex, const glm::mat4& viewProjection) const;
     GLuint computeBlur() const;
 
     // Render resolution

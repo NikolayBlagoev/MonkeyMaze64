@@ -28,8 +28,8 @@ SSAOFilter::~SSAOFilter() {
     glDeleteTextures(1, &randomRotationTex);
 }
 
-GLuint SSAOFilter::render(GLuint positionTex, GLuint normalTex, const glm::mat4& projection) const {
-    computeSSAO(positionTex, normalTex, projection);
+GLuint SSAOFilter::render(GLuint positionTex, GLuint normalTex, const glm::mat4& viewProjection) const {
+    computeSSAO(positionTex, normalTex, viewProjection);
     return computeBlur();
 }
 
@@ -108,7 +108,7 @@ void SSAOFilter::generateRandomRotation() {
                         GL_RGBA, GL_FLOAT, randomRotationData.data());
 }
 
-void SSAOFilter::computeSSAO(GLuint positionTex, GLuint normalTex, const glm::mat4& projection) const {
+void SSAOFilter::computeSSAO(GLuint positionTex, GLuint normalTex, const glm::mat4& viewProjection) const {
     // Bind SSAO computation shader and bright regions framebuffer
     ssaoRender.bind();
     glBindFramebuffer(GL_FRAMEBUFFER, renderBuffer);
@@ -128,7 +128,7 @@ void SSAOFilter::computeSSAO(GLuint positionTex, GLuint normalTex, const glm::ma
     glUniform1i(2, utils::POST_PROCESSING_TEX_START_IDX + 2);
 
     // Set remaining uniforms (see shaders/ssao/main_render.frag for details)
-    glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(viewProjection));
     glUniform2f(4, static_cast<float>(RENDER_WIDTH), static_cast<float>(RENDER_HEIGHT));
     glUniform1f(5, static_cast<float>(m_renderConfig.ssaoKernelLength));
     glUniform1f(6, m_renderConfig.ssaoRadius);

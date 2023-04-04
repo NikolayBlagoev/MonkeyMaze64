@@ -23,7 +23,7 @@ public:
                      ParticleEmitterManager& particleEmitterManager, std::weak_ptr<const Texture> xToonTex);
     ~DeferredRenderer();
 
-    void render(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos);
+    void render(const glm::mat4& viewProjection, const glm::vec3& cameraPos);
 
     // External state management
     void initLightingShader();
@@ -37,14 +37,14 @@ private:
     void initShaders();
 
     void bindMaterialTextures(const GPUMesh& mesh, const glm::vec3& cameraPos) const;
-    void helper(MeshTree* mt, const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const;
-    void renderGeometry(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const;
+    void recursiveGeometryRender(MeshTree* mt, const glm::mat4& viewProjection, const glm::vec3& cameraPos) const;
+    void renderGeometry(const glm::mat4& viewProjection, const glm::vec3& cameraPos) const;
     
     void bindGBufferTextures() const;
     void renderLighting(const glm::vec3& cameraPos);
 
-    void renderForward(const glm::mat4& viewProjectionMatrix);
-    void renderPostProcessing(const glm::mat4& projection);
+    void renderForward(const glm::mat4& viewProjection);
+    void renderPostProcessing(const glm::mat4& viewProjection);
     void copyGBufferDepth(GLuint destinationBuffer);
 
     static constexpr GLuint INVALID     = 0xFFFFFFFF;

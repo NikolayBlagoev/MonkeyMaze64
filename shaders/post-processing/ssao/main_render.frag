@@ -8,8 +8,8 @@ layout(location = 0) uniform sampler2D gPosition;
 layout(location = 1) uniform sampler2D gNormal;
 layout(location = 2) uniform sampler2D noiseTex;
 
-// Screen projection matrix
-layout(location = 3) uniform mat4 projection;
+// Screen viewProjection matrix
+layout(location = 3) uniform mat4 viewProjection;
 
 // Render resolution
 layout(location = 4) uniform vec2 renderResolution;
@@ -45,9 +45,9 @@ void main() {
         vec3 samplePos  = TBN * samplesData[sampleIdx]; // From tangent to view-space
         samplePos       = fragPos + samplePos * radius; 
         
-        // Project sample position to get position on screen/texture
+        // Project sample position to get position on screen/G-buffer
         vec4 offset = vec4(samplePos, 1.0);
-        offset      = projection * offset;      // From view to screen space
+        offset      = viewProjection * offset;  // From world to screen space
         offset.xyz  /= offset.w;                // Convert from homogeneous coordinates
         offset.xyz  = offset.xyz * 0.5 + 0.5;   // Transform to range [0.0, 1.0]
         
