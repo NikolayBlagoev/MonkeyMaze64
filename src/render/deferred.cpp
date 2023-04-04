@@ -18,7 +18,8 @@ DeferredRenderer::DeferredRenderer(RenderConfig& renderConfig, Scene& scene, Lig
     , m_lightManager(lightManager)
     , m_particleEmitterManager(particleEmitterManager)
     , m_xToonTex(xToonTex)
-    , bloomFilter(renderConfig) {
+    , bloomFilter(renderConfig)
+    , ssaoFilter(utils::WIDTH, utils::HEIGHT, renderConfig) {
     initBuffers();
     initShaders();
 }
@@ -37,14 +38,15 @@ DeferredRenderer::~DeferredRenderer() {
     glDeleteTextures(1, &hdrTex);
 }
 
-void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) {
-    glViewport(0, 0, utils::WIDTH, utils::HEIGHT);      // Set correct viewport size
-    renderGeometry(viewProjectionMatrix, cameraPos);    // Geometry pass
-    renderLighting(cameraPos);                          // Lighting pass
-    copyGBufferDepth(hdrBuffer);                        // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
-    renderForward(viewProjectionMatrix);                // Render transparent objects which require forward rendering
-    renderPostProcessing();                             // Combine post-processing results; HDR tonemapping and gamma correction
-    copyGBufferDepth(0U);                               // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
+void DeferredRenderer::render(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos) {
+    glViewport(0, 0, utils::WIDTH, utils::HEIGHT);              // Set correct viewport size
+    const glm::mat4 viewProjectionMatrix = projection * view;   // Compute VP matrix
+    renderGeometry(viewProjectionMatrix, cameraPos);            // Geometry pass
+    renderLighting(cameraPos);                                  // Lighting pass
+    copyGBufferDepth(hdrBuffer);                                // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
+    renderForward(viewProjectionMatrix);                        // Render transparent objects which require forward rendering
+    renderPostProcessing(projection);                           // Combine post-processing results; HDR tonemapping and gamma correction
+    copyGBufferDepth(0U);                                       // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
 }
 
 void DeferredRenderer::initGBuffer() {
@@ -308,10 +310,11 @@ void DeferredRenderer::renderForward(const glm::mat4& viewProjectionMatrix) {
     m_particleEmitterManager.render(hdrBuffer, viewProjectionMatrix); // Only particles need forward shading for now
 }
 
-void DeferredRenderer::renderPostProcessing() {
+void DeferredRenderer::renderPostProcessing(const glm::mat4& projection) {
     // Render post-processing effect(s)
-    GLuint bloomTex;
-    if (m_renderConfig.enableBloom) { bloomTex = bloomFilter.render(hdrTex); }
+    GLuint bloomTex, ssaoTex;
+    if (m_renderConfig.enableBloom) { bloomTex  = bloomFilter.render(hdrTex); }
+    if (m_renderConfig.enableSSAO)  { ssaoTex   = ssaoFilter.render(positionTex, normalTex, projection); }
     
     // Bind core HDR and tonemapping data
     hdrRender.bind();
@@ -330,6 +333,15 @@ void DeferredRenderer::renderPostProcessing() {
         glUniform1i(4, utils::HDR_BUFFER_TEX_START_IDX + 1);
     }
     glUniform1i(5, m_renderConfig.enableBloom);
+
+    // Bind SSAO data
+    if (m_renderConfig.enableSSAO) {
+        glActiveTexture(GL_TEXTURE0 + utils::HDR_BUFFER_TEX_START_IDX + 2);
+        glBindTexture(GL_TEXTURE_2D, ssaoTex);
+        glUniform1i(6, utils::HDR_BUFFER_TEX_START_IDX + 2);
+        glUniform1f(7, m_renderConfig.ssaoOcclussionCoefficient);
+    }
+    glUniform1i(8, m_renderConfig.enableSSAO);
     
     utils::renderQuad();
 }

@@ -1,7 +1,13 @@
 #ifndef _MISC_UTILS_HPP_
 #define _MISC_UTILS_HPP_
 
+#include <framework/disable_all_warnings.h>
+DISABLE_WARNINGS_PUSH()
+#include <glad/glad.h>
+DISABLE_WARNINGS_POP()
+
 #include <random>
+#include <vector>
 
 namespace utils {
     /********** Random number generation **********/
@@ -12,6 +18,41 @@ namespace utils {
     static T randomNumber(T low, T high) { 
         std::uniform_real_distribution<T> distribution(low, high);
         return distribution(randomGenerator);
+    }
+
+    template<typename T>
+    static T acceleratingLinearInterpolation(T low, T high, T interpolant) { return low + interpolant * (high - low); }
+
+    static std::vector<glm::vec4> randomVectors(const glm::vec2& xBounds, const glm::vec2& yBounds, const glm::vec2& zBounds, size_t numSamples,
+                                                bool scaleMagnitude = true, bool acceleratingInterpolationScale = true,
+                                                const glm::vec2& magnitudeBounds = glm::vec2(0.0f, 1.0f)) {
+        std::vector<glm::vec4> generatedVectors(numSamples, {0.0f, 0.0f, 0.0f, 0.0f});
+        std::uniform_real_distribution<float> xDistribution(xBounds.x, xBounds.y);
+        std::uniform_real_distribution<float> yDistribution(yBounds.x, yBounds.y);
+        std::uniform_real_distribution<float> zDistribution(zBounds.x, zBounds.y);
+        std::uniform_real_distribution<float> boundsDistribution(zBounds.x, zBounds.y);
+
+        for (size_t sampleIdx = 0UL; sampleIdx < numSamples; sampleIdx++) {
+            // Generate random vector using given bounds
+            glm::vec4& sample   = generatedVectors[sampleIdx];
+            sample.x            = xDistribution(randomGenerator);
+            sample.y            = yDistribution(randomGenerator);
+            sample.z            = zDistribution(randomGenerator);
+
+            // Set magnitude to given bounds if needed
+            if (scaleMagnitude) {
+                sample  = glm::normalize(sample);
+                sample  *= boundsDistribution(randomGenerator);
+            }            
+
+            // Scale samples closer to origin if acceleration interpolation is enabled
+            if (acceleratingInterpolationScale) {
+                float scale = static_cast<float>(sampleIdx) / static_cast<float>(numSamples);
+                sample *= acceleratingLinearInterpolation(0.1f, 1.0f, scale * scale);
+            }
+        }
+
+        return generatedVectors;
     }
 
     /********** Geometric utilities **********/

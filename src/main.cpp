@@ -445,9 +445,10 @@ int main(int argc, char* argv[]) {
             else                            { currentCamera.updateInput(); }
         }
 
-        // View-projection matrices setup
-        const float fovRadians = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_viewProjectionMatrix = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * currentCamera.viewMatrix();
+        // View and projection matrices setup
+        const float fovRadians          = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 m_view          = currentCamera.viewMatrix();
+        const glm::mat4 m_projection    = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f);
 
         // Particle simulation
         particleEmitterManager.updateEmitters();
@@ -456,12 +457,12 @@ int main(int argc, char* argv[]) {
         utils::renderShadowMaps(scene.root, renderConfig, lightManager);
 
         // Render scene
-        deferredRenderer.render(m_viewProjectionMatrix, currentCamera.cameraPos());
+        deferredRenderer.render(m_view, m_projection, currentCamera.cameraPos());
 
         // Draw UI
         glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        menu.draw(m_viewProjectionMatrix);
+        menu.draw(m_projection * m_view); // Assume identity model matrix
 
         // Process inputs and swap the window buffer
         m_window.swapBuffers();
