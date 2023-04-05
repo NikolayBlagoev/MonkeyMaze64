@@ -195,7 +195,8 @@ int main(int argc, char* argv[]) {
     ParticleEmitterManager particleEmitterManager(renderConfig);
     std::weak_ptr<const Texture> xToonTex = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "toon_map.png");
     DeferredRenderer deferredRenderer(renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
-    Menu menu(scene, renderConfig, lightManager, particleEmitterManager, deferredRenderer);
+    HeadCount headCount;
+    Menu menu(scene, renderConfig, lightManager, particleEmitterManager, deferredRenderer, headCount);
 
     // Register UI callbacks
     m_window.registerKeyCallback(keyCallback);
@@ -345,6 +346,8 @@ int main(int argc, char* argv[]) {
                 MemoryManager::removeEl(headMesh);
                 dir = 100 + tileY * 10 + tileX;
                 signalChange();
+
+                headCount.headsCollected++;
             }
         }
         Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;

@@ -87,7 +87,7 @@ vec3 xToonShading(vec3 fragPos, vec3 fragNormal, vec3 lightPos) {
     float diffuseIntensity  = dot(normalize(fragNormal), normalize(lightPos - fragPos));
     float specularIntensity = dot(normalize(normalize(cameraPos - fragPos) + normalize(lightPos - fragPos)), fragNormal);
     float intensity         = (diffuseIntensity + specularIntensity) / 2.0;
-    float cameraToFragDist  = 1.0 - min(3.0 / length(fragPos - cameraPos), 1.0);
+    float cameraToFragDist  = 1.0 - clamp(1.0 / (length(fragPos - cameraPos) - 1.0), 0.0, 1.0);
     return texture(texToon, vec2(intensity, cameraToFragDist)).rgb;
 }
 
