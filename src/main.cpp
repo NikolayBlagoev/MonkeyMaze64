@@ -98,7 +98,9 @@ void worker_thread()
             }else{
                 gen->remove_head((dir/10)%10, dir%10);
             }
+            gen->visualise(gen->board, 7, 7);
             gen->assign_all(&(gen->dq));
+            gen->visualise(gen->board, 7, 7);
             ready_ = false;
             
             boardCopy = gen->board;
@@ -524,7 +526,7 @@ int main(int argc, char* argv[]) {
 
         // Particle simulation
         particleEmitterManager.updateEmitters();
-
+        player->modelMatrix();
         // Render shadow maps
         utils::renderShadowMaps(scene.root, renderConfig, lightManager);
 
