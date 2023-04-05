@@ -65,6 +65,8 @@ namespace utils {
         float z = in.z / sin(angleRads / 2.0f);
         return glm::vec4(x, y, z, angleDegrees);
     }
+
+    static float eulerDistIgnoreW(glm::vec4 a, glm::vec4 b) { return sqrtf(pow(a.x - b.x, 2.0f) + pow(a.y - b.y, 2.0f) + pow(a.z - b.z, 2.0f)); }
 }
 
 #endif

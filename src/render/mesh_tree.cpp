@@ -10,14 +10,12 @@ DISABLE_WARNINGS_POP()
 
 std::unordered_map<MeshTree*, std::shared_ptr<MeshTree>> MemoryManager::objs;
 
-MeshTree::MeshTree(std::string tag, Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision) {
+MeshTree::MeshTree(std::string tag, const std::optional<HitBox>& maybeHitBox, GPUMesh* model,
+                   glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl) {
     this->transform = {off, rots, rotp, scl};
-    this->tag = tag;
-    
-    if (msh != nullptr) {
-        this->mesh      = new GPUMesh(*msh);
-        this->hitBox    = HitBox::makeHitBox(*msh, allowCollision);
-    }
+    this->tag       = tag;
+    this->mesh      = model;
+    this->hitBox    = maybeHitBox;
 }
 
 MeshTree::~MeshTree() { std::cout<< "Destructor called for MeshTree with tag: " << tag << std::endl; }
@@ -69,17 +67,29 @@ glm::mat4 MeshTree::modelMatrix() const {
 }
 
 HitBox MeshTree::getTransformedHitBox() {
+    if (!hitBox.has_value()) {
+        // Massively far away to ensure no collision
+        glm::vec3 massivelyFar(std::numeric_limits<float>::max());
+        std::array<glm::vec3, 8> massivelyFarPoints;
+        std::fill(massivelyFarPoints.begin(), massivelyFarPoints.end(), massivelyFar);
+        return { .allowCollision = false, .points = massivelyFarPoints };
+    } 
+
     glm::mat4 modelMatrix   = this->modelMatrix();
-    HitBox transformed      = this->hitBox;
+    HitBox transformed      = this->hitBox.value();
     for (glm::vec3& point : transformed.points) { point = modelMatrix * glm::vec4(point, 1.0f); }
     return transformed;
 }
 
-glm::vec3 MeshTree::getTransformedHitBoxMiddle() { return modelMatrix() * glm::vec4(this->hitBox.getMiddle(), 1); }
+glm::vec3 MeshTree::getTransformedHitBoxMiddle() { 
+    if (!hitBox.has_value()) { return glm::vec3(std::numeric_limits<float>::max()); } // Massively far away to ensure no collision
+    return modelMatrix() * glm::vec4(this->hitBox.value().getMiddle(), 1.0f);
+}
 
 bool MeshTree::collide(MeshTree *other) {
-    if(other == nullptr || other == this) return false;
-    return ((this->hitBox.allowCollision && other->hitBox.allowCollision) &&
+    if (other == nullptr            || other == this ||
+        !this->hitBox.has_value()   || !other->hitBox.has_value()) { return false; }
+    return ((this->hitBox.value().allowCollision && other->hitBox.value().allowCollision) &&
              this->getTransformedHitBox().collides(other->getTransformedHitBox()));
 }
 

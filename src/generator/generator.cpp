@@ -227,7 +227,7 @@ int Generator::remove_options(Defined* node, int mm, int mx){
     if(up != nullptr && up->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
-            up->possible[i] = up->possible[i] && opens[node->tileType-1][0] == opens[i][2];
+            up->possible[i] = up->possible[i] && opens[static_cast<int32_t>(node->tileType) - 1][0] == opens[i][2];
             if(!up->possible[i]) count++;
         }
         if(count < min_node){
@@ -240,7 +240,7 @@ int Generator::remove_options(Defined* node, int mm, int mx){
     if(right != nullptr && right->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
-            right->possible[i] = right->possible[i] && opens[node->tileType-1][1] == opens[i][3];
+            right->possible[i] = right->possible[i] && opens[static_cast<int32_t>(node->tileType) - 1][1] == opens[i][3];
             if(!right->possible[i]) count++;
         }
         if(count < min_node){
@@ -254,7 +254,7 @@ int Generator::remove_options(Defined* node, int mm, int mx){
     if(down != nullptr && down->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
-            down->possible[i] = down->possible[i] && opens[node->tileType-1][2] == opens[i][0];
+            down->possible[i] = down->possible[i] && opens[static_cast<int32_t>(node->tileType) - 1][2] == opens[i][0];
             if(!down->possible[i]) count++;
         }
         if(count < min_node){
@@ -268,7 +268,7 @@ int Generator::remove_options(Defined* node, int mm, int mx){
     if(left != nullptr && left->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
-            left->possible[i] = left->possible[i] && opens[node->tileType-1][3] == opens[i][1];
+            left->possible[i] = left->possible[i] && opens[static_cast<int32_t>(node->tileType) - 1][3] == opens[i][1];
             if(!left->possible[i]) count++;
         }
         if(count < min_node){
@@ -290,8 +290,8 @@ int Generator::remove_own_options(Defined* node){
     if(up != nullptr && !up->empty){
         
         for(int i = 0; i < 18; i ++){
-            if(node->possible[i] && !opens[up->tileType-1][2] == opens[i][0]) count++;
-            node->possible[i] = node->possible[i] && opens[up->tileType-1][2] == opens[i][0];
+            if(node->possible[i] && !opens[static_cast<int32_t>(up->tileType)-1][2] == opens[i][0]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(up->tileType)-1][2] == opens[i][0];
             
         }
 
@@ -301,8 +301,8 @@ int Generator::remove_own_options(Defined* node){
     if(right != nullptr && !right->empty){
         
         for(int i = 0; i < 18; i ++){
-            if(node->possible[i] && !opens[right->tileType-1][3] == opens[i][1]) count++;
-            node->possible[i] = node->possible[i] && opens[right->tileType-1][3] == opens[i][1];
+            if(node->possible[i] && !opens[static_cast<int32_t>(right->tileType)-1][3] == opens[i][1]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(right->tileType)-1][3] == opens[i][1];
            
         }
 
@@ -313,8 +313,8 @@ int Generator::remove_own_options(Defined* node){
     if(down != nullptr && !down->empty){
         
         for(int i = 0; i < 18; i ++){
-            if(node->possible[i] && !opens[down->tileType-1][0] == opens[i][2]) count++;
-            node->possible[i] = node->possible[i] && opens[down->tileType-1][0] == opens[i][2];
+            if(node->possible[i] && !opens[static_cast<int32_t>(down->tileType)-1][0] == opens[i][2]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(down->tileType)-1][0] == opens[i][2];
             
         }
 
@@ -325,8 +325,8 @@ int Generator::remove_own_options(Defined* node){
     if(left != nullptr && !left->empty){
         
         for(int i = 0; i < 18; i ++){
-            if(node->possible[i] && !opens[left->tileType-1][1] == opens[i][3]) count++;
-            node->possible[i] = node->possible[i] && opens[left->tileType-1][1] == opens[i][3];
+            if(node->possible[i] && !opens[static_cast<int32_t>(left->tileType)-1][1] == opens[i][3]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(left->tileType)-1][1] == opens[i][3];
             
         }
 
@@ -370,7 +370,7 @@ void Generator::constrain(Defined* nd, int opts){
                         }
                     }
                     nd->empty = false;
-                    nd->tileType = i+1;
+                    nd->tileType = static_cast<TileType>(i + 1);
                     
                     break;
                 }
@@ -504,13 +504,13 @@ void Generator::instantiate_terr(){
         board[i] = new Defined*[7];
     }
     Defined* tempt[7][7] =   {  
-        {new Defined(), new Defined(), new Defined(), new Defined(), new Defined(), new Defined(), new Defined()},
-        {new Defined(), new Defined(), new Defined(), new Defined(10), new Defined(), new Defined(), new Defined()},
-        {new Defined(), new Defined(), new Defined(), new Defined(11), new Defined(), new Defined(), new Defined()},
-        {new Defined(18), new Defined(1),new Defined(10), new Defined(1), new Defined(17), new Defined(12), new Defined()},
-        {new Defined(), new Defined(), new Defined(), new Defined(18), new Defined(), new Defined(),new Defined()},
-        {new Defined(),new Defined(), new Defined(), new Defined(1), new Defined(), new Defined(), new Defined()},
-        {new Defined(), new Defined(), new Defined(), new Defined(17), new Defined(), new Defined(), new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(),                      new Defined(),                      new Defined(),                  new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(TileType::TUNNEL4),     new Defined(),                      new Defined(),                  new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(TileType::TURN1),       new Defined(),                      new Defined(),                  new Defined()},
+        {new Defined(TileType::TJUNCTION4), new Defined(TileType::CROSSING),    new Defined(TileType::TUNNEL4), new Defined(TileType::CROSSING),    new Defined(TileType::TJUNCTION3),  new Defined(TileType::TURN2),   new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(TileType::TJUNCTION4),  new Defined(),                      new Defined(),                  new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(TileType::CROSSING),    new Defined(),                      new Defined(),                  new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(TileType::TJUNCTION3),  new Defined(),                      new Defined(),                  new Defined()},
        
     };
     for(int i = 0; i < 7; i ++){
