@@ -60,6 +60,7 @@ public:
     // External objects manipulated by node
     AreaLight*  al { nullptr };
     PointLight* pl { nullptr };
+    std::shared_ptr<EnemyCamera> enemyCam;
 };
 
 class MemoryManager {

@@ -197,8 +197,8 @@ public:
                 cameram->addChild(aperturem->shared_from_this());
                 EnemyCamera* cam = new EnemyCamera(&(cameram->transform.selfRotate), &(stand2m->transform.selfRotate));
                 room->addChild(ret->shared_from_this());
-
-                
+                aperturem->enemyCam = std::shared_ptr<EnemyCamera>(new EnemyCamera(&(cameram->transform.selfRotate), &(stand2m->transform.selfRotate)));
+                cameras.push_back(aperturem->enemyCam);
                 aperturem->al=lightManager.addAreaLight(glm::vec3(1.0f, -3.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 aperturem->al->falloff = utils::CONSTANT_AREA_LIGHT_FALLOFF;
                 aperturem->al->intensityMultiplier = 2.f;
