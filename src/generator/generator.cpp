@@ -338,7 +338,7 @@ void Generator::constrain(Defined* nd, int opts){
     if(nd == nullptr || !nd->empty){
         return;
     }
-    opts -= remove_own_options(nd);
+    opts += remove_own_options(nd);
     bool flag = true;
     while(flag){
         int chs = rand() % (18-opts);
@@ -461,6 +461,26 @@ void Generator::move_u(Defined*** board, std::deque <Defined*> *dq){
     }
 }
 void Generator::assign_all(std::deque <Defined*> *dq){
+    for (int i = 0; i < 7; i ++){
+        for (int j = 0; j < 7; j ++){
+            Defined* xe = board[i][j];
+            if(i>0){
+                xe->up = board[i-1][j];
+            }
+            if(j>0){
+                xe->left = board[i][j-1];
+            }
+            if(i<6){
+                xe->down = board[i+1][j];
+            }
+            if(j<6){
+                xe->right = board[i][j+1];
+            }
+        
+            
+        }
+
+    }
     while(!dq->empty()){
         Defined* curr = dq->front();
         dq->pop_front();
