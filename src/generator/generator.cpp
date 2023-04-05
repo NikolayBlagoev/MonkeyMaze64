@@ -295,7 +295,7 @@ void Generator::constrain(Defined* nd, int opts){
                     }
                     if((i >= 1 && i <= 4) || i>=14){
                         float res = exp(-0.2f*(rand()%10));
-                        if( true || res > acc_cam ){
+                        if( res > acc_cam ){
                             nd->objs.push_back(new ProcObj(SpecialObjType::EnemyCamera));
                             acc_cam = 1.f;
                         }else{
@@ -306,7 +306,7 @@ void Generator::constrain(Defined* nd, int opts){
 
                     if((i >= 1 && i <= 4) || i == 0){
                         float res = exp(-0.2f*(rand()%20));
-                        if( true || ( res > acc_head && heads < 7)){
+                        if( ( res > acc_head && heads < 7)){
                             nd->objs.push_back(new ProcObj(SpecialObjType::Collectible));
                             acc_head = 1.f;
                         }else{

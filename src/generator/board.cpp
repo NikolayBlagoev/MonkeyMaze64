@@ -75,13 +75,45 @@ void Board::load(Defined*** boardCopy, const InitialState& initialState, size_t 
                         break;
                     } case TileType::CROSSING: {
                         MeshTree* crossingTile = new MeshTree(
-                            "cross", initialState.crossing.second, initialState.crossing.first,
+                            "cross", {}, nullptr,
                             glm::vec3(utils::TILE_LENGTH_X * i, 0.0f, utils::TILE_LENGTH_Z * j),
                             glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
                             glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
                             glm::vec3(0.3f));
                         board[i][j] = crossingTile;
                         MemoryManager::addEl(crossingTile);
+
+                        MeshTree* pillarTL = new MeshTree(
+                            "pillarTL", initialState.pillarTL.second, initialState.pillarTL.first);
+                        
+                        MemoryManager::addEl(pillarTL);
+                        crossingTile->addChild(pillarTL->shared_from_this());
+
+                        MeshTree* pillarBL = new MeshTree(
+                            "pillarBL", initialState.pillarBL.second, initialState.pillarBL.first);
+                        
+                        MemoryManager::addEl(pillarBL);
+                        crossingTile->addChild(pillarBL->shared_from_this());
+
+                        MeshTree* pillarBR = new MeshTree(
+                            "pillarBL", initialState.pillarBR.second, initialState.pillarBR.first);
+                        
+                        MemoryManager::addEl(pillarBR);
+                        crossingTile->addChild(pillarBR->shared_from_this());
+
+                        MeshTree* pillarTR = new MeshTree(
+                            "pillarBL", initialState.pillarTR.second, initialState.pillarTR.first);
+                        
+                        MemoryManager::addEl(pillarTR);
+                        crossingTile->addChild(pillarTR->shared_from_this());
+
+
+                        MeshTree* floorT = new MeshTree(
+                            "floor", initialState.floor.second, initialState.floor.first);
+                        
+                        MemoryManager::addEl(floorT);
+                        crossingTile->addChild(floorT->shared_from_this());
+
                         break;
                     } case TileType::ROOM1: {
                         MeshTree* roomTile = new MeshTree(

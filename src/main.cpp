@@ -300,17 +300,64 @@ int main(int argc, char* argv[]) {
     Mesh tjunctionCPU  = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj"));
     Mesh tunnelCPU     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj"));
     Mesh turnCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj"));
+
+
+    // Tile pieces:
+    Mesh floorCPU          = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "floor.obj"));
+    Mesh pillarBLCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "pillar_bottom_left.obj"));
+    Mesh pillarBRCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "pillar-bottom-right.obj"));
+    Mesh pillarTLCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "pillar-top-left.obj"));
+    Mesh pillarTRCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "pillar-top-right.obj"));
+    Mesh wallHRCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "walf-half-right.obj"));
+    Mesh wallHBCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-half-bottom.obj"));
+    Mesh wallHTCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-half-top.obj"));
+    Mesh wallFBCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-full-bottom.obj"));
+    Mesh wallFRCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-full-right.obj"));
+    Mesh wallFTCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-full-top.obj"));
+    // Mesh wallHTCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-half-top.obj"));
+    
+
     GPUMesh crossing(crossingCPU);
     GPUMesh room(roomCPU);
     GPUMesh tjunction(tjunctionCPU);
     GPUMesh tunnel(tunnelCPU);
     GPUMesh turn(turnCPU);
+
+
+    GPUMesh floorT(floorCPU);
+    GPUMesh pillarBL(pillarBLCPU);
+    GPUMesh pillarBR(pillarBRCPU);
+    GPUMesh pillarTL(pillarTLCPU);
+    GPUMesh pillarTR(pillarTRCPU);
+    GPUMesh wallHR(wallHRCPU);
+    GPUMesh wallHB(wallHBCPU);
+    GPUMesh wallHT(wallHTCPU);
+    GPUMesh wallFB(wallFBCPU);
+    GPUMesh wallFR(wallFRCPU);
+    GPUMesh wallFT(wallFTCPU);
+
     HitBox crossingHitBox   = HitBox::makeHitBox(crossingCPU,   false);
     HitBox roomHitBox       = HitBox::makeHitBox(roomCPU,       false);
     HitBox tjunctionHitBox  = HitBox::makeHitBox(tjunctionCPU,  false);
     HitBox tunnelHitBox     = HitBox::makeHitBox(tunnelCPU,     false);
     HitBox turnHitbox       = HitBox::makeHitBox(turnCPU,       false);
-    std::array<GPUMesh*, 5UL> tileMeshes = { &crossing, &room, &tjunction, &tunnel, &turn };
+
+
+    HitBox floorHitbox          = HitBox::makeHitBox(floorCPU,       false);
+    HitBox pillarBLHitbox       = HitBox::makeHitBox(pillarBLCPU,       true);
+    HitBox pillarBRHitbox       = HitBox::makeHitBox(pillarBRCPU,       true);
+    HitBox pillarTLHitbox       = HitBox::makeHitBox(pillarTLCPU,       true);
+    HitBox pillarTRHitbox       = HitBox::makeHitBox(pillarTRCPU,       true);
+    HitBox wallHRHitbox         = HitBox::makeHitBox(wallHRCPU,       true);
+    HitBox wallHBHitbox         = HitBox::makeHitBox(wallHBCPU,       true);
+    HitBox wallHTHitbox         = HitBox::makeHitBox(wallHTCPU,       true);
+    HitBox wallFBHitbox         = HitBox::makeHitBox(wallFBCPU,       true);
+    HitBox wallFRHitbox         = HitBox::makeHitBox(wallFRCPU,       true);
+    HitBox wallFTHitbox         = HitBox::makeHitBox(wallFTCPU,       true);
+
+
+    std::array<GPUMesh*, 16UL> tileMeshes = { &crossing, &room, &tjunction, &tunnel, &turn, &floorT, &pillarBL, &pillarBR,
+     &pillarTL, &pillarTR, &wallHR, &wallHB, &wallHT, &wallFB, &wallFR, &wallFT};
     for (GPUMesh* mesh : tileMeshes) {
         mesh->setAlbedo(albedoStone);
         mesh->setAO(aoStone);
@@ -402,7 +449,17 @@ int main(int argc, char* argv[]) {
         .stand1     = std::make_pair(&stand1, stand1HitBox),
         .stand2     = std::make_pair(&stand2, stand2HitBox),
         .suzanne    = std::make_pair(&suzanne, suzanneHitbox),
-
+        .floor      = std::make_pair(&floorT, floorHitbox),
+        .pillarBL   = std::make_pair(&pillarBL, floorHitbox),
+        .pillarBR   = std::make_pair(&pillarBR, pillarBRHitbox),
+        .pillarTL   = std::make_pair(&pillarTL, pillarTLHitbox),
+        .pillarTR   = std::make_pair(&pillarTR, pillarTRHitbox),
+        .wallHR     = std::make_pair(&wallHR, wallHRHitbox),
+        .wallHB     = std::make_pair(&wallHB, wallHBHitbox),
+        .wallHT     = std::make_pair(&wallHT, wallHTHitbox),
+        .wallFB     = std::make_pair(&wallFB, wallFBHitbox),
+        .wallFR     = std::make_pair(&wallFR, wallFRHitbox),
+        .wallFT     = std::make_pair(&wallFT, wallFTHitbox),
         .bezierCurveManager = bezierCurveManager,
         .lightManager       = lightManager,
         .cameras            = cameras,

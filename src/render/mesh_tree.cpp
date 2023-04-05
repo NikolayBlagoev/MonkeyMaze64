@@ -85,7 +85,7 @@ glm::vec3 MeshTree::getTransformedHitBoxMiddle() {
 bool MeshTree::collide(MeshTree *other) {
     if (other == nullptr            || other == this ||
         !this->hitBox.has_value()   || !other->hitBox.has_value()) { return false; }
-    return ((this->hitBox.value().allowCollision && other->hitBox.value().allowCollision) &&
+    return ((!this->hitBox.value().allowCollision || !other->hitBox.value().allowCollision) &&
              this->getTransformedHitBox().collides(other->getTransformedHitBox()));
 }
 
@@ -115,7 +115,7 @@ bool MeshTree::tryTranslation(glm::vec3 translation, MeshTree* root) {
 
     MeshTree* other = collidesWith(root, this);
     if (other == nullptr) { return true; }
-
+    std::cout<<"collision!!"<<std::endl;
     float newDist = glm::distance(this->getTransformedHitBoxMiddle(), other->getTransformedHitBoxMiddle());
     this->transform.translate -= translation;
     float oldDist = glm::distance(this->getTransformedHitBoxMiddle(), other->getTransformedHitBoxMiddle());

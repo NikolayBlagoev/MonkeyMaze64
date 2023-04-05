@@ -25,7 +25,18 @@ struct InitialState {
     MeshHitBoxRefs stand1;
     MeshHitBoxRefs stand2;
     MeshHitBoxRefs suzanne;
-
+    MeshHitBoxRefs floor;
+    MeshHitBoxRefs pillarBL;
+    MeshHitBoxRefs pillarBR;
+    MeshHitBoxRefs pillarTL;
+    MeshHitBoxRefs pillarTR;
+    MeshHitBoxRefs wallHR;
+    MeshHitBoxRefs wallHB;
+    MeshHitBoxRefs wallHT;
+    MeshHitBoxRefs wallFB;
+    MeshHitBoxRefs wallFR;
+    MeshHitBoxRefs wallFT;
+    
     // External objects
     BezierCurveManager& bezierCurveManager;
     LightManager& lightManager;
