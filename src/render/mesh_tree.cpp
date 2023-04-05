@@ -55,8 +55,12 @@ glm::mat4 MeshTree::modelMatrix() const {
         pl->position = currTransform * glm::vec4(0.f, 0.f, 0.f, 1.f);
     }
     if (al != nullptr) {
-        al->position        = currTransform * glm::vec4(0.f, 0.f, 0.f, 1.f);
-        al->externalForward = glm::normalize(currTransform * glm::vec4(-1.f, 0.f, 0.f, 1.f));
+        glm::vec4 tmp = currTransform * glm::vec4(0.f, 0.f, 0.f, 1.f);
+        tmp /= tmp.w;
+        al->position        = tmp;
+        tmp = currTransform * glm::vec4(-1.f, 0.f, 0.f, 1.f);
+        tmp /= tmp.w;
+        al->externalForward = tmp;
     }
 
     return currTransform;
