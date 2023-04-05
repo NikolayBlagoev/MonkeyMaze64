@@ -66,6 +66,7 @@ private:
     HitBox getTransformedHitBox();
     glm::vec3 getTransformedHitBoxMiddle();
     bool collide(MeshTree* other);
+    std::shared_ptr<EnemyCamera> enemyCam;
 };
 
 class MemoryManager {
