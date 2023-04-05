@@ -34,6 +34,9 @@ DISABLE_WARNINGS_POP()
 // Game state
 // TODO: Have a separate struct for this if it becomes too much
 bool cameraZoomed = false;
+bool playerDetected = false;
+bool xToonPowerUp = false;
+std::chrono::time_point<std::chrono::high_resolution_clock> playerLastDetected;
 std::mutex m;
 std::condition_variable cv;
 bool ready_ = false;
@@ -87,7 +90,9 @@ void backgroundMazeGeneration() {
             }else{
                 gen->remove_head((dir/10)%10, dir%10);
             }
+            gen->visualise(gen->board, 7, 7);
             gen->assign_all(&(gen->dq));
+            gen->visualise(gen->board, 7, 7);
             ready_ = false;
             
             boardCopy = gen->board;
@@ -132,7 +137,8 @@ void mouseButtonCallback(int button, int action, int mods) {
     else if (action == GLFW_RELEASE) { onMouseReleased(button, mods); }
 }
 
-void makeCameraMoves(){
+void makeCameraMoves(glm::vec3 playerPos, std::chrono::time_point<std::chrono::high_resolution_clock> curr_time){
+    bool curr_detected = false;
     for(size_t i = 0; i < cameras.size(); i++){
         if(cameras.at(i).expired()){
             cameras.erase(cameras.begin() + i);
@@ -141,6 +147,17 @@ void makeCameraMoves(){
         }
         std::shared_ptr<EnemyCamera> cam = cameras.at(i).lock();
         // IF PLAYER IN VIEW DO STUFF
+        if(!xToonPowerUp  && cam.get()->canSeePoint(playerPos, 15.f)){
+            if(!playerDetected){
+                playerLastDetected = curr_time;
+            }
+            *(cam.get()->color) = glm::vec3(1.f,0.f,0.f);
+            curr_detected = true;
+            std::cout<<"DETECTED"<<std::endl;
+            continue;
+        }else{
+            *(cam.get()->color) = glm::vec3(0.f,1.f,1.f);
+        }
         // OTHERWISE:
         if(cam.get()->motion_left){
             if(cam.get()->camera->w <= -45.f){
@@ -158,6 +175,7 @@ void makeCameraMoves(){
             }
         }
     }
+    playerDetected = curr_detected;
 }
 
 int main(int argc, char* argv[]) {
@@ -403,15 +421,15 @@ int main(int argc, char* argv[]) {
     MeshTree* playerLight = new MeshTree("player light", std::nullopt);
     MemoryManager::addEl(playerLight);
     playerLight->transform.translate = playerLightOffset;
-    playerLight->pl = lightManager.addPointLight(glm::vec3(0.f), glm::vec3(1.0f, 0.5f, 0.0f), 0.3f);
+    playerLight->pl = lightManager.addPointLight(glm::vec3(0.f), glm::vec3(1.0f, 0.5f, 0.0f), 1.0f);
     player->addChild(playerLight->shared_from_this());
 
     // Add test lights
-    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
-    lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 3.0f);
-    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 3.0f);
-    lightManager.addAreaLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
-    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
+    // lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
+    // lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 3.0f);
+    // lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 3.0f);
+    // lightManager.addAreaLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
+    // lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
 
     // Init MeshTree root
     MeshTree* boardRoot = new MeshTree("board root", std::nullopt);
@@ -430,6 +448,7 @@ int main(int argc, char* argv[]) {
     // Bezier curve book-keeping
     bool prev_motion                        = motion;
     std::chrono::time_point start_motion    = millisec_since_epoch;
+    playerLastDetected                      = millisec_since_epoch;
     glm::vec3 prev_pos                      = playerPos;
 
     // Create root node of board
@@ -474,8 +493,24 @@ int main(int argc, char* argv[]) {
             boardRoot->addChild(b->board[i][j]->shared_from_this());
     }
 
+    
+
     // Main loop
     while (!m_window.shouldClose()) {
+        
+        bool xPressed = m_window.isKeyPressed(GLFW_KEY_X);
+
+        if (xPressed != xToonPowerUp) { // state change
+            if (!xPressed)
+                renderConfig.lightingModel = LightingModel::PBR;
+            if (xPressed)
+                renderConfig.lightingModel = LightingModel::XToon;
+
+            deferredRenderer.initLightingShader();
+
+            xToonPowerUp = xPressed;
+        }
+
         playerPos = (player->transform.translate);
         for (size_t childIdx = 0; childIdx < monkeyHeads.size(); childIdx++) {
             std::weak_ptr<MeshTree> head = monkeyHeads.at(childIdx);
@@ -501,7 +536,7 @@ int main(int argc, char* argv[]) {
         Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
         std::chrono::time_point curr_frame = timer.now();
         bezierCurveManager.timeStep(curr_frame);
-        makeCameraMoves();
+        makeCameraMoves(playerPos, curr_frame);
         float delta = std::chrono::duration<float>(curr_frame - millisec_since_epoch).count();
         int rem = static_cast<int>(floor(delta / 0.4f));
         float pos = delta - 0.4f*rem;
@@ -523,7 +558,11 @@ int main(int argc, char* argv[]) {
         }
 
         // Clear the screen
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        if (!xToonPowerUp)
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        else
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
@@ -556,7 +595,7 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
+                
             }else{
                 dir = 2;
                 b->shiftRight(lightManager);
@@ -576,9 +615,10 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
+               
 
             }
+            prev_pos.z = playerPos.z;
         }
 
         if(fabs(playerPos.x - prev_pos.x) >= 2.0f * utils::TILE_LENGTH_X){
@@ -611,7 +651,7 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
+                
             }else{
                 dir = 1;
                 b->shiftUp(lightManager);
@@ -631,9 +671,9 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
-
+                
             }
+            prev_pos.x = playerPos.x;
         }
 
         // Controls
@@ -650,7 +690,7 @@ int main(int argc, char* argv[]) {
 
         // Particle simulation
         particleEmitterManager.updateEmitters();
-
+        player->modelMatrix();
         // Render shadow maps
         utils::renderShadowMaps(scene.root, renderConfig, lightManager);
 

@@ -46,6 +46,8 @@ public:
     void addChild(std::shared_ptr<MeshTree> child);
     glm::mat4 modelMatrix() const;
 
+    // IF THIS GOES SOMEWHERE ELSE MY APPLICATION WILL NOT RUN!!?!?!? IDK WHY?!?!?! C++ PLEASE! PLEASE!!! WHY?!?!?!
+    std::shared_ptr<EnemyCamera> enemyCam;
 public:
     // Intrinsic properties
     std::string tag;
@@ -61,12 +63,12 @@ public:
     // External objects manipulated by node
     AreaLight*  al { nullptr };
     PointLight* pl { nullptr };
-
+    
 private:
     HitBox getTransformedHitBox();
     glm::vec3 getTransformedHitBoxMiddle();
     bool collide(MeshTree* other);
-    std::shared_ptr<EnemyCamera> enemyCam;
+
 };
 
 class MemoryManager {
