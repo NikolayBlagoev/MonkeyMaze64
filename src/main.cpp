@@ -251,7 +251,7 @@ int main(int argc, char* argv[]) {
     MeshTree* playerLight = new MeshTree("player light");
     MemoryManager::addEl(playerLight);
     playerLight->transform.translate = playerLightOffset;
-    playerLight->pl = lightManager.addPointLight(glm::vec3(0.f), glm::vec3(1.0f, 0.5f, 0.0f), 0.3f);
+    playerLight->pl = lightManager.addPointLight(glm::vec3(0.f), glm::vec3(1.0f, 0.5f, 0.0f), 1.0f);
     player->addChild(playerLight->shared_from_this());
 
     MeshTree* tempMesh = new MeshTree("dragon particle", &dragonMesh, playerPos + glm::vec3(1.0f, 0.0f, 0.0f),
@@ -269,11 +269,11 @@ int main(int argc, char* argv[]) {
     Mesh turn = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj"));
 
     // Add test lights
-    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
-    lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 3.0f);
-    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 3.0f);
-    lightManager.addAreaLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
-    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
+    // lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
+    // lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 3.0f);
+    // lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 3.0f);
+    // lightManager.addAreaLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
+    // lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
 
     // Add particle emitter(s)
     particleEmitterManager.addEmitter({ 1.0f, 1.0f, 1.0f });
@@ -307,8 +307,24 @@ int main(int argc, char* argv[]) {
             boardRoot->addChild(b->board[i][j]->shared_from_this());
     }
 
+    bool xToonPowerUp = false;
+
     // Main loop
     while (!m_window.shouldClose()) {
+        
+        bool xPressed = m_window.isKeyPressed(GLFW_KEY_X);
+
+        if (xPressed != xToonPowerUp) { // state change
+            if (!xPressed)
+                renderConfig.lightingModel = LightingModel::PBR;
+            if (xPressed)
+                renderConfig.lightingModel = LightingModel::XToon;
+
+            deferredRenderer.initLightingShader();
+
+            xToonPowerUp = xPressed;
+        }
+
         playerPos = (player->transform.translate);
         for (size_t childIdx = 0; childIdx < monkeyHeads.size(); childIdx++) {
             std::weak_ptr<MeshTree> head = monkeyHeads.at(childIdx);
@@ -356,7 +372,11 @@ int main(int argc, char* argv[]) {
         }
 
         // Clear the screen
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        if (!xToonPowerUp)
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        else
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
