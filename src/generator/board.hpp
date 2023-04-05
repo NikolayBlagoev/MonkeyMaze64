@@ -209,17 +209,6 @@ public:
                 std::cout<<"putting monkey"<<std::endl;
                 room->addChild(ret->shared_from_this());
                 monkeyHeads.push_back(ret->shared_from_this());
-                // BezierCurve<glm::vec3> b3d              = BezierCurve<glm::vec3>(glm::vec3(-3.f, 2.f, 0.f), glm::vec3(-3.3f , 3.f, 0.f), glm::vec3(-2.7f , 4.f, 0.f), glm::vec3(-3.f, 5.f, 0.f), 10.f);
-                // BezierCurve<glm::vec3> b3d2             = BezierCurve<glm::vec3>(glm::vec3(-3.f, 5.f, 0.f), glm::vec3(-2.7f , 4.f, 0.f), glm::vec3(-3.3f , 3.f, 0.f), glm::vec3(-3.f, 2.f, 0.f), 10.f);
-                // BezierComposite<glm::vec3> b3c          = BezierComposite<glm::vec3>({b3d, b3d2}, true, 20.f);
-                // BezierComboComposite<glm::vec3> combo   = BezierComboComposite<glm::vec3>(b3c, &ret->transform.translate, ret->shared_from_this());
-                // rndrr.add3dComposite(combo);
-
-                // BezierCurve<glm::vec4> b4d              = BezierCurve<glm::vec4>(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
-                // BezierCurve<glm::vec4> b4d2             = BezierCurve<glm::vec4>(glm::vec4(0.f , 1.f, 0.f, 0.f) , glm::vec4(0.f , -0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , -0.3826834f, 0.f, 0.9238795f),  glm::vec4(0.f, -0.0005f, 0.f, 0.9999999f), 10.f);
-                // BezierComposite<glm::vec4> b4c          = BezierComposite<glm::vec4>({b4d, b4d2}, true, 20.f);
-                // BezierComboComposite<glm::vec4> combo2  = BezierComboComposite<glm::vec4>(b4c, &ret->transform.selfRotate, ret->shared_from_this());
-                // rndrr.add4dComposite(combo2);
             }
         }
     }

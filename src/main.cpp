@@ -65,8 +65,6 @@ void signalChange(){
     }
 }
 
-float eulerDistance(glm::vec4 a, glm::vec4 b) { return sqrtf(pow(a.x - b.x, 2.0f) + pow(a.y - b.y, 2.0f) + pow(a.z - b.z, 2.0f)); }
-
 void worker_thread()
 {
     
@@ -109,6 +107,7 @@ void worker_thread()
     *ready = false;
     
 }
+
 void onKeyPressed(int key, int) {
     switch (key) {
         case GLFW_KEY_LEFT_CONTROL:
@@ -128,9 +127,7 @@ void onKeyReleased(int key, int) {
 
 void onMouseMove(const glm::dvec2&) {}
 
-void onMouseClicked(int , int ) {
-    // signalChange();
-}
+void onMouseClicked(int , int ) {}
 
 void onMouseReleased(int , int ) {}
 
@@ -205,41 +202,94 @@ int main(int argc, char* argv[]) {
     // Load shadow shaders
     utils::initShadowShaders();
 
-    // Load textures
-    std::weak_ptr<const Texture> rustAlbedo     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
-    std::weak_ptr<const Texture> rustNormal     = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_normal.png");
-    std::weak_ptr<const Texture> rustMetallic   = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_metallic.png");
-    std::weak_ptr<const Texture> rustRoughness  = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_roughness.png");
-    std::weak_ptr<const Texture> stoneAlbedo    = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
-    std::weak_ptr<const Texture> stoneNormal    = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
-    std::weak_ptr<const Texture> stoneRoughness = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
-    std::weak_ptr<const Texture> stoneAO        = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "rustediron2_basecolor.png");
+    // Constant names for all textures
+    constexpr std::string_view textureAlbedo        = "color_map.jpg";
+    constexpr std::string_view textureAO            = "ao_map.jpg";
+    constexpr std::string_view textureDisplacement  = "displacement_map.jpg";
+    constexpr std::string_view textureMetalness     = "metalness_map.jpg";
+    constexpr std::string_view textureNormal        = "normal_map_opengl.jpg";
+    constexpr std::string_view textureRoughness     = "roughness_map.jpg";
 
-    // Load meshes
-    Mesh camera = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "camera.obj"));
-    Mesh aperture = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "aperture.obj"));
-    Mesh stand2 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "stand2.obj"));
-    Mesh stand1 = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "stand1.obj"));
-    Mesh suzanne = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "suzanne.obj"));
-    Mesh dragonMesh = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj"));
+    /********** Texture loading **********/
+    // Crystal
+    std::filesystem::path crystalTextureFolder = utils::RESOURCES_DIR_PATH / "textures" / "Crystal";
+    std::array<std::string, 7UL> crystalColors = { "blue", "green", "purple", "red", "sky", "white", "yellow" };
+    std::array<std::weak_ptr<const Texture>, 7UL> albedoCrystals;
+    for (size_t textureIdx = 0UL; textureIdx < albedoCrystals.size(); textureIdx++) {
+        albedoCrystals[textureIdx] = textureManager.addTexture(crystalTextureFolder / ("color_map_" + crystalColors[textureIdx] + ".jpg"));
+    }
+    std::weak_ptr<const Texture> aoCrystal              = textureManager.addTexture(crystalTextureFolder / textureAO);
+    std::weak_ptr<const Texture> displacementCrystal    = textureManager.addTexture(crystalTextureFolder / textureDisplacement);
+    std::weak_ptr<const Texture> metalnessCrystal       = textureManager.addTexture(crystalTextureFolder / textureMetalness);
+    std::weak_ptr<const Texture> normalCrystal          = textureManager.addTexture(crystalTextureFolder / textureNormal);
+    std::weak_ptr<const Texture> roughnessCrystal       = textureManager.addTexture(crystalTextureFolder / textureRoughness);
 
+    // Glass
+    std::filesystem::path glassTextureFolder        = utils::RESOURCES_DIR_PATH / "textures" / "Glass Blocks";
+    std::weak_ptr<const Texture> albedoGlass        = textureManager.addTexture(glassTextureFolder / textureAlbedo);
+    std::weak_ptr<const Texture> aoGlass            = textureManager.addTexture(glassTextureFolder / textureAO);
+    std::weak_ptr<const Texture> displacementGlass  = textureManager.addTexture(glassTextureFolder / textureDisplacement);
+    std::weak_ptr<const Texture> normalGlass        = textureManager.addTexture(glassTextureFolder / textureNormal);
+    std::weak_ptr<const Texture> roughnessGlass     = textureManager.addTexture(glassTextureFolder / textureRoughness);
+
+    // Stone
+    std::filesystem::path stoneTextureFolder        = utils::RESOURCES_DIR_PATH / "textures" / "Mossy Stone";
+    std::weak_ptr<const Texture> albedoStone        = textureManager.addTexture(stoneTextureFolder / textureAlbedo);
+    std::weak_ptr<const Texture> aoStone            = textureManager.addTexture(stoneTextureFolder / textureAO);
+    std::weak_ptr<const Texture> displacementStone  = textureManager.addTexture(stoneTextureFolder / textureDisplacement);
+    std::weak_ptr<const Texture> metalnessStone     = textureManager.addTexture(stoneTextureFolder / textureMetalness);
+    std::weak_ptr<const Texture> normalStone        = textureManager.addTexture(stoneTextureFolder / textureNormal);
+    std::weak_ptr<const Texture> roughnessStone     = textureManager.addTexture(stoneTextureFolder / textureRoughness);
+
+    // Metal
+    std::filesystem::path metalTextureFolder        = utils::RESOURCES_DIR_PATH / "textures" / "Rusty Metal";
+    std::weak_ptr<const Texture> albedoMetal        = textureManager.addTexture(metalTextureFolder / textureAlbedo);
+    std::weak_ptr<const Texture> aoMetal            = textureManager.addTexture(metalTextureFolder / textureAO);
+    std::weak_ptr<const Texture> displacementMetal  = textureManager.addTexture(metalTextureFolder / textureDisplacement);
+    std::weak_ptr<const Texture> metalnessMetal     = textureManager.addTexture(metalTextureFolder / textureMetalness);
+    std::weak_ptr<const Texture> normalMetal        = textureManager.addTexture(metalTextureFolder / textureNormal);
+    std::weak_ptr<const Texture> roughnessMetal     = textureManager.addTexture(metalTextureFolder / textureRoughness);
+
+    // Fur
+    std::filesystem::path furTextureFolder      = utils::RESOURCES_DIR_PATH / "textures" / "Yeti Fur";
+    std::array<std::string, 6UL> hyperFurColors = { "blue", "green", "red", "violet", "white", "yellow"};
+    std::array<std::weak_ptr<const Texture>, 6UL> albedoHyperFur;
+    for (size_t textureIdx = 0UL; textureIdx < albedoHyperFur.size(); textureIdx++) {
+        albedoHyperFur[textureIdx] = textureManager.addTexture(furTextureFolder / ("color_map_" + hyperFurColors[textureIdx] + ".jpg"));
+    }
+    std::weak_ptr<const Texture> albedoFur          = textureManager.addTexture(furTextureFolder / textureAlbedo);
+    std::weak_ptr<const Texture> aoFur              = textureManager.addTexture(furTextureFolder / textureAO);
+    std::weak_ptr<const Texture> displacementFur    = textureManager.addTexture(furTextureFolder / textureDisplacement);
+    std::weak_ptr<const Texture> normalFur          = textureManager.addTexture(furTextureFolder / textureNormal);
+    std::weak_ptr<const Texture> roughnessFur       = textureManager.addTexture(furTextureFolder / textureRoughness);
+    /*************************************/
+
+    // Load object meshes
+    Mesh camera     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "camera.obj"));
+    Mesh aperture   = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "aperture.obj"));
+    Mesh stand2     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "stand2.obj"));
+    Mesh stand1     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "stand1.obj"));
+    Mesh suzanne    = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "suzanne.obj"));
+
+    // Load player character animation models and set textures
     Mesh defaultMonkeyPose = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose0.obj"));
-
     std::vector<GPUMesh> monkeyPoses;
     monkeyPoses.emplace_back(defaultMonkeyPose);
-
     for (int i = 1; i < 16; ++i) {
-
-        auto fileName = "monkeypose" + std::to_string(i * 2)+ ".obj";
-
-        Mesh cpuMesh = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / fileName));
+        // Load model and create mesh object
+        auto fileName   = "monkeypose" + std::to_string(i * 2)+ ".obj";
+        Mesh cpuMesh    = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / fileName));
         monkeyPoses.emplace_back(cpuMesh);
+
+        // Link textures
+        monkeyPoses[i].setAlbedo(albedoFur);
+        monkeyPoses[i].setAO(aoFur);
+        monkeyPoses[i].setDisplacement(displacementFur, true);
+        monkeyPoses[i].setNormal(normalFur);
+        monkeyPoses[i].setRoughness(roughnessFur);
     }
 
-    MeshTree* bezierDragon = new MeshTree("bezier dragon", &dragonMesh);
-    MemoryManager::addEl(bezierDragon);
-    scene.addMesh(bezierDragon->shared_from_this());
-
+    // Add player mesh node
     MeshTree* player = new MeshTree("player", &defaultMonkeyPose, playerPos,
                                     glm::vec4(0.0f, 1.0f, 0.0f, 180.0f),
                                     glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
@@ -248,25 +298,19 @@ int main(int argc, char* argv[]) {
     MemoryManager::addEl(player);
     scene.addMesh(player->shared_from_this());
 
+    // Add player torch mesh node
     MeshTree* playerLight = new MeshTree("player light");
     MemoryManager::addEl(playerLight);
     playerLight->transform.translate = playerLightOffset;
     playerLight->pl = lightManager.addPointLight(glm::vec3(0.f), glm::vec3(1.0f, 0.5f, 0.0f), 0.3f);
     player->addChild(playerLight->shared_from_this());
 
-    MeshTree* tempMesh = new MeshTree("dragon particle", &dragonMesh, playerPos + glm::vec3(1.0f, 0.0f, 0.0f),
-                                   glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
-                                   glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
-                                   glm::vec3(1.0f),
-                                   false);
-    MemoryManager::addEl(tempMesh);
-    scene.addMesh(tempMesh->shared_from_this());
-
-    Mesh crossing = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj"));
-    Mesh room = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj"));
-    Mesh tjunction = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj"));
-    Mesh tunnel = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj"));
-    Mesh turn = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj"));
+    // Load tile meshes
+    Mesh crossing   = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj"));
+    Mesh room       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj"));
+    Mesh tjunction  = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj"));
+    Mesh tunnel     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj"));
+    Mesh turn       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj"));
 
     // Add test lights
     lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
@@ -275,10 +319,7 @@ int main(int argc, char* argv[]) {
     lightManager.addAreaLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
     lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
 
-    // Add particle emitter(s)
-    particleEmitterManager.addEmitter({ 1.0f, 1.0f, 1.0f });
-
-    // Init MeshTree
+    // Init MeshTree root
     MeshTree* boardRoot = new MeshTree("board root");
     MemoryManager::addEl(boardRoot);
     boardRoot->transform.translate = offsetBoard;
@@ -296,6 +337,7 @@ int main(int argc, char* argv[]) {
     std::chrono::time_point start_motion    = millisec_since_epoch;
     glm::vec3 prev_pos                      = playerPos;
 
+    // Create root node of board
     boardRoot = new MeshTree("boardoot");
     MemoryManager::addEl(boardRoot);
     scene.root->addChild(boardRoot->shared_from_this());
@@ -319,7 +361,7 @@ int main(int argc, char* argv[]) {
             MeshTree* headMesh = head.lock().get();
             glm::vec4 monkeyPose = headMesh->modelMatrix()*glm::vec4(0.f, 0.f, 0.f, 1.f);
             monkeyPose = monkeyPose/monkeyPose.w;
-            float dist = eulerDistance(monkeyPose,  glm::vec4(playerPos, 1.f));
+            float dist = utils::eulerDistIgnoreW(monkeyPose,  glm::vec4(playerPos, 1.f));
             
             if (dist < 1.0f) { 
                 std::cout<<"COLLIDE!!"<<std::endl;
