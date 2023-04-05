@@ -81,7 +81,7 @@ struct RenderConfig {
 
     // Shadow maps
     float areaShadowFovY    { 60.0f }; // Degrees
-    float shadowNearPlane   { 0.5f };
+    float shadowNearPlane   { 0.1f };
     float shadowFarPlane    { 30.0f };
 
     glm::mat4 areaShadowMapsProjectionMatrix() const {
