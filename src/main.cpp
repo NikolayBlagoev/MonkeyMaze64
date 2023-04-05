@@ -437,7 +437,7 @@ int main(int argc, char* argv[]) {
         }
 
         if(fabs(playerPos.x - prev_pos.x) >= 2*factorx){
-            if(playerPos.x > prev_pos.x){
+            if(playerPos.x < prev_pos.x){
                 std::cout<<"down"<<std::endl;
                 dir = 3;
                 b->move_d(lightManager);
