@@ -429,7 +429,7 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
+                
             }else{
                 dir = 2;
                 b->move_r(lightManager);
@@ -450,9 +450,10 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
+               
 
             }
+            prev_pos.z = playerPos.z;
         }
 
         if(fabs(playerPos.x - prev_pos.x) >= 2*factorx){
@@ -486,7 +487,7 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
+                
             }else{
                 dir = 1;
                 b->move_u(lightManager);
@@ -507,9 +508,9 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
-
+                
             }
+            prev_pos.x = playerPos.x;
         }
 
         // Controls

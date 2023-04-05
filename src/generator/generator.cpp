@@ -279,10 +279,66 @@ int Generator::remove_options(Defined* node, int mm, int mx){
     return dir_min*100 + min_node;
 }
 
+int Generator::remove_own_options(Defined* node){
+    if(node == nullptr || !node->empty){
+        return 0;
+    }
+    int min_node = 99;
+    int dir_min = 0;
+    Defined* up = node->up;
+    int count = 0;
+    if(up != nullptr && !up->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[up->tileType-1][2] == opens[i][0]) count++;
+            node->possible[i] = node->possible[i] && opens[up->tileType-1][2] == opens[i][0];
+            
+        }
+
+    }
+
+    Defined* right = node->right;
+    if(right != nullptr && !right->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[right->tileType-1][3] == opens[i][1]) count++;
+            node->possible[i] = node->possible[i] && opens[right->tileType-1][3] == opens[i][1];
+           
+        }
+
+    }
+
+    Defined* down = node->down;
+    
+    if(down != nullptr && !down->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[down->tileType-1][0] == opens[i][2]) count++;
+            node->possible[i] = node->possible[i] && opens[down->tileType-1][0] == opens[i][2];
+            
+        }
+
+    }
+
+
+    Defined* left = node->left;
+    if(left != nullptr && !left->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[left->tileType-1][1] == opens[i][3]) count++;
+            node->possible[i] = node->possible[i] && opens[left->tileType-1][1] == opens[i][3];
+            
+        }
+
+    }
+    return count;
+}
+
 void Generator::constrain(Defined* nd, int opts){
     if(nd == nullptr || !nd->empty){
         return;
     }
+    opts -= remove_own_options(nd);
     bool flag = true;
     while(flag){
         int chs = rand() % (18-opts);
