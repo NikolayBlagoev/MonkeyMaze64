@@ -13,7 +13,7 @@ DISABLE_WARNINGS_POP()
 enum class SpecialObjType { Collectible, EnemyCamera };
 enum class TileType { INVALID,
                       CROSSING,                     // Values as of this one MUST start at 1 for pre-existing generation arithmetic to work. I tried
-                      ROOM1, ROOM2, ROOM3, ROOM4,   // My assumption as a dude doing refactoring is that these correspond to left-right-up-down, but I don't know which is which
+                      ROOM1, ROOM2, ROOM3, ROOM4,   // My assumption as a dude doing refactoring is that the numbers correspond to left-right-up-down, but I don't know which is which
                       EMPTY,
                       TUNNEL1, TUNNEL2, TUNNEL3, TUNNEL4,
                       TURN1, TURN2, TURN3, TURN4,

@@ -130,8 +130,7 @@ void LightManager::removePointLight(size_t idx) {
 }
 
 void LightManager::removeByReference(PointLight *pl) {
-    if (pl == nullptr)
-        return;
+    if (pl == nullptr) { return; }
 
     for (int i = 0; i < pointLights.size(); i++) {
         PointLight* curLight = pointLights[i];
@@ -220,10 +219,9 @@ std::vector<AreaLightShader> LightManager::createAreaLightsShaderData() {
 }
 
 void LightManager::removeByReference(AreaLight* al){
-    if (al == nullptr)
-        return;
+    if (al == nullptr) { return; }
 
-    for (int i = 0; i < areaLights.size(); i++) {
+    for (size_t i = 0; i < areaLights.size(); i++) {
         AreaLight* curLight = areaLights[i];
         if(curLight != al){
             continue;

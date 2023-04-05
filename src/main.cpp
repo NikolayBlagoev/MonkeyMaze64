@@ -184,10 +184,10 @@ int main(int argc, char* argv[]) {
     std::thread worker(backgroundMazeGeneration);
 
     // Player position data
-    glm::vec3 playerPos = glm::vec3(0.0f, -0.1f, 1.0f);
-    glm::vec3 playerMiddleOffset = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 playerCameraPos = playerPos + glm::vec3(0.0f, 1.0f, 1.5f) + playerMiddleOffset;
-    glm::vec3 playerLightOffset = glm::vec3(-0.9f, 2.5f, 1.3f);
+    glm::vec3 playerPos             = glm::vec3(0.0f, -0.1f, 1.0f);
+    glm::vec3 playerMiddleOffset    = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 playerCameraPos       = playerPos + glm::vec3(0.0f, 1.0f, 1.5f) + playerMiddleOffset;
+    glm::vec3 playerLightOffset     = glm::vec3(-0.9f, 2.5f, 1.3f);
 
     // Init core objects
     RenderConfig renderConfig;
@@ -300,7 +300,7 @@ int main(int argc, char* argv[]) {
         component->setRoughness(roughnessMetal);
     }
     GPUMesh suzanne(suzanneCPU);
-    suzanne.setAlbedo(albedoCrystals[0]); // TODO: Link to placement logic so which texture is used is varied
+    suzanne.setAlbedo(albedoCrystals[3]); // TODO: Link to placement logic so which texture is used is varied
     suzanne.setAO(aoCrystal);
     suzanne.setDisplacement(displacementCrystal, true);
     suzanne.setMetallic(metalnessCrystal);
@@ -420,16 +420,19 @@ int main(int argc, char* argv[]) {
     // Add player torch mesh node
     MeshTree* playerLight = new MeshTree("player light", std::nullopt);
     MemoryManager::addEl(playerLight);
-    playerLight->transform.translate = playerLightOffset;
-    playerLight->pl = lightManager.addPointLight(glm::vec3(0.f), glm::vec3(1.0f, 0.5f, 0.0f), 1.0f);
+    playerLight->transform.translate                = playerLightOffset;
+    playerLight->pl                                 = lightManager.addPointLight(glm::vec3(0.0f), glm::vec3(1.0f, 0.5f, 0.0f), 6.0f);
+    playerLight->particleEmitter                    = particleEmitterManager.addEmitter(glm::vec3(0.0f));
+    playerLight->particleEmitter->m_baseColor       = glm::vec4(0.75f, 0.4f, 0.1f, 0.1f);
+    playerLight->particleEmitter->m_baseVelocity    = glm::vec3(0.0f, 0.01f, 0.0f);
     player->addChild(playerLight->shared_from_this());
 
     // Add test lights
-    // lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
-    // lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 3.0f);
-    // lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 3.0f);
-    // lightManager.addAreaLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
-    // lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
+    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
+    lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 3.0f);
+    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 3.0f);
+    lightManager.addAreaLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
+    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
 
     // Init MeshTree root
     MeshTree* boardRoot = new MeshTree("board root", std::nullopt);
@@ -569,7 +572,7 @@ int main(int argc, char* argv[]) {
         if(fabs(playerPos.z - prev_pos.z) >= 2.0f * utils::TILE_LENGTH_Z){
             if(playerPos.z < prev_pos.z){
                 dir = 4;
-                b->shiftLeft(lightManager);
+                b->shiftLeft(lightManager, particleEmitterManager);
                 MemoryManager::removeEl(boardRoot);
             
                 boardRoot = new MeshTree("boardroot", std::nullopt);
@@ -598,7 +601,7 @@ int main(int argc, char* argv[]) {
                 
             }else{
                 dir = 2;
-                b->shiftRight(lightManager);
+                b->shiftRight(lightManager, particleEmitterManager);
                 MemoryManager::removeEl(boardRoot);
             
                 boardRoot = new MeshTree("boardroot", std::nullopt);
@@ -625,7 +628,7 @@ int main(int argc, char* argv[]) {
             if(playerPos.x > prev_pos.x){
                 std::cout<<"down"<<std::endl;
                 dir = 3;
-                b->shiftDown(lightManager);
+                b->shiftDown(lightManager, particleEmitterManager);
                 MemoryManager::removeEl(boardRoot);
             
                 boardRoot = new MeshTree("boardroot", std::nullopt);
@@ -654,7 +657,7 @@ int main(int argc, char* argv[]) {
                 
             }else{
                 dir = 1;
-                b->shiftUp(lightManager);
+                b->shiftUp(lightManager, particleEmitterManager);
                 MemoryManager::removeEl(boardRoot);
             
                 boardRoot = new MeshTree("boardroot", std::nullopt);
@@ -683,6 +686,9 @@ int main(int argc, char* argv[]) {
             if (renderConfig.controlPlayer) { currentCamera.updateInput(player, scene.root, playerMiddleOffset); }
             else                            { currentCamera.updateInput(); }
         }
+
+        // Update transformation of managed mesh tree objects
+        scene.root->transformExternal();
 
         // View and projection matrices setup
         const float fovRadians              = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
