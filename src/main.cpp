@@ -40,41 +40,34 @@ bool ready_ = false;
 bool processed_ = false;
 std::vector<std::weak_ptr<EnemyCamera>> cameras;
 std::vector<std::weak_ptr<MeshTree>> monkeyHeads;
+glm::vec3 offsetBoard(-3.0f * utils::TILE_LENGTH_X, 0.0f, -3.0f * utils::TILE_LENGTH_Z);
 Defined*** boardCopy;
-const float tileLengthX = 7.72f;
-const float tileLengthZ = 7.72f;
 const float board_init_off = -6.2f;
 bool motion = false;
-glm::vec3 offsetBoard ( -3*tileLengthX,0.f,-3*tileLengthZ);
 int dir = -1;
 bool* ready = new bool;
 bool processed = false;
 Generator* gen =  new Generator();
 
-void signalChange(){
+void signalChange() {
     {
         ready_ = true;
         std::unique_lock<std::mutex> lk(m);
-        
         cv.notify_all();
     }
     {
         std::unique_lock<std::mutex> lk(m);
         cv.wait(lk, []{ return processed_;});
         processed_ = false;
-
     }
 }
 
-void worker_thread()
-{
-    
+void backgroundMazeGeneration() {
     gen->instantiate_terr();
     boardCopy = gen->board;
-    gen->visualise(gen->board, 7,7);
-    while(true){
+    gen->visualise(gen->board, 7, 7);
+    while (true) {
         //TODO: SAFE ACCESS!!!
-        
         {
             std::unique_lock<std::mutex> lk(m);
             cv.wait(lk, []{ return ready_;});
@@ -102,11 +95,8 @@ void worker_thread()
             lk.unlock();
             cv.notify_one();
         }
-
     }
-
     *ready = false;
-    
 }
 
 void onKeyPressed(int key, int) {
@@ -171,8 +161,9 @@ void makeCameraMoves(){
 }
 
 int main(int argc, char* argv[]) {
+    // Init maze generation thread
     *ready = false;
-    std::thread worker(worker_thread);
+    std::thread worker(backgroundMazeGeneration);
 
     // Player position data
     glm::vec3 playerPos = glm::vec3(0.0f, -0.1f, 1.0f);
@@ -369,6 +360,7 @@ int main(int argc, char* argv[]) {
     std::chrono::time_point millisec_since_epoch    = timer.now();
     BezierCurveManager bezierCurveManager                        = BezierCurveManager(millisec_since_epoch);
 
+    // Bezier curve book-keeping
     bool prev_motion                        = motion;
     std::chrono::time_point start_motion    = millisec_since_epoch;
     glm::vec3 prev_pos                      = playerPos;
@@ -421,8 +413,8 @@ int main(int argc, char* argv[]) {
             
             if (dist < 1.0f) { 
                 std::cout<<"COLLIDE!!"<<std::endl;
-                int32_t tileX = static_cast<int32_t>(floor((playerPos.z - offsetBoard.z) / tileLengthX));
-                int32_t tileY = static_cast<int32_t>(floor((playerPos.x - offsetBoard.x) / tileLengthZ));
+                int32_t tileX = static_cast<int32_t>(floor((playerPos.z - offsetBoard.z) / utils::TILE_LENGTH_X));
+                int32_t tileY = static_cast<int32_t>(floor((playerPos.x - offsetBoard.x) / utils::TILE_LENGTH_Z));
                 std::cout << tileX << " " << tileY << std::endl;
                 MemoryManager::removeEl(headMesh);
                 dir = 100 + tileY * 10 + tileX;
@@ -458,7 +450,7 @@ int main(int argc, char* argv[]) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
-        if(fabs(playerPos.z - prev_pos.z) >= 2*tileLengthZ){
+        if(fabs(playerPos.z - prev_pos.z) >= 2.0f * utils::TILE_LENGTH_Z){
             if(playerPos.z < prev_pos.z){
                 dir = 4;
                 b->shiftLeft(lightManager);
@@ -467,7 +459,7 @@ int main(int argc, char* argv[]) {
                 boardRoot = new MeshTree("boardroot", std::nullopt);
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
-                offsetBoard.z -=2*tileLengthZ;
+                offsetBoard.z -= 2.0f * utils::TILE_LENGTH_Z;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
                 b->load(boardCopy, InitialState, 0UL, 7UL, 0UL, 2UL);
@@ -496,7 +488,7 @@ int main(int argc, char* argv[]) {
                 boardRoot = new MeshTree("boardroot", std::nullopt);
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
-                offsetBoard.z +=2*tileLengthZ;
+                offsetBoard.z += 2.0f * utils::TILE_LENGTH_Z;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
                 b->load(boardCopy, InitialState, 0UL, 7UL, 5UL, 7UL);
@@ -512,7 +504,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if(fabs(playerPos.x - prev_pos.x) >= 2*tileLengthX){
+        if(fabs(playerPos.x - prev_pos.x) >= 2.0f * utils::TILE_LENGTH_X){
             if(playerPos.x > prev_pos.x){
                 std::cout<<"down"<<std::endl;
                 dir = 3;
@@ -522,7 +514,7 @@ int main(int argc, char* argv[]) {
                 boardRoot = new MeshTree("boardroot", std::nullopt);
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
-                offsetBoard.x += 2*tileLengthX;
+                offsetBoard.x += 2.0f * utils::TILE_LENGTH_X;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
                 b->load(boardCopy, InitialState, 5UL, 7UL, 0UL, 7UL);
@@ -551,7 +543,7 @@ int main(int argc, char* argv[]) {
                 boardRoot = new MeshTree("boardroot", std::nullopt);
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
-                offsetBoard.x -=2*tileLengthX;
+                offsetBoard.x -= 2.0f * utils::TILE_LENGTH_X;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
                 b->load(boardCopy, InitialState, 0UL, 2UL, 0UL, 7UL);
