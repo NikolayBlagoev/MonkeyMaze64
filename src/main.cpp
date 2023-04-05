@@ -7,7 +7,7 @@ DISABLE_WARNINGS_POP()
 #include <framework/window.h>
 
 #include <gameplay/enemy_camera.h>
-#include <generator/board.hpp>
+#include <generator/board.h>
 #include <generator/generator.h>
 #include <render/bezier.h>
 #include <render/config.h>
@@ -20,6 +20,7 @@ DISABLE_WARNINGS_POP()
 #include <ui/camera.h>
 #include <ui/menu.h>
 #include <utils/constants.h>
+#include <utils/hitbox.hpp>
 #include <utils/render_utils.hpp>
 
 #include <mutex>
@@ -40,11 +41,11 @@ bool processed_ = false;
 std::vector<std::weak_ptr<EnemyCamera>> cameras;
 std::vector<std::weak_ptr<MeshTree>> monkeyHeads;
 Defined*** boardCopy;
-const float factorx = 7.72f;
-const float factory = 7.72f;
+const float tileLengthX = 7.72f;
+const float tileLengthZ = 7.72f;
 const float board_init_off = -6.2f;
 bool motion = false;
-glm::vec3 offsetBoard ( -3*factorx,0.f,-3*factory);
+glm::vec3 offsetBoard ( -3*tileLengthX,0.f,-3*tileLengthZ);
 int dir = -1;
 bool* ready = new bool;
 bool processed = false;
@@ -264,23 +265,65 @@ int main(int argc, char* argv[]) {
     std::weak_ptr<const Texture> roughnessFur       = textureManager.addTexture(furTextureFolder / textureRoughness);
     /*************************************/
 
-    // Load object meshes
-    Mesh camera     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "camera.obj"));
-    Mesh aperture   = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "aperture.obj"));
-    Mesh stand2     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "stand2.obj"));
-    Mesh stand1     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "stand1.obj"));
-    Mesh suzanne    = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "suzanne.obj"));
+    /********** Model loading and texture setting ************/
+    // In-tile objects
+    Mesh apertureCPU    = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "aperture.obj"));
+    Mesh cameraCPU      = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "camera.obj"));
+    Mesh stand1CPU      = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "stand1.obj"));
+    Mesh stand2CPU      = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "stand2.obj"));
+    Mesh suzanneCPU     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "suzanne.obj"));
+    GPUMesh aperture(apertureCPU);
+    GPUMesh camera(cameraCPU);
+    GPUMesh stand1(stand1CPU);
+    GPUMesh stand2(stand2CPU);
+    GPUMesh suzanne(suzanneCPU);
+    HitBox apertureHitBox   = HitBox::makeHitBox(apertureCPU,   false);
+    HitBox cameraHitBox     = HitBox::makeHitBox(cameraCPU,     false);
+    HitBox stand1HitBox     = HitBox::makeHitBox(stand1CPU,     false);
+    HitBox stand2HitBox     = HitBox::makeHitBox(stand2CPU,     false);
+    HitBox suzanneHitbox    = HitBox::makeHitBox(suzanneCPU,    false);
 
-    // Load player character animation models and set textures
-    Mesh defaultMonkeyPose = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose0.obj"));
+    // Tile meshes
+    Mesh crossingCPU   = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj"));
+    Mesh roomCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj"));
+    Mesh tjunctionCPU  = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj"));
+    Mesh tunnelCPU     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj"));
+    Mesh turnCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj"));
+    GPUMesh crossing(crossingCPU);
+    GPUMesh room(roomCPU);
+    GPUMesh tjunction(tjunctionCPU);
+    GPUMesh tunnel(tunnelCPU);
+    GPUMesh turn(turnCPU);
+    HitBox crossingHitBox   = HitBox::makeHitBox(crossingCPU,   false);
+    HitBox roomHitBox       = HitBox::makeHitBox(roomCPU,       false);
+    HitBox tjunctionHitBox  = HitBox::makeHitBox(tjunctionCPU,  false);
+    HitBox tunnelHitBox     = HitBox::makeHitBox(tunnelCPU,     false);
+    HitBox turnHitbox       = HitBox::makeHitBox(turnCPU,       false);
+    std::vector<GPUMesh*> tileMeshes = { &crossing, &room, &tjunction, &tunnel, &turn };
+    for (GPUMesh* mesh : tileMeshes) {
+        mesh->setAlbedo(albedoStone);
+        mesh->setAO(aoStone);
+        mesh->setDisplacement(displacementStone, true);
+        mesh->setMetallic(metalnessStone);
+        mesh->setNormal(normalStone);
+        mesh->setRoughness(roughnessStone);
+    }
+
+    // Player character
+    Mesh defaultMonkeyModel = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose0.obj"));
     std::vector<GPUMesh> monkeyPoses;
-    monkeyPoses.emplace_back(defaultMonkeyPose);
-    for (int i = 1; i < 16; ++i) {
-        // Load model and create mesh object
-        auto fileName   = "monkeypose" + std::to_string(i * 2)+ ".obj";
-        Mesh cpuMesh    = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / fileName));
-        monkeyPoses.emplace_back(cpuMesh);
-
+    std::vector<HitBox> monkeyHitBoxes;
+    monkeyPoses.emplace_back(defaultMonkeyModel);
+    monkeyHitBoxes.push_back(HitBox::makeHitBox(defaultMonkeyModel, true));
+    for (size_t i = 0UL; i < 16UL; i++) {
+        // Load model and create mesh and hitbox objects
+        if (i != 0UL) {
+            auto fileName   = "monkeypose" + std::to_string(i * 2)+ ".obj";
+            Mesh cpuMesh    = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / fileName));
+            monkeyPoses.emplace_back(cpuMesh);
+            monkeyHitBoxes.push_back(HitBox::makeHitBox(cpuMesh, true));
+        }
+        
         // Link textures
         monkeyPoses[i].setAlbedo(albedoFur);
         monkeyPoses[i].setAO(aoFur);
@@ -288,29 +331,22 @@ int main(int argc, char* argv[]) {
         monkeyPoses[i].setNormal(normalFur);
         monkeyPoses[i].setRoughness(roughnessFur);
     }
+    /**************************************/
 
     // Add player mesh node
-    MeshTree* player = new MeshTree("player", &defaultMonkeyPose, playerPos,
+    MeshTree* player = new MeshTree("player", monkeyHitBoxes[0], &monkeyPoses[0], playerPos,
                                     glm::vec4(0.0f, 1.0f, 0.0f, 180.0f),
                                     glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
-                                    glm::vec3(0.3f),
-                                    true);
+                                    glm::vec3(0.3f));
     MemoryManager::addEl(player);
     scene.addMesh(player->shared_from_this());
 
     // Add player torch mesh node
-    MeshTree* playerLight = new MeshTree("player light");
+    MeshTree* playerLight = new MeshTree("player light", std::nullopt);
     MemoryManager::addEl(playerLight);
     playerLight->transform.translate = playerLightOffset;
     playerLight->pl = lightManager.addPointLight(glm::vec3(0.f), glm::vec3(1.0f, 0.5f, 0.0f), 0.3f);
     player->addChild(playerLight->shared_from_this());
-
-    // Load tile meshes
-    Mesh crossing   = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "crossing.obj"));
-    Mesh room       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "room.obj"));
-    Mesh tjunction  = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj"));
-    Mesh tunnel     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj"));
-    Mesh turn       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj"));
 
     // Add test lights
     lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
@@ -320,7 +356,7 @@ int main(int argc, char* argv[]) {
     lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
 
     // Init MeshTree root
-    MeshTree* boardRoot = new MeshTree("board root");
+    MeshTree* boardRoot = new MeshTree("board root", std::nullopt);
     MemoryManager::addEl(boardRoot);
     boardRoot->transform.translate = offsetBoard;
    
@@ -331,19 +367,39 @@ int main(int argc, char* argv[]) {
     BezierCurve<glm::vec4> b4d                      = BezierCurve<glm::vec4>(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
     BezierComposite<glm::vec3> b3c                  = BezierComposite<glm::vec3>({b3d, b3d2}, true, 20.f);
     std::chrono::time_point millisec_since_epoch    = timer.now();
-    BezierCurveManager rndrr                        = BezierCurveManager(millisec_since_epoch);
+    BezierCurveManager bezierCurveManager                        = BezierCurveManager(millisec_since_epoch);
 
     bool prev_motion                        = motion;
     std::chrono::time_point start_motion    = millisec_since_epoch;
     glm::vec3 prev_pos                      = playerPos;
 
     // Create root node of board
-    boardRoot = new MeshTree("boardoot");
+    boardRoot = new MeshTree("boardoot", std::nullopt);
     MemoryManager::addEl(boardRoot);
     scene.root->addChild(boardRoot->shared_from_this());
+
+    // Create state object to pass over to the board object
+    InitialState InitialState {
+        .crossing   = std::make_pair(&crossing, crossingHitBox),
+        .room       = std::make_pair(&room, roomHitBox),
+        .tjunction  = std::make_pair(&tjunction, tjunctionHitBox),
+        .tunnel     = std::make_pair(&tunnel, tunnelHitBox),
+        .turn       = std::make_pair(&turn, turnHitbox),
+        .camera     = std::make_pair(&camera, cameraHitBox),
+        .aperture   = std::make_pair(&aperture, apertureHitBox),
+        .stand1     = std::make_pair(&stand1, stand1HitBox),
+        .stand2     = std::make_pair(&stand2, stand2HitBox),
+        .suzanne    = std::make_pair(&suzanne, suzanneHitbox),
+
+        .bezierCurveManager = bezierCurveManager,
+        .lightManager       = lightManager,
+        .cameras            = cameras,
+        .monkeyHeads        = monkeyHeads
+    };
     
+    // Init initial set of tiles
     boardRoot->transform.translate = offsetBoard;
-    b = new Board(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras, monkeyHeads});
+    b = new Board(boardCopy, InitialState);
     for(int i = 0; i < 7; i ++){
         for(int j = 0; j < 7; j++)
             boardRoot->addChild(b->board[i][j]->shared_from_this());
@@ -365,8 +421,8 @@ int main(int argc, char* argv[]) {
             
             if (dist < 1.0f) { 
                 std::cout<<"COLLIDE!!"<<std::endl;
-                int32_t tileX = static_cast<int32_t>(floor((playerPos.z - offsetBoard.z) / factorx));
-                int32_t tileY = static_cast<int32_t>(floor((playerPos.x - offsetBoard.x) / factory));
+                int32_t tileX = static_cast<int32_t>(floor((playerPos.z - offsetBoard.z) / tileLengthX));
+                int32_t tileY = static_cast<int32_t>(floor((playerPos.x - offsetBoard.x) / tileLengthZ));
                 std::cout << tileX << " " << tileY << std::endl;
                 MemoryManager::removeEl(headMesh);
                 dir = 100 + tileY * 10 + tileX;
@@ -375,7 +431,7 @@ int main(int argc, char* argv[]) {
         }
         Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
         std::chrono::time_point curr_frame = timer.now();
-        rndrr.timeStep(curr_frame);
+        bezierCurveManager.timeStep(curr_frame);
         makeCameraMoves();
         float delta = std::chrono::duration<float>(curr_frame - millisec_since_epoch).count();
         int rem = static_cast<int>(floor(delta / 0.4f));
@@ -402,20 +458,19 @@ int main(int argc, char* argv[]) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
-        if(fabs(playerPos.z - prev_pos.z) >= 2*factory){
+        if(fabs(playerPos.z - prev_pos.z) >= 2*tileLengthZ){
             if(playerPos.z < prev_pos.z){
                 dir = 4;
-                b->move_l(lightManager);
+                b->shiftLeft(lightManager);
                 MemoryManager::removeEl(boardRoot);
             
-                boardRoot = new MeshTree("boardroot");
+                boardRoot = new MeshTree("boardroot", std::nullopt);
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
-                offsetBoard.z -=2*factory;
+                offsetBoard.z -=2*tileLengthZ;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
-                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras, monkeyHeads},
-                0, 7, 0, 2);
+                b->load(boardCopy, InitialState, 0UL, 7UL, 0UL, 2UL);
                 for(int i = 0; i < 7; i ++){
                     for(int j = 0; j < 7; j++){
                         
@@ -435,17 +490,16 @@ int main(int argc, char* argv[]) {
                 prev_pos = playerPos;
             }else{
                 dir = 2;
-                b->move_r(lightManager);
+                b->shiftRight(lightManager);
                 MemoryManager::removeEl(boardRoot);
             
-                boardRoot = new MeshTree("boardroot");
+                boardRoot = new MeshTree("boardroot", std::nullopt);
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
-                offsetBoard.z +=2*factory;
+                offsetBoard.z +=2*tileLengthZ;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
-                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras, monkeyHeads},
-                0, 7, 5, 7);
+                b->load(boardCopy, InitialState, 0UL, 7UL, 5UL, 7UL);
                 for(int i = 0; i < 7; i ++){
                     for(int j = 0; j < 7; j++){
                         std::cout<<boardCopy[i][j]->tileType<<"\t";
@@ -458,21 +512,20 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if(fabs(playerPos.x - prev_pos.x) >= 2*factorx){
+        if(fabs(playerPos.x - prev_pos.x) >= 2*tileLengthX){
             if(playerPos.x > prev_pos.x){
                 std::cout<<"down"<<std::endl;
                 dir = 3;
-                b->move_d(lightManager);
+                b->shiftDown(lightManager);
                 MemoryManager::removeEl(boardRoot);
             
-                boardRoot = new MeshTree("boardroot");
+                boardRoot = new MeshTree("boardroot", std::nullopt);
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
-                offsetBoard.x += 2*factorx;
+                offsetBoard.x += 2*tileLengthX;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
-                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras, monkeyHeads},
-                5, 7, 0, 7);
+                b->load(boardCopy, InitialState, 5UL, 7UL, 0UL, 7UL);
                 for(int i = 0; i < 7; i ++){
                     for(int j = 0; j < 7; j++){
                         
@@ -492,17 +545,16 @@ int main(int argc, char* argv[]) {
                 prev_pos = playerPos;
             }else{
                 dir = 1;
-                b->move_u(lightManager);
+                b->shiftUp(lightManager);
                 MemoryManager::removeEl(boardRoot);
             
-                boardRoot = new MeshTree("boardroot");
+                boardRoot = new MeshTree("boardroot", std::nullopt);
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
-                offsetBoard.x -=2*factorx;
+                offsetBoard.x -=2*tileLengthX;
                 boardRoot->transform.translate = offsetBoard;
                 signalChange();
-                b->load(boardCopy, {&crossing, &room, &tjunction, &tunnel, &turn, &camera, &aperture, &stand2, &stand1, &suzanne, rndrr, lightManager, cameras, monkeyHeads},
-                0, 2, 0, 7);
+                b->load(boardCopy, InitialState, 0UL, 2UL, 0UL, 7UL);
                 for(int i = 0; i < 7; i ++){
                     for(int j = 0; j < 7; j++){
                         std::cout<<boardCopy[i][j]->tileType<<"\t";

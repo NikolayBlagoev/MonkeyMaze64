@@ -15,6 +15,7 @@ DISABLE_WARNINGS_POP()
 
 #include <filesystem>
 #include <vector>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -27,30 +28,30 @@ struct MeshTransform {
 
 class MeshTree : public std::enable_shared_from_this<MeshTree> {
 public:
-    MeshTree(std::string tag, 
-             Mesh* msh              = nullptr,
+    MeshTree(std::string tag,
+             const std::optional<HitBox>& maybeHitBox,
+             GPUMesh* model         = nullptr,
              glm::vec3 off          = glm::vec3(0.0f), 
              glm::vec4 rots         = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
              glm::vec4 rotp         = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
-             glm::vec3 scl          = glm::vec3(1.0f),
-             bool allowCollision    = false);
+             glm::vec3 scl          = glm::vec3(1.0f));
     ~MeshTree();
 
+    // Collision detection
+    static MeshTree* collidesWith(MeshTree* root, MeshTree* toCheck);
+    bool tryTranslation(glm::vec3 translation, MeshTree* root);
+
+    // Mesh management
     void clean(LightManager& lmngr);
     void addChild(std::shared_ptr<MeshTree> child);
     glm::mat4 modelMatrix() const;
-    static MeshTree* collidesWith(MeshTree* root, MeshTree* toCheck);
-    HitBox getTransformedHitBox();
-    glm::vec3 getTransformedHitBoxMiddle();
-    bool collide(MeshTree* other);
-    bool tryTranslation(glm::vec3 translation, MeshTree* root);
 
 public:
     // Intrinsic properties
     std::string tag;
     MeshTransform transform;
     GPUMesh* mesh { nullptr };
-    HitBox hitBox;
+    std::optional<HitBox> hitBox;
 
     // Tree hierarchy management
     bool is_root = false;
@@ -60,6 +61,11 @@ public:
     // External objects manipulated by node
     AreaLight*  al { nullptr };
     PointLight* pl { nullptr };
+
+private:
+    HitBox getTransformedHitBox();
+    glm::vec3 getTransformedHitBoxMiddle();
+    bool collide(MeshTree* other);
 };
 
 class MemoryManager {
