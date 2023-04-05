@@ -34,6 +34,7 @@ DISABLE_WARNINGS_POP()
 // TODO: Have a separate struct for this if it becomes too much
 bool cameraZoomed = false;
 bool playerDetected = false;
+bool xToonPowerUp = false;
 std::chrono::time_point<std::chrono::high_resolution_clock> playerLastDetected;
 std::mutex m;
 std::condition_variable cv;
@@ -156,12 +157,13 @@ void makeCameraMoves(glm::vec3 playerPos, std::chrono::time_point<std::chrono::h
         }
         std::shared_ptr<EnemyCamera> cam = cameras.at(i).lock();
         // IF PLAYER IN VIEW DO STUFF
-        if(cam.get()->canSeePoint(playerPos, 15.f)){
+        if(!xToonPowerUp  && cam.get()->canSeePoint(playerPos, 15.f)){
             if(!playerDetected){
                 playerLastDetected = curr_time;
             }
             *(cam.get()->color) = glm::vec3(1.f,0.f,0.f);
             curr_detected = true;
+            std::cout<<"DETECTED"<<std::endl;
             continue;
         }else{
             *(cam.get()->color) = glm::vec3(0.f,1.f,1.f);
@@ -322,7 +324,7 @@ int main(int argc, char* argv[]) {
             boardRoot->addChild(b->board[i][j]->shared_from_this());
     }
 
-    bool xToonPowerUp = false;
+    
 
     // Main loop
     while (!m_window.shouldClose()) {
