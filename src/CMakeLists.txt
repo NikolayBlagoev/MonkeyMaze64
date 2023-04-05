@@ -1,5 +1,6 @@
 target_sources(FinalProject
 	PRIVATE
+        "${CMAKE_CURRENT_LIST_DIR}/generator/board.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/generator/generator.cpp"
 
         "${CMAKE_CURRENT_LIST_DIR}/render/bezier.cpp"

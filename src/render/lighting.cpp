@@ -107,10 +107,6 @@ PointLight* LightManager::addPointLight(const glm::vec3& position, const glm::ve
 
     pointLights.push_back(light);
 
-    // Repopulate SSBO after addition
-    std::vector<PointLightShader> pointLightsShaderData = createPointLightsShaderData();
-    glNamedBufferData(ssboPointLights, sizeof(PointLightShader) * pointLightsShaderData.size(), pointLightsShaderData.data(), GL_STATIC_COPY);
-
     return light;
 }
 
@@ -124,10 +120,6 @@ void LightManager::removePointLight(size_t idx) {
     glDeleteFramebuffers(6, lightToRemove->framebuffers.data());
 
     pointLights.erase(pointLights.begin() + idx);
-
-    // Repopulate SSBO after removal
-    std::vector<PointLightShader> pointLightsShaderData = createPointLightsShaderData();
-    glNamedBufferData(ssboPointLights, sizeof(PointLightShader) * pointLightsShaderData.size(), pointLightsShaderData.data(), GL_STATIC_COPY);
 
     // Reattach framebuffers to corresponding texture layers
     // Plonking out a framebuffer from the beginning or middle causes the framebuffers to become misaligned from their position in the array
@@ -190,11 +182,6 @@ AreaLight* LightManager::addAreaLight(const glm::vec3& position, const glm::vec3
     glNamedFramebufferTextureLayer(light->framebuffer, GL_DEPTH_ATTACHMENT, areaShadowTexArr, 0, static_cast<GLint>(areaLights.size()));
 
     areaLights.push_back(light);
-
-    // Repopulate SSBO after addition
-    std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData();
-    glNamedBufferData(ssboAreaLights, sizeof(AreaLightShader) * areaLightsShaderData.size(), areaLightsShaderData.data(), GL_STATIC_COPY);
-
     return light;
 }
 
@@ -210,10 +197,6 @@ void LightManager::removeAreaLight(size_t idx) {
 
     areaLights.erase(areaLights.begin() + idx);
     free(lightToRemove);
-
-    // Repopulate SSBO after removal
-    std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData();
-    glNamedBufferData(ssboAreaLights, sizeof(AreaLightShader) * areaLightsShaderData.size(), areaLightsShaderData.data(), GL_STATIC_COPY);
 
     // Reattach framebuffers to corresponding texture layers
     // Plonking out a framebuffer from the beginning or middle causes the framebuffers to become misaligned from their position in the array
@@ -269,6 +252,8 @@ void LightManager::removeByReference(AreaLight* al){
 
 void LightManager::bind() {
     // Point lights
+    std::vector<PointLightShader> pointLightsShaderData = createPointLightsShaderData();
+    glNamedBufferData(ssboPointLights, sizeof(PointLightShader) * pointLightsShaderData.size(), pointLightsShaderData.data(), GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboPointLights); // Bind to binding=0
 
     // Point lights shadow maps sampler
@@ -277,6 +262,8 @@ void LightManager::bind() {
     glUniform1i(7, utils::SHADOW_START_IDX);
 
     // Area lights
+    std::vector<AreaLightShader> areaLightsShaderData = createAreaLightsShaderData();
+    glNamedBufferData(ssboAreaLights, sizeof(AreaLightShader) * areaLightsShaderData.size(), areaLightsShaderData.data(), GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboAreaLights); // Bind to binding=1
 
     // Area lights shadow maps sampler
