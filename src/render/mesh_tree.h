@@ -44,6 +44,7 @@ public:
     glm::vec3 getTransformedHitBoxMiddle();
     bool collide(MeshTree* other);
     bool tryTranslation(glm::vec3 translation, MeshTree* root);
+    std::shared_ptr<EnemyCamera> enemyCam;
 
 public:
     // Intrinsic properties
@@ -60,7 +61,8 @@ public:
     // External objects manipulated by node
     AreaLight*  al { nullptr };
     PointLight* pl { nullptr };
-    std::shared_ptr<EnemyCamera> enemyCam;
+    
+    
 };
 
 class MemoryManager {

@@ -13,7 +13,7 @@ std::unordered_map<MeshTree*, std::shared_ptr<MeshTree>> MemoryManager::objs;
 MeshTree::MeshTree(std::string tag, Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision) {
     this->transform = {off, rots, rotp, scl};
     this->tag = tag;
-
+    
     if (msh != nullptr) {
         this->mesh      = new GPUMesh(*msh);
         this->hitBox    = HitBox::makeHitBox(*msh, allowCollision);

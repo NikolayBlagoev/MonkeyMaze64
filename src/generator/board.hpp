@@ -206,7 +206,7 @@ public:
             }else if(roomTile->objs.at(i)->type == SpecialObjType::Collectible){
                 MeshTree* ret = new MeshTree("suzanne", suzanne, glm::vec3(-3.f, 2.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec4(0.f, 1.f, 0.f, 0.f), glm::vec3(1.f), false);
                 MemoryManager::addEl(ret);
-                std::cout<<"putting monkey"<<std::endl;
+                
                 room->addChild(ret->shared_from_this());
                 monkeyHeads.push_back(ret->shared_from_this());
                 BezierCurve<glm::vec3> b3d              = BezierCurve<glm::vec3>(glm::vec3(-3.f, 2.f, 0.f), glm::vec3(-3.3f , 3.f, 0.f), glm::vec3(-2.7f , 4.f, 0.f), glm::vec3(-3.f, 5.f, 0.f), 10.f);
