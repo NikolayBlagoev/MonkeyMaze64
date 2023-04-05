@@ -49,6 +49,9 @@ public:
 
     glm::mat4 modelMatrix(bool includeScale = true) const;
 
+    // IF THIS GOES SOMEWHERE ELSE MY APPLICATION WILL NOT RUN!!?!?!? IDK WHY?!?!?! C++ PLEASE! PLEASE!!! WHY?!?!?!
+    std::shared_ptr<EnemyCamera> enemyCam;
+  
 public:
     // Intrinsic properties
     std::string tag;
@@ -65,11 +68,12 @@ public:
     AreaLight*  al                      { nullptr };
     PointLight* pl                      { nullptr };
     ParticleEmitter* particleEmitter    { nullptr };
-
+  
 private:
     HitBox getTransformedHitBox();
     glm::vec3 getTransformedHitBoxMiddle();
     bool collide(MeshTree* other);
+
 };
 
 class MemoryManager {

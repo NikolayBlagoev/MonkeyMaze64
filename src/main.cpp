@@ -34,6 +34,9 @@ DISABLE_WARNINGS_POP()
 // Game state
 // TODO: Have a separate struct for this if it becomes too much
 bool cameraZoomed = false;
+bool playerDetected = false;
+bool xToonPowerUp = false;
+std::chrono::time_point<std::chrono::high_resolution_clock> playerLastDetected;
 std::mutex m;
 std::condition_variable cv;
 bool ready_ = false;
@@ -87,7 +90,9 @@ void backgroundMazeGeneration() {
             }else{
                 gen->remove_head((dir/10)%10, dir%10);
             }
+            gen->visualise(gen->board, 7, 7);
             gen->assign_all(&(gen->dq));
+            gen->visualise(gen->board, 7, 7);
             ready_ = false;
             
             boardCopy = gen->board;
@@ -132,7 +137,8 @@ void mouseButtonCallback(int button, int action, int mods) {
     else if (action == GLFW_RELEASE) { onMouseReleased(button, mods); }
 }
 
-void makeCameraMoves(){
+void makeCameraMoves(glm::vec3 playerPos, std::chrono::time_point<std::chrono::high_resolution_clock> curr_time){
+    bool curr_detected = false;
     for(size_t i = 0; i < cameras.size(); i++){
         if(cameras.at(i).expired()){
             cameras.erase(cameras.begin() + i);
@@ -141,6 +147,17 @@ void makeCameraMoves(){
         }
         std::shared_ptr<EnemyCamera> cam = cameras.at(i).lock();
         // IF PLAYER IN VIEW DO STUFF
+        if(!xToonPowerUp  && cam.get()->canSeePoint(playerPos, 15.f)){
+            if(!playerDetected){
+                playerLastDetected = curr_time;
+            }
+            *(cam.get()->color) = glm::vec3(1.f,0.f,0.f);
+            curr_detected = true;
+            std::cout<<"DETECTED"<<std::endl;
+            continue;
+        }else{
+            *(cam.get()->color) = glm::vec3(0.f,1.f,1.f);
+        }
         // OTHERWISE:
         if(cam.get()->motion_left){
             if(cam.get()->camera->w <= -45.f){
@@ -158,6 +175,7 @@ void makeCameraMoves(){
             }
         }
     }
+    playerDetected = curr_detected;
 }
 
 int main(int argc, char* argv[]) {
@@ -300,17 +318,64 @@ int main(int argc, char* argv[]) {
     Mesh tjunctionCPU  = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj"));
     Mesh tunnelCPU     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj"));
     Mesh turnCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj"));
+
+
+    // Tile pieces:
+    Mesh floorCPU          = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "floor.obj"));
+    Mesh pillarBLCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "pillar_bottom_left.obj"));
+    Mesh pillarBRCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "pillar-bottom-right.obj"));
+    Mesh pillarTLCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "pillar-top-left.obj"));
+    Mesh pillarTRCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "pillar-top-right.obj"));
+    Mesh wallHRCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "walf-half-right.obj"));
+    Mesh wallHBCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-half-bottom.obj"));
+    Mesh wallHTCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-half-top.obj"));
+    Mesh wallFBCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-full-bottom.obj"));
+    Mesh wallFRCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-full-right.obj"));
+    Mesh wallFTCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-full-top.obj"));
+    // Mesh wallHTCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-half-top.obj"));
+    
+
     GPUMesh crossing(crossingCPU);
     GPUMesh room(roomCPU);
     GPUMesh tjunction(tjunctionCPU);
     GPUMesh tunnel(tunnelCPU);
     GPUMesh turn(turnCPU);
+
+
+    GPUMesh floorT(floorCPU);
+    GPUMesh pillarBL(pillarBLCPU);
+    GPUMesh pillarBR(pillarBRCPU);
+    GPUMesh pillarTL(pillarTLCPU);
+    GPUMesh pillarTR(pillarTRCPU);
+    GPUMesh wallHR(wallHRCPU);
+    GPUMesh wallHB(wallHBCPU);
+    GPUMesh wallHT(wallHTCPU);
+    GPUMesh wallFB(wallFBCPU);
+    GPUMesh wallFR(wallFRCPU);
+    GPUMesh wallFT(wallFTCPU);
+
     HitBox crossingHitBox   = HitBox::makeHitBox(crossingCPU,   false);
     HitBox roomHitBox       = HitBox::makeHitBox(roomCPU,       false);
     HitBox tjunctionHitBox  = HitBox::makeHitBox(tjunctionCPU,  false);
     HitBox tunnelHitBox     = HitBox::makeHitBox(tunnelCPU,     false);
     HitBox turnHitbox       = HitBox::makeHitBox(turnCPU,       false);
-    std::array<GPUMesh*, 5UL> tileMeshes = { &crossing, &room, &tjunction, &tunnel, &turn };
+
+
+    HitBox floorHitbox          = HitBox::makeHitBox(floorCPU,       false);
+    HitBox pillarBLHitbox       = HitBox::makeHitBox(pillarBLCPU,       true);
+    HitBox pillarBRHitbox       = HitBox::makeHitBox(pillarBRCPU,       true);
+    HitBox pillarTLHitbox       = HitBox::makeHitBox(pillarTLCPU,       true);
+    HitBox pillarTRHitbox       = HitBox::makeHitBox(pillarTRCPU,       true);
+    HitBox wallHRHitbox         = HitBox::makeHitBox(wallHRCPU,       true);
+    HitBox wallHBHitbox         = HitBox::makeHitBox(wallHBCPU,       true);
+    HitBox wallHTHitbox         = HitBox::makeHitBox(wallHTCPU,       true);
+    HitBox wallFBHitbox         = HitBox::makeHitBox(wallFBCPU,       true);
+    HitBox wallFRHitbox         = HitBox::makeHitBox(wallFRCPU,       true);
+    HitBox wallFTHitbox         = HitBox::makeHitBox(wallFTCPU,       true);
+
+
+    std::array<GPUMesh*, 16UL> tileMeshes = { &crossing, &room, &tjunction, &tunnel, &turn, &floorT, &pillarBL, &pillarBR,
+     &pillarTL, &pillarTR, &wallHR, &wallHB, &wallHT, &wallFB, &wallFR, &wallFT};
     for (GPUMesh* mesh : tileMeshes) {
         mesh->setAlbedo(albedoStone);
         mesh->setAO(aoStone);
@@ -386,6 +451,7 @@ int main(int argc, char* argv[]) {
     // Bezier curve book-keeping
     bool prev_motion                        = motion;
     std::chrono::time_point start_motion    = millisec_since_epoch;
+    playerLastDetected                      = millisec_since_epoch;
     glm::vec3 prev_pos                      = playerPos;
 
     // Create root node of board
@@ -405,7 +471,17 @@ int main(int argc, char* argv[]) {
         .stand1     = std::make_pair(&stand1, stand1HitBox),
         .stand2     = std::make_pair(&stand2, stand2HitBox),
         .suzanne    = std::make_pair(&suzanne, suzanneHitbox),
-
+        .floor      = std::make_pair(&floorT, floorHitbox),
+        .pillarBL   = std::make_pair(&pillarBL, floorHitbox),
+        .pillarBR   = std::make_pair(&pillarBR, pillarBRHitbox),
+        .pillarTL   = std::make_pair(&pillarTL, pillarTLHitbox),
+        .pillarTR   = std::make_pair(&pillarTR, pillarTRHitbox),
+        .wallHR     = std::make_pair(&wallHR, wallHRHitbox),
+        .wallHB     = std::make_pair(&wallHB, wallHBHitbox),
+        .wallHT     = std::make_pair(&wallHT, wallHTHitbox),
+        .wallFB     = std::make_pair(&wallFB, wallFBHitbox),
+        .wallFR     = std::make_pair(&wallFR, wallFRHitbox),
+        .wallFT     = std::make_pair(&wallFT, wallFTHitbox),
         .bezierCurveManager = bezierCurveManager,
         .lightManager       = lightManager,
         .cameras            = cameras,
@@ -420,8 +496,24 @@ int main(int argc, char* argv[]) {
             boardRoot->addChild(b->board[i][j]->shared_from_this());
     }
 
+    
+
     // Main loop
     while (!m_window.shouldClose()) {
+        
+        bool xPressed = m_window.isKeyPressed(GLFW_KEY_X);
+
+        if (xPressed != xToonPowerUp) { // state change
+            if (!xPressed)
+                renderConfig.lightingModel = LightingModel::PBR;
+            if (xPressed)
+                renderConfig.lightingModel = LightingModel::XToon;
+
+            deferredRenderer.initLightingShader();
+
+            xToonPowerUp = xPressed;
+        }
+
         playerPos = (player->transform.translate);
         for (size_t childIdx = 0; childIdx < monkeyHeads.size(); childIdx++) {
             std::weak_ptr<MeshTree> head = monkeyHeads.at(childIdx);
@@ -447,7 +539,7 @@ int main(int argc, char* argv[]) {
         Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
         std::chrono::time_point curr_frame = timer.now();
         bezierCurveManager.timeStep(curr_frame);
-        makeCameraMoves();
+        makeCameraMoves(playerPos, curr_frame);
         float delta = std::chrono::duration<float>(curr_frame - millisec_since_epoch).count();
         int rem = static_cast<int>(floor(delta / 0.4f));
         float pos = delta - 0.4f*rem;
@@ -469,7 +561,11 @@ int main(int argc, char* argv[]) {
         }
 
         // Clear the screen
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        if (!xToonPowerUp)
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        else
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
@@ -502,7 +598,7 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
+                
             }else{
                 dir = 2;
                 b->shiftRight(lightManager, particleEmitterManager);
@@ -522,9 +618,10 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
+               
 
             }
+            prev_pos.z = playerPos.z;
         }
 
         if(fabs(playerPos.x - prev_pos.x) >= 2.0f * utils::TILE_LENGTH_X){
@@ -557,7 +654,7 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
+                
             }else{
                 dir = 1;
                 b->shiftUp(lightManager, particleEmitterManager);
@@ -577,9 +674,9 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout<<std::endl;
                 }
-                prev_pos = playerPos;
-
+                
             }
+            prev_pos.x = playerPos.x;
         }
 
         // Controls
@@ -599,7 +696,7 @@ int main(int argc, char* argv[]) {
 
         // Particle simulation
         particleEmitterManager.updateEmitters();
-
+        player->modelMatrix();
         // Render shadow maps
         utils::renderShadowMaps(scene.root, renderConfig, lightManager);
 

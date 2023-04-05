@@ -29,11 +29,23 @@ void MeshTree::transformExternal() {
     // Transform objects managed by this node
     glm::mat4 currTransform = modelMatrix(false);
     if (al != nullptr) {
-        al->position        = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        al->externalForward = glm::normalize(currTransform * glm::vec4(-1.0f, 0.0f, 0.0f, 1.0f));
+        glm::vec4 homogeneous = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        homogeneous           /= homogeneous.w;
+        al->position          = homogeneous;
+        homogeneous           = currTransform * glm::vec4(-1.0f, 0.0f, 0.0f, 1.0f);
+        homogeneous           /= homogeneous.w;
+        al->externalForward   = homogeneous;
     }
-    if (pl != nullptr) { pl->position = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); }
-    if (particleEmitter != nullptr) { particleEmitter->m_position = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); }
+    if (pl != nullptr) {
+      glm::vec4 homogeneous = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+      homogeneous           /= homogeneous.w;
+      pl->position          = homogeneous;
+    }
+    if (particleEmitter != nullptr) {
+      glm::vec4 homogeneous       = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+      homogeneous                 /= homogeneous.w;
+      particleEmitter->m_position = homogeneous;
+    }
 
     // Transform objects managed by children
     for (std::weak_ptr<MeshTree> child : children) { if (!child.expired()) { child.lock().get()->transformExternal(); } }
@@ -91,7 +103,7 @@ glm::vec3 MeshTree::getTransformedHitBoxMiddle() {
 bool MeshTree::collide(MeshTree *other) {
     if (other == nullptr            || other == this ||
         !this->hitBox.has_value()   || !other->hitBox.has_value()) { return false; }
-    return ((this->hitBox.value().allowCollision && other->hitBox.value().allowCollision) &&
+    return ((!this->hitBox.value().allowCollision || !other->hitBox.value().allowCollision) &&
              this->getTransformedHitBox().collides(other->getTransformedHitBox()));
 }
 
@@ -121,7 +133,7 @@ bool MeshTree::tryTranslation(glm::vec3 translation, MeshTree* root) {
 
     MeshTree* other = collidesWith(root, this);
     if (other == nullptr) { return true; }
-
+    std::cout<<"collision!!"<<std::endl;
     float newDist = glm::distance(this->getTransformedHitBoxMiddle(), other->getTransformedHitBoxMiddle());
     this->transform.translate -= translation;
     float oldDist = glm::distance(this->getTransformedHitBoxMiddle(), other->getTransformedHitBoxMiddle());

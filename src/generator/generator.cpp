@@ -279,10 +279,66 @@ int Generator::remove_options(Defined* node, int mm, int mx){
     return dir_min*100 + min_node;
 }
 
+int Generator::remove_own_options(Defined* node){
+    if(node == nullptr || !node->empty){
+        return 0;
+    }
+    int min_node = 99;
+    int dir_min = 0;
+    Defined* up = node->up;
+    int count = 0;
+    if(up != nullptr && !up->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[static_cast<int32_t>(up->tileType)-1][2] == opens[i][0]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(up->tileType)-1][2] == opens[i][0];
+            
+        }
+
+    }
+
+    Defined* right = node->right;
+    if(right != nullptr && !right->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[static_cast<int32_t>(right->tileType)-1][3] == opens[i][1]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(right->tileType)-1][3] == opens[i][1];
+           
+        }
+
+    }
+
+    Defined* down = node->down;
+    
+    if(down != nullptr && !down->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[static_cast<int32_t>(down->tileType)-1][0] == opens[i][2]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(down->tileType)-1][0] == opens[i][2];
+            
+        }
+
+    }
+
+
+    Defined* left = node->left;
+    if(left != nullptr && !left->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[static_cast<int32_t>(left->tileType)-1][1] == opens[i][3]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(left->tileType)-1][1] == opens[i][3];
+            
+        }
+
+    }
+    return count;
+}
+
 void Generator::constrain(Defined* nd, int opts){
     if(nd == nullptr || !nd->empty){
         return;
     }
+    opts += remove_own_options(nd);
     bool flag = true;
     while(flag){
         int chs = rand() % (18-opts);
@@ -295,7 +351,7 @@ void Generator::constrain(Defined* nd, int opts){
                     }
                     if((i >= 1 && i <= 4) || i>=14){
                         float res = exp(-0.2f*(rand()%10));
-                        if( true || res > acc_cam ){
+                        if( res > acc_cam ){
                             nd->objs.push_back(new ProcObj(SpecialObjType::EnemyCamera));
                             acc_cam = 1.f;
                         }else{
@@ -306,7 +362,7 @@ void Generator::constrain(Defined* nd, int opts){
 
                     if((i >= 1 && i <= 4) || i == 0){
                         float res = exp(-0.2f*(rand()%20));
-                        if( true || ( res > acc_head && heads < 7)){
+                        if( ( res > acc_head && heads < 7)){
                             nd->objs.push_back(new ProcObj(SpecialObjType::Collectible));
                             acc_head = 1.f;
                         }else{
@@ -405,6 +461,26 @@ void Generator::move_u(Defined*** board, std::deque <Defined*> *dq){
     }
 }
 void Generator::assign_all(std::deque <Defined*> *dq){
+    for (int i = 0; i < 7; i ++){
+        for (int j = 0; j < 7; j ++){
+            Defined* xe = board[i][j];
+            if(i>0){
+                xe->up = board[i-1][j];
+            }
+            if(j>0){
+                xe->left = board[i][j-1];
+            }
+            if(i<6){
+                xe->down = board[i+1][j];
+            }
+            if(j<6){
+                xe->right = board[i][j+1];
+            }
+        
+            
+        }
+
+    }
     while(!dq->empty()){
         Defined* curr = dq->front();
         dq->pop_front();
