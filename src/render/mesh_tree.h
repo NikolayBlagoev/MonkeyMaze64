@@ -44,8 +44,9 @@ public:
     glm::vec3 getTransformedHitBoxMiddle();
     bool collide(MeshTree* other);
     bool tryTranslation(glm::vec3 translation, MeshTree* root);
-    std::shared_ptr<EnemyCamera> enemyCam;
 
+    // IF THIS GOES SOMEWHERE ELSE MY APPLICATION WILL NOT RUN!!?!?!? IDK WHY?!?!?! C++ PLEASE! PLEASE!!! WHY?!?!?!
+    std::shared_ptr<EnemyCamera> enemyCam;
 public:
     // Intrinsic properties
     std::string tag;
@@ -62,6 +63,7 @@ public:
     AreaLight*  al { nullptr };
     PointLight* pl { nullptr };
     
+
     
 };
 
