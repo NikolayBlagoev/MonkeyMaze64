@@ -25,7 +25,21 @@ void MeshTree::addChild(std::shared_ptr<MeshTree> child){
     this->children.push_back(child);
 }
 
-glm::mat4 MeshTree::modelMatrix() const {
+void MeshTree::transformExternal() {
+    // Transform objects managed by this node
+    glm::mat4 currTransform = modelMatrix(false);
+    if (al != nullptr) {
+        al->position        = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        al->externalForward = glm::normalize(currTransform * glm::vec4(-1.0f, 0.0f, 0.0f, 1.0f));
+    }
+    if (pl != nullptr) { pl->position = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); }
+    if (particleEmitter != nullptr) { particleEmitter->m_position = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); }
+
+    // Transform objects managed by children
+    for (std::weak_ptr<MeshTree> child : children) { if (!child.expired()) { child.lock().get()->transformExternal(); } }
+}
+
+glm::mat4 MeshTree::modelMatrix(bool includeScale) const {
     glm::mat4 currTransform;
 
     // Apply model matrix of parent
@@ -49,15 +63,7 @@ glm::mat4 MeshTree::modelMatrix() const {
     currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.w), glm::vec3(transform.selfRotate.x, transform.selfRotate.y, transform.selfRotate.z));
 
     // Scale
-    currTransform = glm::scale(currTransform, transform.scale);
-
-    if (pl != nullptr) {
-        pl->position = currTransform * glm::vec4(0.f, 0.f, 0.f, 1.f);
-    }
-    if (al != nullptr) {
-        al->position        = currTransform * glm::vec4(0.f, 0.f, 0.f, 1.f);
-        al->externalForward = glm::normalize(currTransform * glm::vec4(-1.f, 0.f, 0.f, 1.f));
-    }
+    if (includeScale) { currTransform = glm::scale(currTransform, transform.scale); }
 
     return currTransform;
 }
@@ -128,7 +134,7 @@ bool MeshTree::tryTranslation(glm::vec3 translation, MeshTree* root) {
     return false;
 }
 
-void MeshTree::clean(LightManager& lmngr){
+void MeshTree::clean(LightManager& lmngr, ParticleEmitterManager& particleEmitterManager){
     // Destroy all children
     for (size_t childIdx = 0; childIdx < children.size(); childIdx++) {
         if (!children[childIdx].expired()) {
@@ -138,5 +144,7 @@ void MeshTree::clean(LightManager& lmngr){
     }
 
     // Destroy all external objects (if any)
-    if (al != nullptr){ lmngr.removeByReference(al); }
+    if (al != nullptr)              { lmngr.removeByReference(al); }
+    if (pl != nullptr)              { lmngr.removeByReference(pl); }
+    if (particleEmitter != nullptr) { particleEmitterManager.removeByReference(particleEmitter); }
 }

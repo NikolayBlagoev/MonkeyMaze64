@@ -11,6 +11,7 @@ DISABLE_WARNINGS_POP()
 #include <gameplay/enemy_camera.h>
 #include <render/lighting.h>
 #include <render/mesh.h>
+#include <render/particle.h>
 #include <utils/hitbox.hpp>
 
 #include <filesystem>
@@ -42,9 +43,11 @@ public:
     bool tryTranslation(glm::vec3 translation, MeshTree* root);
 
     // Mesh management
-    void clean(LightManager& lmngr);
+    void clean(LightManager& lmngr, ParticleEmitterManager& particleEmitterManager);
     void addChild(std::shared_ptr<MeshTree> child);
-    glm::mat4 modelMatrix() const;
+    void transformExternal();
+
+    glm::mat4 modelMatrix(bool includeScale = true) const;
 
 public:
     // Intrinsic properties
@@ -58,9 +61,10 @@ public:
     std::weak_ptr<MeshTree> parent;
     std::vector<std::weak_ptr<MeshTree>> children;
     
-    // External objects manipulated by node
-    AreaLight*  al { nullptr };
-    PointLight* pl { nullptr };
+    // External objects manipulated by node (ideally you would extend these to vectors to manage multiple, but submission is in 15 hours)
+    AreaLight*  al                      { nullptr };
+    PointLight* pl                      { nullptr };
+    ParticleEmitter* particleEmitter    { nullptr };
 
 private:
     HitBox getTransformedHitBox();

@@ -252,7 +252,7 @@ void Board::load(Defined*** boardCopy, const InitialState& initialState, size_t 
     fix_translations();
 }
 
-void Board::shiftLeft(LightManager& lightManager) {
+void Board::shiftLeft(LightManager& lightManager, ParticleEmitterManager& particleEmitterManager) {
     // We shift two columns to the left
     constexpr size_t lastColumn         = utils::TILES_PER_ROW - 1UL;
     constexpr size_t secondToLastColumn = utils::TILES_PER_ROW - 2UL;
@@ -261,7 +261,7 @@ void Board::shiftLeft(LightManager& lightManager) {
     // Remove old tiles
     for (size_t i = 0UL; i < utils::TILES_PER_ROW; i++) {
         for (size_t j = lastColumn; j >= secondToLastColumn; j--) {
-            board[i][j]->clean(lightManager);
+            board[i][j]->clean(lightManager, particleEmitterManager);
             MemoryManager::removeEl(board[i][j]);
         }
     }
@@ -274,7 +274,7 @@ void Board::shiftLeft(LightManager& lightManager) {
     }
 }
 
-void Board::shiftDown(LightManager& lightManager) {
+void Board::shiftDown(LightManager& lightManager, ParticleEmitterManager& particleEmitterManager) {
     // We shift two rows down
     constexpr size_t thirdRow        = 2UL;
     constexpr size_t secondToLastRow = utils::TILES_PER_ROW - 2UL;
@@ -282,7 +282,7 @@ void Board::shiftDown(LightManager& lightManager) {
     // Remove old tiles
     for (size_t j = 0UL; j < utils::TILES_PER_ROW; j++) {
         for (size_t i = 0UL; i < thirdRow; i++) {
-            board[i][j]->clean(lightManager);
+            board[i][j]->clean(lightManager, particleEmitterManager);
             MemoryManager::removeEl(board[i][j]);
         }
     }
@@ -295,14 +295,14 @@ void Board::shiftDown(LightManager& lightManager) {
     }
 }
 
-void Board::shiftRight(LightManager& lightManager) {
+void Board::shiftRight(LightManager& lightManager, ParticleEmitterManager& particleEmitterManager) {
     // We shift two columns to the right
     constexpr size_t thirdColumn        = 2UL;
     constexpr size_t secondToLastColumn = utils::TILES_PER_ROW - 2UL;
 
     for (size_t i = 0UL; i < utils::TILES_PER_ROW; i++) {
         for (size_t j = 0UL; j < thirdColumn; j++) {
-            board[i][j]->clean(lightManager);
+            board[i][j]->clean(lightManager, particleEmitterManager);
             MemoryManager::removeEl(board[i][j]);
         }
     }
@@ -315,7 +315,7 @@ void Board::shiftRight(LightManager& lightManager) {
     }
 }
 
-void Board::shiftUp(LightManager& lightManager) {
+void Board::shiftUp(LightManager& lightManager, ParticleEmitterManager& particleEmitterManager) {
     // We shift two rows up
     constexpr size_t lastRow            = utils::TILES_PER_ROW - 1UL;
     constexpr size_t secondToLastRow    = utils::TILES_PER_ROW - 2UL;
@@ -324,7 +324,7 @@ void Board::shiftUp(LightManager& lightManager) {
     // Remove old tiles
     for (size_t j = 0UL; j < 7UL; j++) {
         for (size_t i = 6; i >= secondToLastRow; i--) {
-            board[i][j]->clean(lightManager);
+            board[i][j]->clean(lightManager, particleEmitterManager);
             MemoryManager::removeEl(board[i][j]);                
         }
     }

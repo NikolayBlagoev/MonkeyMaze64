@@ -6,6 +6,7 @@
 #include <render/bezier.h>
 #include <render/lighting.h>
 #include <render/mesh_tree.h>
+#include <render/particle.h>
 #include <utils/constants.h>
 #include <array>
 #include <utility>
@@ -41,10 +42,10 @@ public:
     void addObjectsRoom(MeshTree* room, Defined* roomTile, const InitialState& initialState);
     void load(Defined*** boardCopy, const InitialState& initialState, size_t startI, size_t stopI, size_t startY, size_t stopY);
 
-    void shiftLeft(LightManager& lightManager);
-    void shiftDown(LightManager& lightManager);
-    void shiftRight(LightManager& lightManager);
-    void shiftUp(LightManager& lightManager);
+    void shiftLeft(LightManager& lightManager,  ParticleEmitterManager& particleEmitterManager);
+    void shiftDown(LightManager& lightManager,  ParticleEmitterManager& particleEmitterManager);
+    void shiftRight(LightManager& lightManager, ParticleEmitterManager& particleEmitterManager);
+    void shiftUp(LightManager& lightManager,    ParticleEmitterManager& particleEmitterManager);
 
     HeptaGrid board;
 };

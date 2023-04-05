@@ -42,8 +42,8 @@ public:
     // Initial values used for initialisation and resurrection of particles
     glm::vec3 m_baseVelocity    { 0.001f, 0.001f, 0.001f };
     glm::vec4 m_baseColor       { 1.0f, 1.0f, 1.0f, 0.01f };
-    float m_baseLife            { 200.0f };
-    float m_baseSize            { 0.01f };
+    float m_baseLife            { 75.0f };
+    float m_baseSize            { 0.02f };
 
     float lifeDelta     { 1.0f };
     glm::vec3 m_position;
@@ -64,19 +64,16 @@ public:
     ParticleEmitterManager(const RenderConfig& renderConfig);
 
     void render(GLuint renderBuffer, const glm::mat4& viewProjectionMatrix) const;
-    void updateEmitters() { for (ParticleEmitter& emitter : emitters) { emitter.update(
+    void updateEmitters() { for (ParticleEmitter* emitter : emitters) { emitter->update(
         m_renderConfig.velocityDeviation, m_renderConfig.colorDeviation, m_renderConfig.lifeDeviation, m_renderConfig.sizeDeviation
     ); } }
 
-    void addEmitter(glm::vec3 position)     { emitters.emplace_back(position,
-                                                                    m_renderConfig.velocityDeviation,
-                                                                    m_renderConfig.colorDeviation,
-                                                                    m_renderConfig.lifeDeviation,
-                                                                    m_renderConfig.sizeDeviation); }
-    void removeEmitter(size_t idx)          { emitters.erase(emitters.begin() + idx); }
-    ParticleEmitter& emitterAt(size_t idx)  { return emitters[idx]; }
+    
+    ParticleEmitter& emitterAt(size_t idx)  { return *emitters[idx]; }
     size_t numEmitters()                    { return emitters.size(); }
-
+    ParticleEmitter* addEmitter(glm::vec3 position);
+    void removeEmitter(size_t idx);
+    void removeByReference(ParticleEmitter* emitter);
 
 private:
     static constexpr GLuint INVALID = 0xFFFFFFFF;
@@ -87,7 +84,7 @@ private:
          0.5f, -0.5f,  0.0f
     };
 
-    std::vector<ParticleEmitter> emitters;
+    std::vector<ParticleEmitter*> emitters;
 
     // OpenGL rendering
     GLuint VAO          { INVALID };

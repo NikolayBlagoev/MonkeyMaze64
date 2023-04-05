@@ -55,18 +55,18 @@ struct RenderConfig {
     int32_t ssaoSamples             { 32 };     // Can causes performance explosions at higher values
     int32_t ssaoKernelLength        { 4 };      // Must be even
     float ssaoRadius                { 0.25f };
-    float ssaoBias                  { 0.020f }; 
+    float ssaoBias                  { 0.05f }; 
     float ssaoPower                 { 6.5f };
-    float ssaoOcclussionCoefficient { 1.2f };
+    float ssaoOcclussionCoefficient { 0.5f };
 
     // Particles
-    float velocityDeviation { 0.001f };
+    float velocityDeviation { 0.005f };
     float colorDeviation    { 0.1f };
     float lifeDeviation     { 25.0f };
-    float sizeDeviation     { 0.001f };
+    float sizeDeviation     { 0.005f };
 
     // Parallax mapping
-    float heightScale       { 0.075f };
+    float heightScale       { 0.025f };
     float minDepthLayers    { 8.0f };
     float maxDepthLayers    { 32.0f };
 
