@@ -264,10 +264,30 @@ int main(int argc, char* argv[]) {
     Mesh stand2CPU      = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "stand2.obj"));
     Mesh suzanneCPU     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "suzanne.obj"));
     GPUMesh aperture(apertureCPU);
+    aperture.setAlbedo(albedoGlass);
+    aperture.setAO(aoGlass);
+    aperture.setDisplacement(displacementGlass, true);
+    aperture.setNormal(normalGlass);
+    aperture.setRoughness(roughnessGlass);
     GPUMesh camera(cameraCPU);
     GPUMesh stand1(stand1CPU);
     GPUMesh stand2(stand2CPU);
+    std::array<GPUMesh*, 3> cameraMetalComponents = { &camera, &stand1, &stand2 };
+    for (GPUMesh* component : cameraMetalComponents) {
+        component->setAlbedo(albedoMetal);
+        component->setAO(aoMetal);
+        component->setDisplacement(displacementMetal, true);
+        component->setMetallic(metalnessMetal);
+        component->setNormal(normalMetal);
+        component->setRoughness(roughnessMetal);
+    }
     GPUMesh suzanne(suzanneCPU);
+    suzanne.setAlbedo(albedoCrystals[0]); // TODO: Link to placement logic so which texture is used is varied
+    suzanne.setAO(aoCrystal);
+    suzanne.setDisplacement(displacementCrystal, true);
+    suzanne.setMetallic(metalnessCrystal);
+    suzanne.setNormal(normalCrystal);
+    suzanne.setRoughness(roughnessCrystal);
     HitBox apertureHitBox   = HitBox::makeHitBox(apertureCPU,   false);
     HitBox cameraHitBox     = HitBox::makeHitBox(cameraCPU,     false);
     HitBox stand1HitBox     = HitBox::makeHitBox(stand1CPU,     false);
@@ -290,7 +310,7 @@ int main(int argc, char* argv[]) {
     HitBox tjunctionHitBox  = HitBox::makeHitBox(tjunctionCPU,  false);
     HitBox tunnelHitBox     = HitBox::makeHitBox(tunnelCPU,     false);
     HitBox turnHitbox       = HitBox::makeHitBox(turnCPU,       false);
-    std::vector<GPUMesh*> tileMeshes = { &crossing, &room, &tjunction, &tunnel, &turn };
+    std::array<GPUMesh*, 5UL> tileMeshes = { &crossing, &room, &tjunction, &tunnel, &turn };
     for (GPUMesh* mesh : tileMeshes) {
         mesh->setAlbedo(albedoStone);
         mesh->setAO(aoStone);
