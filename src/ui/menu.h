@@ -21,8 +21,8 @@ struct HeadCount {
 class Menu {
 public:
     Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager,
-         ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer,
-         HeadCount& HeadCount);
+         ParticleEmitterManager& particleEmitterManager, DeferredRenderer& mainRenderer,
+         DeferredRenderer& minimapRenderer, HeadCount& headCount);
 
     // Main drawing functions
     void draw2D();
@@ -78,7 +78,8 @@ private:
     Scene& m_scene;
     LightManager& m_lightManager;
     ParticleEmitterManager& m_particleEmitterManager;
-    DeferredRenderer& m_deferredRenderer;
+    DeferredRenderer& m_mainRenderer;
+    DeferredRenderer& m_minimapRenderer;
     HeadCount& m_headCount;
 
     Shader debugShader;

@@ -13,12 +13,14 @@ DISABLE_WARNINGS_POP()
 #include <iostream>
 
 Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager,
-           ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer, HeadCount& headCount)
+           ParticleEmitterManager& particleEmitterManager, DeferredRenderer& mainRenderer,
+           DeferredRenderer& minimapRenderer, HeadCount& headCount)
     : m_scene(scene)
     , m_renderConfig(renderConfig)
     , m_lightManager(lightManager)
     , m_particleEmitterManager(particleEmitterManager)
-    , m_deferredRenderer(deferredRenderer)
+    , m_mainRenderer(mainRenderer)
+    , m_minimapRenderer(minimapRenderer)
     , m_headCount(headCount) {
     ShaderBuilder debugShaderBuilder;
     debugShaderBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "debug" / "light_debug.vert");
@@ -261,7 +263,8 @@ void Menu::drawShaderLoader() {
     // Load currently selected shaders
     if (ImGui::Button("Reload shaders")) { 
         m_renderConfig.lightingModel = selectedLightingModel;
-        m_deferredRenderer.initLightingShader();
+        m_mainRenderer.initLightingShader();
+        m_minimapRenderer.initLightingShader();
     }
 }
 
@@ -305,8 +308,10 @@ void Menu::drawParallaxControls() {
 
 void Menu::drawSSAOControls() {
     ImGui::Checkbox("Enable SSAO", &m_renderConfig.enableSSAO);
-    if (ImGui::SliderInt("Samples", &m_renderConfig.ssaoSamples, 1, 128))               { m_deferredRenderer.ssaoRegenSamples(); }
-    if (ImGui::DragInt("Kernel length", &m_renderConfig.ssaoKernelLength, 2, 2, 16))    { m_deferredRenderer.ssaoRegenRandomRotation(); }
+    if (ImGui::SliderInt("Samples", &m_renderConfig.ssaoSamples, 1, 128))               { m_mainRenderer.ssaoRegenSamples();
+                                                                                          m_minimapRenderer.ssaoRegenSamples(); }
+    if (ImGui::DragInt("Kernel length", &m_renderConfig.ssaoKernelLength, 2, 2, 16))    { m_mainRenderer.ssaoRegenRandomRotation(); 
+                                                                                          m_minimapRenderer.ssaoRegenRandomRotation();}
     ImGui::SliderFloat("Radius", &m_renderConfig.ssaoRadius, 0.01f, 1.0f);
     ImGui::SliderFloat("Bias", &m_renderConfig.ssaoBias, 0.01f, 0.25f);
     ImGui::SliderFloat("Power", &m_renderConfig.ssaoPower, 5.0f, 20.0f);

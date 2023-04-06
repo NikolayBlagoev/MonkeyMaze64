@@ -213,7 +213,7 @@ int main(int argc, char* argv[]) {
                                      utils::HEIGHT  / static_cast<int32_t>(utils::MINIMAP_SIZE_SCALE), 
                                      renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
     HeadCount headCount;
-    Menu menu(scene, renderConfig, lightManager, particleEmitterManager, mainRenderer, headCount);
+    Menu menu(scene, renderConfig, lightManager, particleEmitterManager, mainRenderer, minimapRenderer, headCount);
 
     // Register UI callbacks
     m_window.registerKeyCallback(keyCallback);
@@ -543,6 +543,7 @@ int main(int argc, char* argv[]) {
                 renderConfig.gamma      = 1.0f;
             }
             mainRenderer.initLightingShader();
+            minimapRenderer.initLightingShader();
             xToonPowerUp = xPressed;
         }
 
@@ -730,7 +731,7 @@ int main(int argc, char* argv[]) {
         menu.draw3D(viewProjectionMain);
         
         // Draw minimap if desired
-        if (renderConfig.drawMinimap && !xToonPowerUp) {
+        if (renderConfig.drawMinimap ) {// && !xToonPowerUp) {
             const float fovRadiansMinimap           = glm::radians(renderConfig.minimapVerticalFOV);
 
             const glm::vec3 position = playerPos + glm::vec3(0.0f, 10.0f, 0.0f);
