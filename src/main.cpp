@@ -426,7 +426,9 @@ int main(int argc, char* argv[]) {
     playerLight->pl                                 = lightManager.addPointLight(glm::vec3(0.0f), glm::vec3(1.0f, 0.5f, 0.0f), 6.0f);
     playerLight->particleEmitter                    = particleEmitterManager.addEmitter(glm::vec3(0.0f));
     playerLight->particleEmitter->m_baseColor       = glm::vec4(0.75f, 0.4f, 0.1f, 0.1f);
-    playerLight->particleEmitter->m_baseVelocity    = glm::vec3(0.0f, 0.01f, 0.0f);
+    playerLight->particleEmitter->m_baseVelocity    = glm::vec3(0.0f, 0.001f, 0.0f);
+    playerLight->particleEmitter->m_baseLife        = 10.0f;
+    playerLight->particleEmitter->m_baseSize        = 0.01f;
     player->addChild(playerLight->shared_from_this());
 
     // Add test lights
@@ -530,7 +532,7 @@ int main(int argc, char* argv[]) {
         // Handle power-up
         bool xPressed = m_window.isKeyPressed(GLFW_KEY_X);
         if (xPressed != xToonPowerUp) {
-            if (!xPressed)  { 
+            if (!xPressed)  {
                 renderConfig.lightingModel = LightingModel::PBR;
                 renderConfig.exposure   = 1.0f;
                 renderConfig.gamma      = 2.2f;
@@ -728,7 +730,7 @@ int main(int argc, char* argv[]) {
         menu.draw3D(viewProjectionMain);
         
         // Draw minimap if desired
-        if (renderConfig.drawMinimap) {
+        if (renderConfig.drawMinimap && !xToonPowerUp) {
             const float fovRadiansMinimap           = glm::radians(renderConfig.minimapVerticalFOV);
 
             const glm::vec3 position = playerPos + glm::vec3(0.0f, 10.0f, 0.0f);
