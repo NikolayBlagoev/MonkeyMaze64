@@ -159,7 +159,7 @@ void makeCameraMoves(glm::vec3 playerPos, std::chrono::time_point<std::chrono::h
             }
             *(cam.get()->color) = glm::vec3(1.f,0.f,0.f);
             curr_detected = true;
-            std::cout<<"DETECTED"<<std::endl;
+            // std::cout<<"DETECTED"<<std::endl;
             continue;
         }else{
             *(cam.get()->color) = glm::vec3(0.f,1.f,1.f);
@@ -426,7 +426,9 @@ int main(int argc, char* argv[]) {
     playerLight->pl                                 = lightManager.addPointLight(glm::vec3(0.0f), glm::vec3(1.0f, 0.5f, 0.0f), 6.0f);
     playerLight->particleEmitter                    = particleEmitterManager.addEmitter(glm::vec3(0.0f));
     playerLight->particleEmitter->m_baseColor       = glm::vec4(0.75f, 0.4f, 0.1f, 0.1f);
-    playerLight->particleEmitter->m_baseVelocity    = glm::vec3(0.0f, 0.01f, 0.0f);
+    playerLight->particleEmitter->m_baseVelocity    = glm::vec3(0.0f, 0.001f, 0.0f);
+    playerLight->particleEmitter->m_baseLife        = 10.0f;
+    playerLight->particleEmitter->m_baseSize        = 0.01f;
     player->addChild(playerLight->shared_from_this());
 
     // Add test lights
@@ -503,6 +505,16 @@ int main(int argc, char* argv[]) {
 
     // Main loop
     while (!m_window.shouldClose()) {
+        Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
+
+        // Controls
+        ImGuiIO io = ImGui::GetIO();
+        m_window.updateInput();
+        if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
+            if (renderConfig.controlPlayer) { currentCamera.updateInput(player, scene.root, playerMiddleOffset); }
+            else                            { currentCamera.updateInput(); }
+        }
+
         // Handle cutscene
         if (headCount.headsCollected == headCount.headsToCollect) { cutsceneTriggered = true; }
         if (cutsceneTriggered) {
@@ -520,7 +532,7 @@ int main(int argc, char* argv[]) {
         // Handle power-up
         bool xPressed = m_window.isKeyPressed(GLFW_KEY_X);
         if (xPressed != xToonPowerUp) {
-            if (!xPressed)  { 
+            if (!xPressed)  {
                 renderConfig.lightingModel = LightingModel::PBR;
                 renderConfig.exposure   = 1.0f;
                 renderConfig.gamma      = 2.2f;
@@ -536,6 +548,9 @@ int main(int argc, char* argv[]) {
         }
 
         playerPos = (player->transform.translate);
+        auto test = player->modelMatrix(false) * glm::vec4(glm::vec3(0.0f), 1.0f);
+        auto test2 = player->modelMatrix(true) * glm::vec4(glm::vec3(0.0f), 1.0f);
+
         for (size_t childIdx = 0; childIdx < monkeyHeads.size(); childIdx++) {
             std::weak_ptr<MeshTree> head = monkeyHeads.at(childIdx);
             if (head.expired()) { 
@@ -559,7 +574,7 @@ int main(int argc, char* argv[]) {
                 headCount.headsCollected++;
             }
         }
-        Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
+        
         std::chrono::time_point curr_frame = timer.now();
         bezierCurveManager.timeStep(curr_frame);
         makeCameraMoves(playerPos, curr_frame);
@@ -700,14 +715,6 @@ int main(int argc, char* argv[]) {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-
-        // Controls
-        ImGuiIO io = ImGui::GetIO();
-        m_window.updateInput();
-        if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
-            if (renderConfig.controlPlayer) { currentCamera.updateInput(player, scene.root, playerMiddleOffset); }
-            else                            { currentCamera.updateInput(); }
-        }
         
         // Update transformation of managed mesh tree objects
         scene.root->transformExternal();
@@ -719,15 +726,21 @@ int main(int argc, char* argv[]) {
         utils::renderShadowMaps(scene.root, renderConfig, lightManager);
         
         // Render scene and 3D GUI objects
-        mainRenderer.render(viewProjectionMain, mainCamera.cameraPos());
+        mainRenderer.render(viewProjectionMain, currentCamera.cameraPos());
         mainRenderer.copyGBufferDepth(0); // Copy main renderer G-buffer depth data to main framebuffer so 3D UI elements are depth tested appropriately
         menu.draw3D(viewProjectionMain);
         
         // Draw minimap if desired
-        if (renderConfig.drawMinimap) {
+        if (renderConfig.drawMinimap ) {// && !xToonPowerUp) {
             const float fovRadiansMinimap           = glm::radians(renderConfig.minimapVerticalFOV);
-            const glm::mat4 viewProjectionMinimap   = glm::perspective(fovRadiansMinimap, utils::ASPECT_RATIO, 0.1f, 30.0f) * currentCamera.topDownViewMatrix();
-            minimapRenderer.render(viewProjectionMinimap, currentCamera.topDownPos());
+
+            const glm::vec3 position = playerPos + glm::vec3(0.0f, 10.0f, 0.0f);
+            const glm::mat4 viewMatrix = glm::lookAt(position,
+                                                     playerPos,
+                                                     glm::vec3(0.0f, 0.0f, -1.0f));
+
+            const glm::mat4 viewProjectionMinimap = glm::perspective(fovRadiansMinimap, utils::ASPECT_RATIO, 0.1f, 30.0f) * viewMatrix;
+            minimapRenderer.render(viewProjectionMinimap, position);
         }
 
         // Draw 2D GUI
