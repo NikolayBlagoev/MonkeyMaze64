@@ -11,15 +11,18 @@ DISABLE_WARNINGS_POP()
 #include <utils/constants.h>
 #include <utils/render_utils.hpp>
 
-DeferredRenderer::DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager,
+DeferredRenderer::DeferredRenderer(int32_t renderWidth, int32_t renderHeight,
+                                   RenderConfig& renderConfig, Scene& scene, LightManager& lightManager,
                                    ParticleEmitterManager& particleEmitterManager, std::weak_ptr<const Texture> xToonTex)
-    : m_renderConfig(renderConfig)
+    : RENDER_WIDTH(renderWidth)
+    , RENDER_HEIGHT(renderHeight)
+    , m_renderConfig(renderConfig)
     , m_scene(scene)
     , m_lightManager(lightManager)
     , m_particleEmitterManager(particleEmitterManager)
     , m_xToonTex(xToonTex)
-    , bloomFilter(renderConfig)
-    , ssaoFilter(utils::WIDTH, utils::HEIGHT, renderConfig) {
+    , bloomFilter(renderWidth, renderHeight, renderConfig)
+    , ssaoFilter(renderWidth, renderHeight, renderConfig) {
     initBuffers();
     initShaders();
 }
@@ -39,13 +42,13 @@ DeferredRenderer::~DeferredRenderer() {
 }
 
 void DeferredRenderer::render(const glm::mat4& viewProjection, const glm::vec3& cameraPos) {
-    glViewport(0, 0, utils::WIDTH, utils::HEIGHT);              // Set correct viewport size
-    renderGeometry(viewProjection, cameraPos);            // Geometry pass
-    renderLighting(cameraPos);                                  // Lighting pass
-    copyGBufferDepth(hdrBuffer);                                // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
-    renderForward(viewProjection);                        // Render transparent objects which require forward rendering
-    renderPostProcessing(viewProjection);                           // Combine post-processing results; HDR tonemapping and gamma correction
-    copyGBufferDepth(0U);                                       // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
+    glViewport(0, 0, RENDER_WIDTH, RENDER_HEIGHT);  // Set correct viewport size
+    renderGeometry(viewProjection, cameraPos);      // Geometry pass
+    renderLighting(cameraPos);                      // Lighting pass
+    copyGBufferDepth(hdrBuffer);                    // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
+    renderForward(viewProjection);                  // Render transparent objects which require forward rendering
+    renderPostProcessing(viewProjection);           // Combine post-processing results; HDR tonemapping and gamma correction
+    copyGBufferDepth(0U);                           // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
 }
 
 void DeferredRenderer::initGBuffer() {
@@ -55,22 +58,22 @@ void DeferredRenderer::initGBuffer() {
     // Init attribute textures (keep textures at 4 values, e.g. RGBA, to avoid alignment issues)
     // and assign them as render targets
     glCreateTextures(GL_TEXTURE_2D, 1, &positionTex);
-    glTextureStorage2D(positionTex, 1, GL_RGBA16F, utils::WIDTH , utils::HEIGHT);
+    glTextureStorage2D(positionTex, 1, GL_RGBA16F, RENDER_WIDTH , RENDER_HEIGHT);
     glTextureParameteri(positionTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(positionTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(gBuffer, GL_COLOR_ATTACHMENT0, positionTex, 0);
     glCreateTextures(GL_TEXTURE_2D, 1, &normalTex);
-    glTextureStorage2D(normalTex, 1, GL_RGBA16F, utils::WIDTH , utils::HEIGHT);
+    glTextureStorage2D(normalTex, 1, GL_RGBA16F, RENDER_WIDTH , RENDER_HEIGHT);
     glTextureParameteri(normalTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(normalTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(gBuffer, GL_COLOR_ATTACHMENT1, normalTex, 0);
     glCreateTextures(GL_TEXTURE_2D, 1, &albedoTex);
-    glTextureStorage2D(albedoTex, 1, GL_RGBA8, utils::WIDTH, utils::HEIGHT);
+    glTextureStorage2D(albedoTex, 1, GL_RGBA8, RENDER_WIDTH, RENDER_HEIGHT);
     glTextureParameteri(albedoTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(albedoTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(gBuffer, GL_COLOR_ATTACHMENT2, albedoTex, 0);
     glCreateTextures(GL_TEXTURE_2D, 1, &materialTex);
-    glTextureStorage2D(materialTex, 1, GL_RGBA8, utils::WIDTH, utils::HEIGHT);
+    glTextureStorage2D(materialTex, 1, GL_RGBA8, RENDER_WIDTH, RENDER_HEIGHT);
     glTextureParameteri(materialTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(materialTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(gBuffer, GL_COLOR_ATTACHMENT3, materialTex, 0);
@@ -79,7 +82,7 @@ void DeferredRenderer::initGBuffer() {
 
     // Create and attach depth buffer
     glCreateRenderbuffers(1, &rboDepthG);
-    glNamedRenderbufferStorage(rboDepthG, GL_DEPTH_COMPONENT, utils::WIDTH, utils::HEIGHT);
+    glNamedRenderbufferStorage(rboDepthG, GL_DEPTH_COMPONENT, RENDER_WIDTH, RENDER_HEIGHT);
     glNamedFramebufferRenderbuffer(gBuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthG);
 
     // Check if framebuffer is complete
@@ -92,14 +95,14 @@ void DeferredRenderer::initHdrBuffer() {
 
     // Create texture to render to
     glCreateTextures(GL_TEXTURE_2D, 1, &hdrTex);
-    glTextureStorage2D(hdrTex, 1, GL_RGBA16F, utils::WIDTH, utils::HEIGHT);
+    glTextureStorage2D(hdrTex, 1, GL_RGBA16F, RENDER_WIDTH, RENDER_HEIGHT);
     glTextureParameteri(hdrTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(hdrTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(hdrBuffer, GL_COLOR_ATTACHMENT0, hdrTex, 0);
 
     // Create and attach depth buffer
     glCreateRenderbuffers(1, &rboDepthHDR);
-    glNamedRenderbufferStorage(rboDepthHDR, GL_DEPTH_COMPONENT, utils::WIDTH, utils::HEIGHT);
+    glNamedRenderbufferStorage(rboDepthHDR, GL_DEPTH_COMPONENT, RENDER_WIDTH, RENDER_HEIGHT);
     glNamedFramebufferRenderbuffer(hdrBuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepthHDR);
 
     // Check if framebuffer is complete
@@ -210,6 +213,7 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh, const glm::vec3
     // Camera position
     glUniform3fv(23, 1, glm::value_ptr(cameraPos));
 }
+
 
 void DeferredRenderer::recursiveGeometryRender(MeshTree* mt, const glm::mat4& viewProjection, const glm::vec3& cameraPos) const {
     if (mt == nullptr) { return; }
@@ -342,12 +346,13 @@ void DeferredRenderer::renderPostProcessing(const glm::mat4& viewProjection) {
     }
     glUniform1i(8, m_renderConfig.enableSSAO);
     
+    glViewport(0, 0, RENDER_WIDTH, RENDER_HEIGHT);
     utils::renderQuad();
 }
 
 void DeferredRenderer::copyGBufferDepth(GLuint destinationBuffer) {
     glBlitNamedFramebuffer(gBuffer, destinationBuffer,
-                           0, 0, utils::WIDTH, utils::HEIGHT,
-                           0, 0, utils::WIDTH, utils::HEIGHT,
+                           0, 0, RENDER_WIDTH, RENDER_HEIGHT,
+                           0, 0, RENDER_WIDTH, RENDER_HEIGHT,
                            GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 }

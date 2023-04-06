@@ -13,6 +13,9 @@ namespace utils {
     constexpr int32_t HEIGHT        = 1040;
     constexpr float ASPECT_RATIO    = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
 
+    // Minimap parameters
+    constexpr float MINIMAP_SIZE_SCALE = 3.0f;
+
     // Rendering parameters
     constexpr int32_t LIGHTING_TEX_START_IDX        = 24;
     constexpr int32_t POST_PROCESSING_TEX_START_IDX = 32;
