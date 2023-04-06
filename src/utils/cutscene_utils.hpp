@@ -17,7 +17,8 @@ namespace utils {
                              MeshTree* player, MeshTree* playerLight,
                              Camera& mainCamera, Camera& playerCamera, glm::vec3 playerPos) {
         // Disable user input and set camera slightly in front of player model, looking back at it
-        renderConfig.controlPlayer = false;
+        renderConfig.controlPlayer  = false;
+        renderConfig.drawMinimap    = false;
         mainCamera.setUserInteraction(false);
         playerCamera.setUserInteraction(false);
         glm::vec3 xzPlaneForward    = playerCamera.getForward();
