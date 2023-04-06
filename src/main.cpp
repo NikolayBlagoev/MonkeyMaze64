@@ -20,6 +20,7 @@ DISABLE_WARNINGS_POP()
 #include <ui/camera.h>
 #include <ui/menu.h>
 #include <utils/constants.h>
+#include <utils/cutscene_utils.hpp>
 #include <utils/hitbox.hpp>
 #include <utils/render_utils.hpp>
 
@@ -33,9 +34,14 @@ DISABLE_WARNINGS_POP()
 
 // Game state
 // TODO: Have a separate struct for this if it becomes too much
-bool cameraZoomed = false;
-bool playerDetected = false;
-bool xToonPowerUp = false;
+bool cameraZoomed       = false;
+bool playerDetected     = false;
+bool xToonPowerUp       = false;
+bool cutsceneTriggered  = false;
+bool inCutscene         = false;
+size_t seizureCounter   = 0UL;
+size_t seizureSubCounter   = 0UL;
+
 std::chrono::time_point<std::chrono::high_resolution_clock> playerLastDetected;
 std::mutex m;
 std::condition_variable cv;
@@ -319,9 +325,18 @@ int main(int argc, char* argv[]) {
     Mesh tjunctionCPU  = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tjunction.obj"));
     Mesh tunnelCPU     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tunnel.obj"));
     Mesh turnCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "turn.obj"));
+    GPUMesh crossing(crossingCPU);
+    GPUMesh room(roomCPU);
+    GPUMesh tjunction(tjunctionCPU);
+    GPUMesh tunnel(tunnelCPU);
+    GPUMesh turn(turnCPU);
+    HitBox crossingHitBox   = HitBox::makeHitBox(crossingCPU,   false);
+    HitBox roomHitBox       = HitBox::makeHitBox(roomCPU,       false);
+    HitBox tjunctionHitBox  = HitBox::makeHitBox(tjunctionCPU,  false);
+    HitBox tunnelHitBox     = HitBox::makeHitBox(tunnelCPU,     false);
+    HitBox turnHitbox       = HitBox::makeHitBox(turnCPU,       false);
 
-
-    // Tile pieces:
+    // Tile pieces
     Mesh floorCPU          = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "floor.obj"));
     Mesh pillarBLCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "pillar_bottom_left.obj"));
     Mesh pillarBRCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "pillar-bottom-right.obj"));
@@ -332,17 +347,7 @@ int main(int argc, char* argv[]) {
     Mesh wallHTCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-half-top.obj"));
     Mesh wallFBCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-full-bottom.obj"));
     Mesh wallFRCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-full-right.obj"));
-    Mesh wallFTCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-full-top.obj"));
-    // Mesh wallHTCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-half-top.obj"));
-    
-
-    GPUMesh crossing(crossingCPU);
-    GPUMesh room(roomCPU);
-    GPUMesh tjunction(tjunctionCPU);
-    GPUMesh tunnel(tunnelCPU);
-    GPUMesh turn(turnCPU);
-
-
+    Mesh wallFTCPU       = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "tiles" / "wall-full-top.obj"));    
     GPUMesh floorT(floorCPU);
     GPUMesh pillarBL(pillarBLCPU);
     GPUMesh pillarBR(pillarBRCPU);
@@ -354,27 +359,19 @@ int main(int argc, char* argv[]) {
     GPUMesh wallFB(wallFBCPU);
     GPUMesh wallFR(wallFRCPU);
     GPUMesh wallFT(wallFTCPU);
+    HitBox floorHitbox          = HitBox::makeHitBox(floorCPU,      false);
+    HitBox pillarBLHitbox       = HitBox::makeHitBox(pillarBLCPU,   true);
+    HitBox pillarBRHitbox       = HitBox::makeHitBox(pillarBRCPU,   true);
+    HitBox pillarTLHitbox       = HitBox::makeHitBox(pillarTLCPU,   true);
+    HitBox pillarTRHitbox       = HitBox::makeHitBox(pillarTRCPU,   true);
+    HitBox wallHRHitbox         = HitBox::makeHitBox(wallHRCPU,     true);
+    HitBox wallHBHitbox         = HitBox::makeHitBox(wallHBCPU,     true);
+    HitBox wallHTHitbox         = HitBox::makeHitBox(wallHTCPU,     true);
+    HitBox wallFBHitbox         = HitBox::makeHitBox(wallFBCPU,     true);
+    HitBox wallFRHitbox         = HitBox::makeHitBox(wallFRCPU,     true);
+    HitBox wallFTHitbox         = HitBox::makeHitBox(wallFTCPU,     true);
 
-    HitBox crossingHitBox   = HitBox::makeHitBox(crossingCPU,   false);
-    HitBox roomHitBox       = HitBox::makeHitBox(roomCPU,       false);
-    HitBox tjunctionHitBox  = HitBox::makeHitBox(tjunctionCPU,  false);
-    HitBox tunnelHitBox     = HitBox::makeHitBox(tunnelCPU,     false);
-    HitBox turnHitbox       = HitBox::makeHitBox(turnCPU,       false);
-
-
-    HitBox floorHitbox          = HitBox::makeHitBox(floorCPU,       false);
-    HitBox pillarBLHitbox       = HitBox::makeHitBox(pillarBLCPU,       true);
-    HitBox pillarBRHitbox       = HitBox::makeHitBox(pillarBRCPU,       true);
-    HitBox pillarTLHitbox       = HitBox::makeHitBox(pillarTLCPU,       true);
-    HitBox pillarTRHitbox       = HitBox::makeHitBox(pillarTRCPU,       true);
-    HitBox wallHRHitbox         = HitBox::makeHitBox(wallHRCPU,       true);
-    HitBox wallHBHitbox         = HitBox::makeHitBox(wallHBCPU,       true);
-    HitBox wallHTHitbox         = HitBox::makeHitBox(wallHTCPU,       true);
-    HitBox wallFBHitbox         = HitBox::makeHitBox(wallFBCPU,       true);
-    HitBox wallFRHitbox         = HitBox::makeHitBox(wallFRCPU,       true);
-    HitBox wallFTHitbox         = HitBox::makeHitBox(wallFTCPU,       true);
-
-
+    // Set textures for all tile components
     std::array<GPUMesh*, 16UL> tileMeshes = { &crossing, &room, &tjunction, &tunnel, &turn, &floorT, &pillarBL, &pillarBR,
      &pillarTL, &pillarTR, &wallHR, &wallHB, &wallHT, &wallFB, &wallFR, &wallFT};
     for (GPUMesh* mesh : tileMeshes) {
@@ -429,11 +426,14 @@ int main(int argc, char* argv[]) {
     player->addChild(playerLight->shared_from_this());
 
     // Add test lights
-    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 3.0f);
-    lightManager.addPointLight(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 3.0f);
-    lightManager.addPointLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 3.0f);
-    lightManager.addAreaLight(glm::vec3(-1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
-    lightManager.addAreaLight(glm::vec3(1.0f, 1.0f, -1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
+    lightManager.addAreaLight(glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(1.0f), utils::CONSTANT_AREA_LIGHT_FALLOFF, 10.0f,
+                              95.0f, 230.0f);
+    lightManager.addAreaLight(glm::vec3(0.0f, 2.0f, 2.0f), glm::vec3(1.0f), utils::CONSTANT_AREA_LIGHT_FALLOFF, 10.0f,
+                              135.0f, 270.0f);
+    lightManager.addAreaLight(glm::vec3(-2.0f, 2.0f, 0.0f), glm::vec3(1.0f), utils::CONSTANT_AREA_LIGHT_FALLOFF, 10.0f,
+                              90.0f, 320.0f);
+    lightManager.addAreaLight(glm::vec3(0.0f, 2.0f, -2.0f), glm::vec3(1.0f), utils::CONSTANT_AREA_LIGHT_FALLOFF, 10.0f,
+                              60.0f, 271.0f);
 
     // Init MeshTree root
     MeshTree* boardRoot = new MeshTree("board root", std::nullopt);
@@ -447,7 +447,7 @@ int main(int argc, char* argv[]) {
     BezierCurve<glm::vec4> b4d                      = BezierCurve<glm::vec4>(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
     BezierComposite<glm::vec3> b3c                  = BezierComposite<glm::vec3>({b3d, b3d2}, true, 20.f);
     std::chrono::time_point millisec_since_epoch    = timer.now();
-    BezierCurveManager bezierCurveManager                        = BezierCurveManager(millisec_since_epoch);
+    BezierCurveManager bezierCurveManager           = BezierCurveManager(millisec_since_epoch);
 
     // Bezier curve book-keeping
     bool prev_motion                        = motion;
@@ -497,21 +497,36 @@ int main(int argc, char* argv[]) {
             boardRoot->addChild(b->board[i][j]->shared_from_this());
     }
 
-    
-
     // Main loop
     while (!m_window.shouldClose()) {
-        
+        // Handle cutscene
+        if (headCount.headsCollected == headCount.headsToCollect) { cutsceneTriggered = true; }
+        if (cutsceneTriggered) {
+            utils::initCutscene(bezierCurveManager, renderConfig, lightManager, player, playerLight, mainCamera, playerCamera, playerPos);
+            inCutscene = true;
+        }
+        if (inCutscene) {
+            monkeyPoses[0].setAlbedo(albedoHyperFur[seizureCounter]);
+            if (++seizureSubCounter >= utils::SEIZURE_SUB_LIMIT) {
+                seizureSubCounter   = 0UL;
+                seizureCounter      = (seizureCounter + 1UL) % albedoHyperFur.size();
+            }
+        }
+
+        // Handle power-up
         bool xPressed = m_window.isKeyPressed(GLFW_KEY_X);
-
-        if (xPressed != xToonPowerUp) { // state change
-            if (!xPressed)
+        if (xPressed != xToonPowerUp) {
+            if (!xPressed)  { 
                 renderConfig.lightingModel = LightingModel::PBR;
-            if (xPressed)
+                renderConfig.exposure   = 1.0f;
+                renderConfig.gamma      = 2.2f;
+            }
+            if (xPressed)   { 
                 renderConfig.lightingModel = LightingModel::XToon;
-
+                renderConfig.exposure   = 0.4f;
+                renderConfig.gamma      = 1.0f;
+            }
             deferredRenderer.initLightingShader();
-
             xToonPowerUp = xPressed;
         }
 
@@ -562,15 +577,6 @@ int main(int argc, char* argv[]) {
         }else{
             player->mesh = &monkeyPoses[0];
         }
-
-        // Clear the screen
-        if (!xToonPowerUp)
-            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        else
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
 
         if(fabs(playerPos.z - prev_pos.z) >= 2.0f * utils::TILE_LENGTH_Z){
             if(playerPos.z < prev_pos.z){
@@ -681,6 +687,11 @@ int main(int argc, char* argv[]) {
             }
             prev_pos.x = playerPos.x;
         }
+
+        // Clear the screen
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
 
         // Controls
         ImGuiIO io = ImGui::GetIO();

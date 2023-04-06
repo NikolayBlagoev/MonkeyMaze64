@@ -34,6 +34,11 @@ namespace utils {
     constexpr size_t TILES_PER_ROW  = 7UL; // Must be at least 2
     constexpr float TILE_LENGTH_X   = 7.72f;
     constexpr float TILE_LENGTH_Z   = 7.72f;
+
+    // Gameplay parameters
+    constexpr uint32_t NUM_HEADS_TO_COLLECT         = 7UL;
+    constexpr float CUTSCENE_POSITION_OFFSET        = 3.0f;
+    constexpr size_t SEIZURE_SUB_LIMIT              = 15UL;
     
     const std::filesystem::path RESOURCES_DIR_PATH  = RESOURCES_DIR;
     const std::filesystem::path SHADERS_DIR_PATH    = SHADERS_DIR;

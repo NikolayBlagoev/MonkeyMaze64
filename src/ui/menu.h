@@ -9,13 +9,8 @@
 #include <render/scene.h>
 
 struct HeadCount {
-    int headsCollected;
-    int headsToCollect;
-
-    HeadCount() {
-        this->headsCollected = 0;
-        this->headsToCollect = 7;
-    }
+    uint32_t headsCollected = { 0UL };
+    uint32_t headsToCollect = { utils::NUM_HEADS_TO_COLLECT };
 };
 
 class Menu {

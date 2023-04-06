@@ -52,7 +52,7 @@ struct RenderConfig {
 
     // SSAO
     bool enableSSAO                 { true };
-    int32_t ssaoSamples             { 32 };     // Can causes performance explosions at higher values
+    int32_t ssaoSamples             { 32 };     // Can cause performance explosions at higher values
     int32_t ssaoKernelLength        { 4 };      // Must be even
     float ssaoRadius                { 0.25f };
     float ssaoBias                  { 0.05f }; 

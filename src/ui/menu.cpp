@@ -333,9 +333,11 @@ void Menu::drawRenderTab() {
 
 void Menu::drawGameTab() {
     if (ImGui::BeginTabItem("Game")) {
-        std::string collected = std::to_string(this->m_headCount.headsCollected);
-        std::string toCollect = std::to_string(this->m_headCount.headsToCollect);
+        std::string collected = std::to_string(m_headCount.headsCollected);
+        std::string toCollect = std::to_string(m_headCount.headsToCollect);
         ImGui::Text("%s", (collected + " / " + toCollect + " collected").c_str());
+
+        if (ImGui::Button("Cheat")) { m_headCount.headsCollected = utils::NUM_HEADS_TO_COLLECT; }
 
         ImGui::EndTabItem();
     }

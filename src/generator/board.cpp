@@ -66,16 +66,16 @@ void Board::addObjectsRoom(MeshTree* room, Defined* roomTile, const InitialState
             MemoryManager::addEl(retRoot);
             room->addChild(retRoot->shared_from_this());
             BezierCurve<glm::vec3> b3d              = BezierCurve<glm::vec3>(glm::vec3(-3.f, 2.f, 0.f), glm::vec3(-3.3f , 2.5f, 0.f), glm::vec3(-2.7f , 3.f, 0.f), glm::vec3(-3.f, 3.5f, 0.f), 10.f);
-                BezierCurve<glm::vec3> b3d2             = BezierCurve<glm::vec3>(glm::vec3(-3.f, 3.5f, 0.f), glm::vec3(-2.7f , 3.f, 0.f), glm::vec3(-3.3f , 2.5f, 0.f), glm::vec3(-3.f, 2.f, 0.f), 10.f);
-                BezierComposite<glm::vec3> b3c          = BezierComposite<glm::vec3>({b3d, b3d2}, true, 20.f);
-                BezierComboComposite<glm::vec3> combo   = BezierComboComposite<glm::vec3>(b3c, &retRoot->transform.translate, retRoot->shared_from_this());
-                initialState.bezierCurveManager.add3dComposite(combo);
+            BezierCurve<glm::vec3> b3d2             = BezierCurve<glm::vec3>(glm::vec3(-3.f, 3.5f, 0.f), glm::vec3(-2.7f , 3.f, 0.f), glm::vec3(-3.3f , 2.5f, 0.f), glm::vec3(-3.f, 2.f, 0.f), 10.f);
+            BezierComposite<glm::vec3> b3c          = BezierComposite<glm::vec3>({b3d, b3d2}, true, 20.f);
+            BezierComboComposite<glm::vec3> combo   = BezierComboComposite<glm::vec3>(b3c, &retRoot->transform.translate, retRoot->shared_from_this());
+            initialState.bezierCurveManager.add3dComposite(combo);
 
-                BezierCurve<glm::vec4> b4d              = BezierCurve<glm::vec4>(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
-                BezierCurve<glm::vec4> b4d2             = BezierCurve<glm::vec4>(glm::vec4(0.f , 1.f, 0.f, 0.f) , glm::vec4(0.f , -0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , -0.3826834f, 0.f, 0.9238795f),  glm::vec4(0.f, -0.0005f, 0.f, 0.9999999f), 10.f);
-                BezierComposite<glm::vec4> b4c          = BezierComposite<glm::vec4>({b4d, b4d2}, true, 20.f);
-                BezierComboComposite<glm::vec4> combo2  = BezierComboComposite<glm::vec4>(b4c, &retRoot->transform.selfRotate, retRoot->shared_from_this());
-                initialState.bezierCurveManager.add4dComposite(combo2);
+            BezierCurve<glm::vec4> b4d              = BezierCurve<glm::vec4>(glm::vec4(0.f, 0.f, 0.f, 1.f), glm::vec4(0.f , 0.3826834f, 0.f, 0.9238795f), glm::vec4(0.f , 0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , 1.f, 0.f, 0.f), 10.f);
+            BezierCurve<glm::vec4> b4d2             = BezierCurve<glm::vec4>(glm::vec4(0.f , 1.f, 0.f, 0.f) , glm::vec4(0.f , -0.7132504f, 0.f, 0.7009093f), glm::vec4(0.f , -0.3826834f, 0.f, 0.9238795f),  glm::vec4(0.f, -0.0005f, 0.f, 0.9999999f), 10.f);
+            BezierComposite<glm::vec4> b4c          = BezierComposite<glm::vec4>({b4d, b4d2}, true, 20.f);
+            BezierComboComposite<glm::vec4> combo2  = BezierComboComposite<glm::vec4>(b4c, &retRoot->transform.selfRotate, retRoot->shared_from_this());
+            initialState.bezierCurveManager.add4dComposite(combo2);
             initialState.monkeyHeads.push_back(retRoot->shared_from_this());
         }
     }
@@ -97,38 +97,26 @@ void Board::load(Defined*** boardCopy, const InitialState& initialState, size_t 
                             glm::vec3(0.3f));
                         board[i][j] = crossingTile;
                         MemoryManager::addEl(crossingTile);
-
                         MeshTree* pillarTL = new MeshTree(
                             "pillarTL", initialState.pillarTL.second, initialState.pillarTL.first);
-                        
                         MemoryManager::addEl(pillarTL);
                         crossingTile->addChild(pillarTL->shared_from_this());
-
                         MeshTree* pillarBL = new MeshTree(
                             "pillarBL", initialState.pillarBL.second, initialState.pillarBL.first);
-                        
                         MemoryManager::addEl(pillarBL);
                         crossingTile->addChild(pillarBL->shared_from_this());
-
                         MeshTree* pillarBR = new MeshTree(
                             "pillarBL", initialState.pillarBR.second, initialState.pillarBR.first);
-                        
                         MemoryManager::addEl(pillarBR);
                         crossingTile->addChild(pillarBR->shared_from_this());
-
                         MeshTree* pillarTR = new MeshTree(
                             "pillarBL", initialState.pillarTR.second, initialState.pillarTR.first);
-                        
                         MemoryManager::addEl(pillarTR);
                         crossingTile->addChild(pillarTR->shared_from_this());
-
-
                         MeshTree* floorT = new MeshTree(
                             "floor", initialState.floor.second, initialState.floor.first);
-                        
                         MemoryManager::addEl(floorT);
                         crossingTile->addChild(floorT->shared_from_this());
-
                         break;
                     } case TileType::ROOM1: {
                         MeshTree* roomTile = new MeshTree(
