@@ -213,7 +213,7 @@ int main(int argc, char* argv[]) {
                                      utils::HEIGHT  / static_cast<int32_t>(utils::MINIMAP_SIZE_SCALE), 
                                      renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
     HeadCount headCount;
-    Menu menu(scene, renderConfig, lightManager, particleEmitterManager, deferredRenderer, headCount);
+    Menu menu(scene, renderConfig, lightManager, particleEmitterManager, mainRenderer, minimapRenderer, headCount);
 
     // Register UI callbacks
     m_window.registerKeyCallback(keyCallback);
@@ -530,7 +530,8 @@ int main(int argc, char* argv[]) {
                 renderConfig.exposure   = 0.4f;
                 renderConfig.gamma      = 1.0f;
             }
-            deferredRenderer.initLightingShader();
+            mainRenderer.initLightingShader();
+            minimapRenderer.initLightingShader();
             xToonPowerUp = xPressed;
         }
 
@@ -693,7 +694,7 @@ int main(int argc, char* argv[]) {
 
         // View-projection matrices setup
         const float fovRadiansMain              = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 viewProjectionMain      = glm::perspective(fovRadiansMain, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
+        const glm::mat4 viewProjectionMain      = glm::perspective(fovRadiansMain, utils::ASPECT_RATIO, 0.1f, 30.0f) * currentCamera.viewMatrix();
 
         // Clear the screen
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -701,6 +702,8 @@ int main(int argc, char* argv[]) {
         glEnable(GL_DEPTH_TEST);
 
         // Controls
+        ImGuiIO io = ImGui::GetIO();
+        m_window.updateInput();
         if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
             if (renderConfig.controlPlayer) { currentCamera.updateInput(player, scene.root, playerMiddleOffset); }
             else                            { currentCamera.updateInput(); }
@@ -723,8 +726,8 @@ int main(int argc, char* argv[]) {
         // Draw minimap if desired
         if (renderConfig.drawMinimap) {
             const float fovRadiansMinimap           = glm::radians(renderConfig.minimapVerticalFOV);
-            const glm::mat4 viewProjectionMinimap   = glm::perspective(fovRadiansMinimap, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.topDownViewMatrix();
-            minimapRenderer.render(viewProjectionMinimap, mainCamera.topDownPos());
+            const glm::mat4 viewProjectionMinimap   = glm::perspective(fovRadiansMinimap, utils::ASPECT_RATIO, 0.1f, 30.0f) * currentCamera.topDownViewMatrix();
+            minimapRenderer.render(viewProjectionMinimap, currentCamera.topDownPos());
         }
 
         // Draw 2D GUI
