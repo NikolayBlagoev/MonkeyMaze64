@@ -503,6 +503,22 @@ int main(int argc, char* argv[]) {
             boardRoot->addChild(b->board[i][j]->shared_from_this());
     }
 
+    Mesh dragonCPUMesh = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "dragon.obj"));
+    GPUMesh* dragonGPUMesh = new GPUMesh(dragonCPUMesh);
+    dragonGPUMesh->setAlbedo(albedoMetal);
+    dragonGPUMesh->setAO(aoMetal);
+    dragonGPUMesh->setDisplacement(displacementMetal, true);
+    dragonGPUMesh->setMetallic(metalnessMetal);
+    dragonGPUMesh->setNormal(normalMetal);
+    dragonGPUMesh->setRoughness(roughnessMetal);
+    HitBox dragonHitBox = HitBox::makeHitBox(dragonCPUMesh, false);
+
+    MeshTree* dragonTree = new MeshTree("dragon", dragonHitBox, dragonGPUMesh, glm::vec3(3.0f, 0.4f, 1.0f),
+        glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+
+    MemoryManager::addEl(dragonTree);
+    scene.addMesh(dragonTree->shared_from_this());
+    lightManager.addPointLight(glm::vec3(3.0f, 1.f, 1.0f), glm::vec3(0.f, 1.f, 1.f) );
     // Main loop
     while (!m_window.shouldClose()) {
         Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
