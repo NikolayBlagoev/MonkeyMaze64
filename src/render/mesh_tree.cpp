@@ -28,24 +28,17 @@ void MeshTree::addChild(std::shared_ptr<MeshTree> child){
 void MeshTree::transformExternal() {
     // Transform objects managed by this node
     glm::mat4 currTransform = modelMatrix(false);
+    glm::vec4 homogeneous   = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    homogeneous             /= homogeneous.w;
     if (al != nullptr) {
-        glm::vec4 homogeneous = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        homogeneous           /= homogeneous.w;
-        al->position          = homogeneous;
-        homogeneous           = currTransform * glm::vec4(-1.0f, 0.0f, 0.0f, 1.0f);
-        homogeneous           /= homogeneous.w;
-        al->externalForward   = homogeneous;
+        glm::vec4 forwardPoint      = currTransform * glm::vec4(10.0f, 0.0f, 0.0f, 1.0f);
+        forwardPoint                /= forwardPoint.w;
+        glm::vec3 forwardDirection  = glm::normalize(glm::vec3(forwardPoint) - glm::vec3(homogeneous));
+        al->position                = glm::vec3(homogeneous) + 0.5f * forwardDirection; // I am not proud of this, but it is 2:13AM and I cannot for the life of me be assed to add another MeshTree node
+        al->externalForward         = forwardDirection;
     }
-    if (pl != nullptr) {
-      glm::vec4 homogeneous = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-      homogeneous           /= homogeneous.w;
-      pl->position          = homogeneous;
-    }
-    if (particleEmitter != nullptr) {
-      glm::vec4 homogeneous       = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-      homogeneous                 /= homogeneous.w;
-      particleEmitter->m_position = homogeneous;
-    }
+    if (pl != nullptr) { pl->position = homogeneous; }
+    if (particleEmitter != nullptr) { particleEmitter->m_position = homogeneous; }
 
     // Transform objects managed by children
     for (std::weak_ptr<MeshTree> child : children) { if (!child.expired()) { child.lock().get()->transformExternal(); } }

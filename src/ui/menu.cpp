@@ -352,7 +352,8 @@ void Menu::drawLights(const glm::mat4& cameraMVP) {
         for (size_t lightIdx = 0U; lightIdx < m_lightManager.numAreaLights(); lightIdx++) {
             const AreaLight& light          = m_lightManager.areaLightAt(lightIdx);
             const glm::vec4 screenPosStart  = cameraMVP * glm::vec4(light.position, 1.0f);
-            const glm::vec4 screenPosEnd    = cameraMVP * glm::vec4(light.position + light.forwardDirection(), 1.0f);
+            const glm::vec4 screenPosEnd    = cameraMVP * glm::vec4(light.position + (light.externalRotationControl ? light.externalForward : light.forwardDirection()),
+                                                                    1.0f);
             drawPoint(25.0f, screenPosStart, light.color);
             drawPoint(15.0f, screenPosEnd, light.color);
         }

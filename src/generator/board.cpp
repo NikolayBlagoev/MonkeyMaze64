@@ -45,17 +45,17 @@ void Board::addObjectsRoom(MeshTree* room, Defined* roomTile, const InitialState
                 glm::vec3(1.0f));
             MemoryManager::addEl(apertureChild);
             cameraChild->addChild(apertureChild->shared_from_this());
+
             // Create and set parameters of area light representing camera cone of vision
             apertureChild->al                           = initialState.lightManager.addAreaLight(glm::vec3(1.0f, -3.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             apertureChild->al->falloff                  = utils::CONSTANT_AREA_LIGHT_FALLOFF;
-            apertureChild->al->intensityMultiplier      = 2.0f;
+            apertureChild->al->intensityMultiplier      = 4.0f;
             apertureChild->al->externalRotationControl  = true;
+            
             EnemyCamera* cam = new EnemyCamera(&(cameraChild->transform.selfRotate), &(standChild->transform.selfRotate), &(apertureChild->al->externalForward), &(apertureChild->al->position), &(apertureChild->al->color));
                 room->addChild(retRoot->shared_from_this());
                 apertureChild->enemyCam = std::shared_ptr<EnemyCamera>(cam);
                 initialState.cameras.push_back(apertureChild->enemyCam);
-            
-            
         } else if (roomTile->objs.at(i)->type == SpecialObjType::Collectible) {
             MeshTree* retRoot = new MeshTree(
                 "suzanne", initialState.suzanne.second, initialState.suzanne.first,
