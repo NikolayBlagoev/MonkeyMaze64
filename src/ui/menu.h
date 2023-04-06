@@ -8,10 +8,21 @@
 #include <render/particle.h>
 #include <render/scene.h>
 
+struct HeadCount {
+    int headsCollected;
+    int headsToCollect;
+
+    HeadCount() {
+        this->headsCollected = 0;
+        this->headsToCollect = 7;
+    }
+};
+
 class Menu {
 public:
     Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager,
-         ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer);
+         ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer,
+         HeadCount& HeadCount);
 
     void draw(const glm::mat4& cameraMVP);
 
@@ -52,6 +63,9 @@ private:
     void drawParallaxControls();
     void drawSSAOControls();
     void drawRenderTab();
+
+    // Render game tab
+    void drawGameTab();
     /******************************/ 
 
     // 3D debug view
@@ -65,6 +79,7 @@ private:
     LightManager& m_lightManager;
     ParticleEmitterManager& m_particleEmitterManager;
     DeferredRenderer& m_deferredRenderer;
+    HeadCount& m_headCount;
 
     Shader debugShader;
 

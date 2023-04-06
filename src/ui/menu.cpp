@@ -13,12 +13,13 @@ DISABLE_WARNINGS_POP()
 #include <iostream>
 
 Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager,
-           ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer)
+           ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer, HeadCount& headCount)
     : m_scene(scene)
     , m_renderConfig(renderConfig)
     , m_lightManager(lightManager)
     , m_particleEmitterManager(particleEmitterManager)
-    , m_deferredRenderer(deferredRenderer) {
+    , m_deferredRenderer(deferredRenderer)
+    , m_headCount(headCount) {
     ShaderBuilder debugShaderBuilder;
     debugShaderBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "debug" / "light_debug.vert");
     debugShaderBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH  / "debug" / "light_debug.frag");
@@ -35,6 +36,7 @@ void Menu::draw2D() {
     ImGui::BeginTabBar("Categories");
     
     drawCameraTab();
+    drawGameTab();
     drawMeshTab();
     drawLightTab();
     drawShadowTab();
@@ -324,6 +326,16 @@ void Menu::drawRenderTab() {
 
         ImGui::Text("SSAO");
         drawSSAOControls();
+
+        ImGui::EndTabItem();
+    }
+}
+
+void Menu::drawGameTab() {
+    if (ImGui::BeginTabItem("Game")) {
+        std::string collected = std::to_string(this->m_headCount.headsCollected);
+        std::string toCollect = std::to_string(this->m_headCount.headsToCollect);
+        ImGui::Text("%s", (collected + " / " + toCollect + " collected").c_str());
 
         ImGui::EndTabItem();
     }
