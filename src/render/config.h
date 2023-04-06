@@ -21,11 +21,13 @@ enum class LightingModel {
 
 struct RenderConfig {
     // Camera (angles in degrees)
-    float moveSpeed         { 0.03f };
+    float moveSpeed         { 0.09f };
     float lookSpeed         { 0.0015f };
     float verticalFOV       { 60.0f };
     float zoomedVerticalFOV { 35.0f };
     bool constrainVertical  { false };
+    bool invertControls     { true  };
+    bool controlPlayer      { true };
 
     // Minimap
     bool drawMinimap            { true };
@@ -53,14 +55,23 @@ struct RenderConfig {
     float bloomBrightThreshold  { 1.0f };
     uint32_t bloomIterations    { 5U };
 
+    // SSAO
+    bool enableSSAO                 { true };
+    int32_t ssaoSamples             { 32 };     // Can cause performance explosions at higher values
+    int32_t ssaoKernelLength        { 4 };      // Must be even
+    float ssaoRadius                { 0.25f };
+    float ssaoBias                  { 0.05f }; 
+    float ssaoPower                 { 6.5f };
+    float ssaoOcclussionCoefficient { 0.5f };
+
     // Particles
-    float velocityDeviation { 0.001f };
+    float velocityDeviation { 0.005f };
     float colorDeviation    { 0.1f };
     float lifeDeviation     { 25.0f };
-    float sizeDeviation     { 0.001f };
+    float sizeDeviation     { 0.005f };
 
     // Parallax mapping
-    float heightScale       { 0.075f };
+    float heightScale       { 0.025f };
     float minDepthLayers    { 8.0f };
     float maxDepthLayers    { 32.0f };
 
@@ -75,12 +86,19 @@ struct RenderConfig {
 
     // Shadow maps
     float areaShadowFovY    { 60.0f }; // Degrees
-    float shadowNearPlane   { 0.5f };
+    float shadowNearPlane   { 0.1f };
     float shadowFarPlane    { 30.0f };
-    glm::mat4 areaShadowMapsProjectionMatrix() const { return glm::perspective(glm::radians(areaShadowFovY), utils::SHADOW_ASPECT_RATIO,
-                                                                               shadowNearPlane, shadowFarPlane); }
-    glm::mat4 pointShadowMapsProjectionMatrix() const { return glm::perspective(glm::radians(utils::CUBE_SHADOW_FOV), utils::SHADOW_ASPECT_RATIO,
-                                                                                shadowNearPlane, shadowFarPlane); }
+
+    glm::mat4 areaShadowMapsProjectionMatrix() const {
+        return glm::perspective(glm::radians(areaShadowFovY),
+                                utils::SHADOW_ASPECT_RATIO,
+                                shadowNearPlane, shadowFarPlane);
+    }
+    glm::mat4 pointShadowMapsProjectionMatrix() const {
+        return glm::perspective(glm::radians(utils::CUBE_SHADOW_FOV),
+                                utils::SHADOW_ASPECT_RATIO,
+                                shadowNearPlane, shadowFarPlane);
+    }
 };
 
 #endif

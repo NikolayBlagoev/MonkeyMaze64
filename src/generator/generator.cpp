@@ -6,208 +6,191 @@
 #include <cstdlib>
 #include <cmath>
 #include "generator.h"
+
 const bool opens[18][4] = {
-    //1:
+    // 1:
     {
-        //up:
+        // up:
         true,
-        //right:
+        // right:
         true,
-        //down:
+        // down:
         true,
-        //left:
+        // left:
         true
-        
-        
+
     },
-    //2:
-     {
-        //up:
-        false,
-        //right:
-        false,
-        //down:
-        true,
-        //left:
-        false
-    },
-    //3:
-     {
-        //up:
-        false,
-        //right:
-        false,
-        //down:
-        false,
-        //left:
-        true
-    },
-    //4:
+    // 2:
     {
-        //up:
+        // up:
+        false,
+        // right:
+        false,
+        // down:
         true,
-        //right:
+        // left:
+        false},
+    // 3:
+    {
+        // up:
         false,
-        //down:
+        // right:
         false,
-        //left:
-        false
+        // down:
+        false,
+        // left:
+        true},
+    // 4:
+    {
+        // up:
+        true,
+        // right:
+        false,
+        // down:
+        false,
+        // left:
+        false},
+    // 5:
+    {
+        // up:
+        false,
+        // right:
+        true,
+        // down:
+        false,
+        // left:
+        false},
+    // 6:
+    {
+        // up:
+        false,
+        // right:
+        false,
+        // down:
+        false,
+        // left:
+        false},
+    // 7:
+    {
+        // up:
+        true,
+        // right:
+        false,
+        // down:
+        true,
+        // left:
+        false},
+    // 8:
+    {
+        // up:
+        false,
+        // right:
+        true,
+        // down:
+        false,
+        // left:
+        true},
+    // 9:
+    {
+        // up:
+        true,
+        // right:
+        false,
+        // down:
+        true,
+        // left:
+        false},
+    // 10:
+    {
+        // up:
+        false,
+        // right:
+        true,
+        // down:
+        false,
+        // left:
+        true},
+    // 11:
+    {
+        // up:
+        false,
+        // right:
+        true,
+        // down:
+        true,
+        // left:
+        false},
+    // 12:
+    {
+        // up:
+        false,
+        // right:
+        false,
+        // down:
+        true,
+        // left:
+        true},
+    // 13:
+    {
+        // up:
+        true,
+        // right:
+        false,
+        // down:
+        false,
+        // left:
+        true},
+    // 14:
+    {
+        // up:
+        true,
+        // right:
+        true,
+        // down:
+        false,
+        // left:
+        false},
+    // 15:
+    {
+        // up:
+        false,
+        // right:
+        true,
+        // down:
+        true,
+        // left:
+        true,
     },
-    //5:
-     {
-        //up:
+    // 16:
+    {
+        // up:
+        true,
+        // right:
         false,
-        //right:
+        // down:
         true,
-        //down:
+        // left:
+        true},
+    // 17:
+    {
+        // up:
+        true,
+        // right:
+        true,
+        // down:
         false,
-        //left:
-        false
-    },
-    //6:
-     {
-        //up:
-        false,
-        //right:
-        false,
-        //down:
-        false,
-        //left:
-        false
-    },
-    //7:
-     {
-        //up:
+        // left:
+        true},
+    // 18:
+    {
+        // up:
         true,
-        //right:
-        false,
-        //down:
+        // right:
         true,
-        //left:
-        false
-    },
-    //8:
-     {
-        //up:
-        false,
-        //right:
+        // down:
         true,
-        //down:
-        false,
-        //left:
-        true
-    },
-    //9:
-     {
-        //up:
-        true,
-        //right:
-        false,
-        //down:
-        true,
-        //left:
-        false
-    },
-    //10:
-     {
-        //up:
-        false,
-        //right:
-        true,
-        //down:
-        false,
-        //left:
-        true
-    },
-    //11:
-     {
-        //up:
-        false,
-        //right:
-        true,
-        //down:
-        true,
-        //left:
-        false
-    },
-    //12:
-     {
-        //up:
-        false,
-        //right:
-        false,
-        //down:
-        true,
-        //left:
-        true
-    },
-    //13:
-     {
-        //up:
-        true,
-        //right:
-        false,
-        //down:
-        false,
-        //left:
-        true
-    },
-    //14:
-     {
-        //up:
-        true,
-        //right:
-        true,
-        //down:
-        false,
-        //left:
-        false
-    },
-    //15:
-     {
-        //up:
-        false,
-        //right:
-        true,
-        //down:
-        true,
-        //left:
-        true,
-    },
-    //16:
-     {
-        //up:
-        true,
-        //right:
-        false,
-        //down:
-        true,
-        //left:
-        true
-    },
-    //17:
-     {
-        //up:
-        true,
-        //right:
-        true,
-        //down:
-        false,
-        //left:
-        true
-    },
-    //18:
-     {
-        //up:
-        true,
-        //right:
-        true,
-        //down:
-        true,
-        //left:
-        false
-    }
-}; 
+        // left:
+        false}};
 
 void Generator::visualise(Defined*** board, int y, int x){
     for (int i = 0; i < y; i ++){
@@ -217,6 +200,7 @@ void Generator::visualise(Defined*** board, int y, int x){
         std::cout<<std::endl;
     }
 }
+
 void Generator::connect(Defined* a, Defined* b, int dir){
     if(dir == 0){
         a->up = b;
@@ -233,17 +217,17 @@ void Generator::connect(Defined* a, Defined* b, int dir){
     }
 } 
 int Generator::remove_options(Defined* node, int mm, int mx){
-    if(node == nullptr || node->empt){
+    if(node == nullptr || node->empty){
         return 1099;
     }
     int min_node = 99;
     int dir_min = 0;
     Defined* up = node->up;
     
-    if(up != nullptr && up->empt){
+    if(up != nullptr && up->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
-            up->possible[i] = up->possible[i] && opens[node->tileType-1][0] == opens[i][2];
+            up->possible[i] = up->possible[i] && opens[static_cast<int32_t>(node->tileType) - 1][0] == opens[i][2];
             if(!up->possible[i]) count++;
         }
         if(count < min_node){
@@ -253,10 +237,10 @@ int Generator::remove_options(Defined* node, int mm, int mx){
     }
 
     Defined* right = node->right;
-    if(right != nullptr && right->empt){
+    if(right != nullptr && right->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
-            right->possible[i] = right->possible[i] && opens[node->tileType-1][1] == opens[i][3];
+            right->possible[i] = right->possible[i] && opens[static_cast<int32_t>(node->tileType) - 1][1] == opens[i][3];
             if(!right->possible[i]) count++;
         }
         if(count < min_node){
@@ -267,10 +251,10 @@ int Generator::remove_options(Defined* node, int mm, int mx){
 
     Defined* down = node->down;
     
-    if(down != nullptr && down->empt){
+    if(down != nullptr && down->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
-            down->possible[i] = down->possible[i] && opens[node->tileType-1][2] == opens[i][0];
+            down->possible[i] = down->possible[i] && opens[static_cast<int32_t>(node->tileType) - 1][2] == opens[i][0];
             if(!down->possible[i]) count++;
         }
         if(count < min_node){
@@ -281,10 +265,10 @@ int Generator::remove_options(Defined* node, int mm, int mx){
 
 
     Defined* left = node->left;
-    if(left != nullptr && left->empt){
+    if(left != nullptr && left->empty){
         int count = 0;
         for(int i = 0; i < 18; i ++){
-            left->possible[i] = left->possible[i] && opens[node->tileType-1][3] == opens[i][1];
+            left->possible[i] = left->possible[i] && opens[static_cast<int32_t>(node->tileType) - 1][3] == opens[i][1];
             if(!left->possible[i]) count++;
         }
         if(count < min_node){
@@ -295,10 +279,66 @@ int Generator::remove_options(Defined* node, int mm, int mx){
     return dir_min*100 + min_node;
 }
 
+int Generator::remove_own_options(Defined* node){
+    if(node == nullptr || !node->empty){
+        return 0;
+    }
+    int min_node = 99;
+    int dir_min = 0;
+    Defined* up = node->up;
+    int count = 0;
+    if(up != nullptr && !up->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[static_cast<int32_t>(up->tileType)-1][2] == opens[i][0]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(up->tileType)-1][2] == opens[i][0];
+            
+        }
+
+    }
+
+    Defined* right = node->right;
+    if(right != nullptr && !right->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[static_cast<int32_t>(right->tileType)-1][3] == opens[i][1]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(right->tileType)-1][3] == opens[i][1];
+           
+        }
+
+    }
+
+    Defined* down = node->down;
+    
+    if(down != nullptr && !down->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[static_cast<int32_t>(down->tileType)-1][0] == opens[i][2]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(down->tileType)-1][0] == opens[i][2];
+            
+        }
+
+    }
+
+
+    Defined* left = node->left;
+    if(left != nullptr && !left->empty){
+        
+        for(int i = 0; i < 18; i ++){
+            if(node->possible[i] && !opens[static_cast<int32_t>(left->tileType)-1][1] == opens[i][3]) count++;
+            node->possible[i] = node->possible[i] && opens[static_cast<int32_t>(left->tileType)-1][1] == opens[i][3];
+            
+        }
+
+    }
+    return count;
+}
+
 void Generator::constrain(Defined* nd, int opts){
-    if(nd == nullptr || !nd->empt){
+    if(nd == nullptr || !nd->empty){
         return;
     }
+    opts += remove_own_options(nd);
     bool flag = true;
     while(flag){
         int chs = rand() % (18-opts);
@@ -312,16 +352,25 @@ void Generator::constrain(Defined* nd, int opts){
                     if((i >= 1 && i <= 4) || i>=14){
                         float res = exp(-0.2f*(rand()%10));
                         if( res > acc_cam ){
-                            std::cout<<"ADDING CAMERA "<<res << " "<<acc_cam<<std::endl;
-                            nd->objs.push_back(new ProcObj(0));
+                            nd->objs.push_back(new ProcObj(SpecialObjType::EnemyCamera));
                             acc_cam = 1.f;
                         }else{
-                            std::cout<<"NOT ADDING CAMERA "<<res << " "<<acc_cam<<std::endl;
                             acc_cam -= 0.1f;
                         }
                     }
-                    nd->empt = false;
-                    nd->tileType = i+1;
+
+
+                    if((i >= 1 && i <= 4) || i == 0){
+                        float res = exp(-0.2f*(rand()%20));
+                        if( ( res > acc_head && heads < 7)){
+                            nd->objs.push_back(new ProcObj(SpecialObjType::Collectible));
+                            acc_head = 1.f;
+                        }else{
+                            acc_head -= 0.05f;
+                        }
+                    }
+                    nd->empty = false;
+                    nd->tileType = static_cast<TileType>(i + 1);
                     
                     break;
                 }
@@ -412,11 +461,31 @@ void Generator::move_u(Defined*** board, std::deque <Defined*> *dq){
     }
 }
 void Generator::assign_all(std::deque <Defined*> *dq){
+    for (int i = 0; i < 7; i ++){
+        for (int j = 0; j < 7; j ++){
+            Defined* xe = board[i][j];
+            if(i>0){
+                xe->up = board[i-1][j];
+            }
+            if(j>0){
+                xe->left = board[i][j-1];
+            }
+            if(i<6){
+                xe->down = board[i+1][j];
+            }
+            if(j<6){
+                xe->right = board[i][j+1];
+            }
+        
+            
+        }
+
+    }
     while(!dq->empty()){
         Defined* curr = dq->front();
         dq->pop_front();
         if(curr == nullptr) continue;
-        if(!curr->empt) continue;
+        if(!curr->empty) continue;
         int count = 0;
         for(int i = 0; i < 18; i ++){
             if(!curr->possible[i]){
@@ -434,15 +503,14 @@ void Generator::instantiate_terr(){
     for(int i = 0; i < 7; i ++){
         board[i] = new Defined*[7];
     }
-    // board[0][0] = 
     Defined* tempt[7][7] =   {  
-        {new Defined(), new Defined(), new Defined(), new Defined(), new Defined(), new Defined(), new Defined()},
-        {new Defined(), new Defined(), new Defined(), new Defined(10), new Defined(), new Defined(), new Defined()},
-        {new Defined(), new Defined(), new Defined(), new Defined(11), new Defined(), new Defined(), new Defined()},
-        {new Defined(18), new Defined(1),new Defined(10), new Defined(1), new Defined(17), new Defined(12), new Defined()},
-        {new Defined(), new Defined(), new Defined(), new Defined(18), new Defined(), new Defined(),new Defined()},
-        {new Defined(),new Defined(), new Defined(), new Defined(1), new Defined(), new Defined(), new Defined()},
-        {new Defined(), new Defined(), new Defined(), new Defined(17), new Defined(), new Defined(), new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(),                      new Defined(),                      new Defined(),                  new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(TileType::TUNNEL4),     new Defined(),                      new Defined(),                  new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(TileType::TURN1),       new Defined(),                      new Defined(),                  new Defined()},
+        {new Defined(TileType::TJUNCTION4), new Defined(TileType::CROSSING),    new Defined(TileType::TUNNEL4), new Defined(TileType::CROSSING),    new Defined(TileType::TJUNCTION3),  new Defined(TileType::TURN2),   new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(TileType::TJUNCTION4),  new Defined(),                      new Defined(),                  new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(TileType::CROSSING),    new Defined(),                      new Defined(),                  new Defined()},
+        {new Defined(),                     new Defined(),                      new Defined(),                  new Defined(TileType::TJUNCTION3),  new Defined(),                      new Defined(),                  new Defined()},
        
     };
     for(int i = 0; i < 7; i ++){
@@ -479,11 +547,10 @@ void Generator::instantiate_terr(){
     int max = 100000;
     Defined* max_node = nullptr;
     while(!dq.empty()){
-        std::cout<<"Constraining"<<std::endl;
         Defined* curr = dq.front();
         dq.pop_front();
         if(curr == nullptr) continue;
-        if(curr->empt) continue;
+        if(curr->empty) continue;
         if(curr->constrained) continue;
         
         int ret = remove_options(curr,0,0);
@@ -509,42 +576,24 @@ void Generator::instantiate_terr(){
     constrain(max_node, max);
     for (int i = 0; i < 7; i ++){
         for (int j = 0; j < 7; j ++){
-            if(board[i][j]->empt) dq.push_back(board[i][j]);
+            if(board[i][j]->empty) dq.push_back(board[i][j]);
             
         }
 
     }
-    
     assign_all(&dq);
-    
-    
-    
-    // while(true){
-    //     visualise(board, 7,7);
-    //     int inp = 0;
-        
+}
 
-    //     if(inp<1 || inp > 4) continue;
-    //     if(inp == 1){
-    //         move_u(board,&dq);
-    //         move_u(board,&dq);
-    //         assign_all(&dq);
-    //     }else if(inp == 2){
-    //         move_r(board,&dq);
-    //         move_r(board,&dq);
-    //         assign_all(&dq);
-    //     }else if(inp == 3){
-    //         move_d(board,&dq);
-    //         move_d(board,&dq);
-    //         assign_all(&dq);
-    //     }else if(inp == 4){
-    //         move_l(board,&dq);
-    //         move_l(board,&dq);
-    //         assign_all(&dq);
-    //     }
-        
-    // }
-    // std::cout<<std::endl;
-    // std::cout<<max;
+void Generator::remove_head(int y, int x){
+    for (size_t i = 0; i < board[y][x]->objs.size(); i++)
+    {
+        if(board[y][x]->objs.at(i)->type == SpecialObjType::Collectible){
+            free(board[y][x]->objs.at(i));
+            board[y][x]->objs.erase(board[y][x]->objs.begin()+i);
+            i--;
+        }
+    }
+    heads ++;
+    std::cout<<"CLEARED HEAD"<<std::endl;
     
 }

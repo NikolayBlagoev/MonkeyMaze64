@@ -1,235 +1,114 @@
 #ifndef _BEZIER_H_
 #define _BEZIER_H_
 
+#include <framework/disable_all_warnings.h>
+DISABLE_WARNINGS_PUSH()
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+DISABLE_WARNINGS_POP()
+
+#include <render/mesh_tree.h>
+#include <array>
 #include <cmath>
 #include <ctime>
 #include <vector>
 #include <chrono>
+#include <ranges>
 #include <time.h>
-#include "mesh_tree.h"
 
-class BezierCurve3dGeneral{
-    public:
-        glm::vec3 pos_t(float t){
-            return glm::vec3(0.f);
-        };
-
-};
-class BezierCurve4dGeneral{
-    public:
-        glm::vec4 pos_t(float t){
-            return glm::vec4(0.f);
-        };
-
-};
-class BezierCurve3d : public BezierCurve3dGeneral{
-    public: 
-        BezierCurve3d(glm::vec3 p1t, glm::vec3 p2t, glm::vec3 p3t, glm::vec3 p4t, float total_timet ) : p1(p1t), p2(p2t), p3(p3t), p4(p4t), total_time(total_timet) {
-
-        };
-        std::chrono::time_point<std::chrono::high_resolution_clock> prev_time;
-        float total_time = -1;
-        glm::vec3 p1, p2, p3, p4;
-        glm::vec3 pos_t(float t){
-            if(t<0) return p1;
-            if(t>total_time) return p4;
-            t = t/total_time;
-            return float(pow(1.f-t,3))*p1 + 3 * float(pow(1.f-t,2)) *t * p3 + 3 * float(pow(t,2)) * (1.f - t) * p3 + float(pow(t,3))*p4;
-        }
+template<typename Type>
+class BezierCurveBase {
+public:
+    // template<typename Type>
+    Type positionAtTime(float t) const { return Type { 0.0f }; }
 };
 
-class BezierCurve4d : public BezierCurve4dGeneral{
-    public: 
-        BezierCurve4d(glm::vec4 p1t, glm::vec4 p2t, glm::vec4 p3t, glm::vec4 p4t, float total_timet ) : p1(p1t), p2(p2t), p3(p3t), p4(p4t), total_time(total_timet) {
-
-        };
-        std::chrono::time_point<std::chrono::high_resolution_clock> prev_time;
-        float total_time = -1;
-        glm::vec4 p1, p2, p3, p4;
-        glm::vec4 pos_t(float t){
-            if(t<0) return p1;
-            if(t>total_time) return p4;
-            t = t/total_time;
-            return float(pow(1.f-t,3)) * p1 + 3 * float(pow(1.f-t,2)) * t * p3 + 3 * float(pow(t,2)) * (1.f - t) * p3 + float(pow(t,3))*p4;
-        }
-
-        static glm::vec4* qToangl(glm::vec4& inp){
-            glm::vec4 in = glm::normalize(inp);
-            float angle_rad = acos(in.w) * 2.f;
-            float angle_deg = angle_rad * 180.f / 3.141592f;
-            float x = in.x / sin(angle_rad/2.f);
-            float y = in.y / sin(angle_rad/2.f);
-            float z = in.z / sin(angle_rad/2.f);
-            return new glm::vec4(x,y,z,angle_deg);
-        }
-};
-
-class CompositeBezier3d : public BezierCurve3dGeneral{
-    public:
-        CompositeBezier3d(std::vector<BezierCurve3d*> curvess, bool toLoop, float completeTime) : loop(toLoop), curves(curvess), total(completeTime) {
-
-        };
-        glm::vec3 pos_t(float t){
-            if(loop){
-                while(t-total > 0){
-                    t-=total;
-                }
-            }
-            if(t<0) curves.at(0)->p1;
-            if(t>total) curves.at(curves.size()-1)->p4;
-            
-            for(int i = 0; i < curves.size(); i++){
-                if(t-curves.at(i)->total_time<0.f){
-                   
-                    return curves.at(i)->pos_t(t);
-                }
-                t = t - curves.at(i)->total_time;
-            }
-            return glm::vec3(0.f);
-        }
-        std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
-        bool loop = false;
-        std::vector<BezierCurve3d*> curves;
-        float total = 0;
-};
-class CompositeBezier4d : public BezierCurve4dGeneral{
-    public:
-        CompositeBezier4d(std::vector<BezierCurve4d*> curvess, bool toLoop, float completeTime) : loop(toLoop), curves(curvess), total(completeTime) {
-
-        };
-        glm::vec4 pos_t(float t){
-            if(loop){
-                int rem = static_cast<int>(floor(t / total));
-                t = total - t*rem;
-            }
-            if(t<0) curves.at(0)->p1;
-            if(t>total) curves.at(curves.size()-1)->p4;
-            
-            for(int i = 0; i < curves.size(); i++){
-                if(t-curves.at(i)->total_time<0.f){
-                    
-                    return curves.at(i)->pos_t(t);
-                }
-                t = t - curves.at(i)->total_time;
-            }
-            return glm::vec4(0.f);
-        }
-        std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
-        bool loop = false;
-        std::vector<BezierCurve4d*> curves;
-        float total = 0;
-};
-class BezierCombo3d {
-    public:
-        MeshTree* prnt;
-        int choice = 0;
-        BezierCurve3d* curve;
-        BezierCombo3d(MeshTree* prnt, BezierCurve3d* curve, int choice = 0) : prnt(prnt), curve(curve), choice(choice){
-
-        };
-        void move(float t){
-            glm::vec3 ret = curve->pos_t(t);
-            if(choice == 0){
-                prnt->offset = ret;
-            }else{
-                prnt->scale = ret;
-            }
-        };
-};
-class BezierCombo3dcomp {
-    public:
-        MeshTree* prnt;
-        int choice = 0;
-        CompositeBezier3d* curve;
-        BezierCombo3dcomp(MeshTree* prnt, CompositeBezier3d* curve, int choice = 0) : prnt(prnt), curve(curve), choice(choice){
-
-        };
-        void move(float t){
-            glm::vec3 ret = curve->pos_t(t);
-            if(choice == 0){
-                prnt->offset = ret;
-            }else{
-                prnt->scale = ret;
-            }
-        };
-};
-class BezierCombo4d {
-    public:
-        MeshTree* prnt;
-        int choice = 0;
-        BezierCurve4d* curve;
-        BezierCombo4d(MeshTree* prnt, BezierCurve4d* curve, int choice = 0) : prnt(prnt), curve(curve), choice(choice){
-
-        };
-        void move(float t){
-            glm::vec4 ret = curve->pos_t(t);
-            if(choice == 0){
-                prnt->selfRotate = *BezierCurve4d::qToangl(ret);
-            }else{
-                prnt->rotateParent = *BezierCurve4d::qToangl(ret);
-            }
-        };
-};
-
-class BezierCombo4dcomp {
-    public:
-        MeshTree* prnt;
-        int choice = 0;
-        CompositeBezier4d* curve;
-        BezierCombo4dcomp(MeshTree* prnt, CompositeBezier4d* curve, int choice = 0) : prnt(prnt), curve(curve), choice(choice){
-
-        };
-        void move(float t){
-            glm::vec4 ret = curve->pos_t(t);
-            if(choice == 0){
-                prnt->selfRotate = *BezierCurve4d::qToangl(ret);
-            }else{
-                prnt->rotateParent = *BezierCurve4d::qToangl(ret);
-            }
-        };
-};
-class BezierCurveRenderer{
-    public:
-        std::vector<BezierCombo3d*> curves3d;
-        std::vector<BezierCombo4d*> curves4d;
-        std::vector<BezierCombo3dcomp*> compcurves3d;
-        std::vector<BezierCombo4dcomp*> compcurves4d;
-        std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
-        BezierCurveRenderer(std::chrono::time_point<std::chrono::high_resolution_clock> start_time) : start_time(start_time){
-
-        };
-        void do_moves(std::chrono::time_point<std::chrono::high_resolution_clock> curr_time){
-            float delta = std::chrono::duration<float>(curr_time - start_time).count();
-            
-            for(int i = 0; i < curves3d.size(); i++){
-                curves3d.at(i)->move(delta);
-            }
-            for(int i = 0; i < curves4d.size(); i++){
-                curves4d.at(i)->move(delta);
-            }
-            for(int i = 0; i < compcurves3d.size(); i++){
-                
-                compcurves3d.at(i)->move(delta);
-            }
-            for(int i = 0; i < compcurves4d.size(); i++){
-                compcurves4d.at(i)->move(delta);
-            }
-        };
-        size_t add3d(BezierCombo3d* curve3d){
-            curves3d.push_back(curve3d);
-            return curves3d.size() - 1UL;
-        }
-        size_t add3dcomp(BezierCombo3dcomp* curve3d){
-            compcurves3d.push_back(curve3d);
-            return compcurves3d.size() - 1UL;
-        }
-        size_t add4d(BezierCombo4d* curve4d){
-            curves4d.push_back(curve4d);
-            return curves4d.size() - 1UL;
-        }
+template<typename Type>
+class BezierCurve : public BezierCurveBase<Type> {
+public:
+    BezierCurve(Type p1t, Type p2t, Type p3t, Type p4t, float total_timet)
+    : controlP0(p1t), controlP1(p2t), controlP2(p3t), controlP3(p4t)
+    , totalTime(total_timet) {};
     
+    Type positionAtTime(float t);
+
+    float totalTime = -1;
+    Type controlP0, controlP1, controlP2, controlP3;
+};
+
+template<typename Type>
+class BezierComposite : public BezierCurveBase<Type> {
+public:
+    BezierComposite(const std::vector<BezierCurve<Type>>& curves, bool toLoop, float completeTime)
+    : loop(toLoop)
+    , m_curves(curves)
+    , total(completeTime) {};
+
+    Type positionAtTime(float t);
+
+    float total = 0;
+    bool loop   = false;
+    std::vector<BezierCurve<Type>> m_curves;
+};
+
+template<typename Type>
+class BezierCombo {
+public:
+    BezierCombo(const BezierCurve<Type>& curve, Type* toMove, std::weak_ptr<MeshTree> obj)
+    : curve(curve)
+    , toMove(toMove)
+    , obj(obj) {};
+    
+    bool positionAtTime(float t);
+
+    BezierCurve<Type> curve;
+    Type* toMove;
+    std::weak_ptr<MeshTree> obj;
+};
+
+template<typename Type>
+class BezierComboComposite {
+public:
+    BezierComboComposite(const BezierComposite<Type>& curve, Type* toMove, std::weak_ptr<MeshTree> obj)
+    : curve(curve)
+    , toMove(toMove)
+    , obj(obj) {};
+
+    bool positionAtTime(float t);
+
+    BezierComposite<Type> curve;
+    Type* toMove;
+    std::weak_ptr<MeshTree> obj;
+};
+
+class BezierCurveManager {
+public:
+    BezierCurveManager(std::chrono::time_point<std::chrono::high_resolution_clock> startTime) : startTime(startTime) {};
+    
+    void timeStep(std::chrono::time_point<std::chrono::high_resolution_clock> curr_time);
+    
+    size_t add3d(const BezierCombo<glm::vec3>& curve3d){
+        curves3d.push_back(curve3d);
+        return curves3d.size() - 1UL;
+    }
+    size_t add3dComposite(const BezierComboComposite<glm::vec3>& curve3d){
+        compCurves3d.push_back(curve3d);
+        return compCurves3d.size() - 1UL;
+    }
+    size_t add4d(const BezierCombo<glm::vec4>& curve4d){
+        curves4d.push_back(curve4d);
+        return curves4d.size() - 1UL;
+    }
+    size_t add4dComposite(const BezierComboComposite<glm::vec4>& curve4d){
+        compCurves4d.push_back(curve4d);
+        return compCurves4d.size() - 1UL;
+    }
+
+    std::vector<BezierCombo<glm::vec3>> curves3d;
+    std::vector<BezierCombo<glm::vec4>> curves4d;
+    std::vector<BezierComboComposite<glm::vec3>> compCurves3d;
+    std::vector<BezierComboComposite<glm::vec4>> compCurves4d;
+    std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 };
 
 #endif

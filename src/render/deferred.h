@@ -13,6 +13,7 @@ DISABLE_WARNINGS_POP()
 #include <render/lighting.h>
 #include <render/particle.h>
 #include <render/scene.h>
+#include <render/ssao.h>
 #include <render/texture.h>
 
 // TODO: Adapt to resize framebuffer sizes when window size changes
@@ -23,9 +24,13 @@ public:
                      ParticleEmitterManager& particleEmitterManager, std::weak_ptr<const Texture> xToonTex);
     ~DeferredRenderer();
 
-    void render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos);
-    void initLightingShader();
     void copyGBufferDepth(GLuint destinationBuffer);
+    void render(const glm::mat4& viewProjection, const glm::vec3& cameraPos);
+
+    // External state management
+    void initLightingShader();
+    void ssaoRegenSamples() { ssaoFilter.regenSamples(); }
+    void ssaoRegenRandomRotation() { ssaoFilter.regenRandomRotation(); }
 
 private:
     void initGBuffer();
@@ -34,14 +39,14 @@ private:
     void initShaders();
 
     void bindMaterialTextures(const GPUMesh& mesh, const glm::vec3& cameraPos) const;
-    void helper(MeshTree* mt, const glm::mat4& currTransform, const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const;
-    void renderGeometry(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const;
+    void recursiveGeometryRender(MeshTree* mt, const glm::mat4& viewProjection, const glm::vec3& cameraPos) const;
+    void renderGeometry(const glm::mat4& viewProjection, const glm::vec3& cameraPos) const;
     
     void bindGBufferTextures() const;
     void renderLighting(const glm::vec3& cameraPos);
 
-    void renderForward(const glm::mat4& viewProjectionMatrix);
-    void renderPostProcessing();
+    void renderForward(const glm::mat4& viewProjection);
+    void renderPostProcessing(const glm::mat4& viewProjection);
 
     static constexpr GLuint INVALID     = 0xFFFFFFFF;
     static constexpr float clearDepth   = 1.0f;
@@ -78,6 +83,7 @@ private:
 
     // Objects managing other rendering bits
     BloomFilter bloomFilter;
+    SSAOFilter ssaoFilter;
 };
 
 #endif

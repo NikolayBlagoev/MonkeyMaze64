@@ -13,10 +13,16 @@ DISABLE_WARNINGS_POP()
 #include <render/particle.h>
 #include <render/scene.h>
 
+struct HeadCount {
+    uint32_t headsCollected = { 0UL };
+    uint32_t headsToCollect = { utils::NUM_HEADS_TO_COLLECT };
+};
+
 class Menu {
 public:
     Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager,
-         ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer);
+         ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer,
+         HeadCount& HeadCount);
 
     // Main drawing functions
     void draw2D();
@@ -29,9 +35,7 @@ private:
     void drawCameraTab();
 
     // Mesh tab
-    void addMesh();
     void drawMaterialControls();
-    void drawMeshControls();
     void drawMeshTab();
 
     // Light tab
@@ -57,7 +61,11 @@ private:
     void drawHdrControls();
     void drawBloomControls();
     void drawParallaxControls();
+    void drawSSAOControls();
     void drawRenderTab();
+
+    // Render game tab
+    void drawGameTab();
     /******************************/ 
 
     // 3D debug view
@@ -71,6 +79,7 @@ private:
     LightManager& m_lightManager;
     ParticleEmitterManager& m_particleEmitterManager;
     DeferredRenderer& m_deferredRenderer;
+    HeadCount& m_headCount;
 
     Shader debugShader;
 

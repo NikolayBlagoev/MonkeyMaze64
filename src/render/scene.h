@@ -10,32 +10,18 @@ DISABLE_WARNINGS_POP()
 #include <filesystem>
 #include <vector>
 
-struct MeshTransform {
-    glm::vec3 scale;
-    glm::vec4 selfRotate; // ROTATE AROUND AXIS
-    glm::vec4 rotateParent;
-    glm::vec3 translate;
-};
+
 
 class Scene {
 public:
-    void addMesh(std::filesystem::path filePath);
-    void removeMesh(size_t idx);
-    void addMesh(MeshTree* nd);
+    void addMesh(std::shared_ptr<MeshTree> nd);
     size_t numMeshes() { return meshes.size(); }
 
-    const GPUMesh& meshAt(size_t idx) { return *(root->children[idx]->mesh); }
-
-
-    glm::mat4 modelMatrix(size_t idx);
-    static glm::mat4 modelMatrix(MeshTree* mt, const glm::mat4& currTransform);
     MeshTree* root { nullptr };
     std::vector<MeshTransform> transformParams;
 
 private:
     std::vector<GPUMesh> meshes;
-    
-    
 };
 
 #endif

@@ -21,6 +21,8 @@ private:
     void initBuffers();
     void initTextures();
     void initShaders();
+
+    // Render computations
     void extractBrightRegions(GLuint hdrTex);
     GLuint computeBlur();
 
@@ -31,15 +33,14 @@ private:
     // Framebuffer (and corresponding texture) for extracting bright regions of rendered image
     GLuint brightBuffer;
     GLuint brightTex;
+    Shader extractBright;
 
-    // Framebuffer (and corresponding texture) pair for ping-pong gaussian blur computation
+    // Framebuffer, shader and texture for ping-pong gaussian blur computation
     std::array<GLuint, 2UL> blurBuffers;
     std::array<GLuint, 2UL> blurTextures;
-
-    Shader extractBright;
     Shader gaussianBlur;
 
-    RenderConfig& m_renderConfig;
+    const RenderConfig& m_renderConfig;
 };
 
 #endif

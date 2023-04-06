@@ -13,12 +13,13 @@ DISABLE_WARNINGS_POP()
 #include <iostream>
 
 Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager,
-           ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer)
+           ParticleEmitterManager& particleEmitterManager, DeferredRenderer& deferredRenderer, HeadCount& headCount)
     : m_scene(scene)
     , m_renderConfig(renderConfig)
     , m_lightManager(lightManager)
     , m_particleEmitterManager(particleEmitterManager)
-    , m_deferredRenderer(deferredRenderer) {
+    , m_deferredRenderer(deferredRenderer)
+    , m_headCount(headCount) {
     ShaderBuilder debugShaderBuilder;
     debugShaderBuilder.addStage(GL_VERTEX_SHADER, utils::SHADERS_DIR_PATH / "debug" / "light_debug.vert");
     debugShaderBuilder.addStage(GL_FRAGMENT_SHADER, utils::SHADERS_DIR_PATH  / "debug" / "light_debug.frag");
@@ -35,6 +36,7 @@ void Menu::draw2D() {
     ImGui::BeginTabBar("Categories");
     drawGameMechanicsTab();
     drawCameraTab();
+    drawGameTab();
     drawMeshTab();
     drawLightTab();
     drawShadowTab();
@@ -62,25 +64,15 @@ void Menu::drawGameMechanicsTab() {
 
 void Menu::drawCameraTab() {
     if (ImGui::BeginTabItem("Camera")) {
-        ImGui::DragFloat("Movement speed", &m_renderConfig.moveSpeed, 0.001f, 0.01f, 0.09f);
-        ImGui::DragFloat("Look speed", &m_renderConfig.lookSpeed, 0.0001f, 0.0005f, 0.0050f);
-        ImGui::DragFloat("FOV (vertical)", &m_renderConfig.verticalFOV, 1.0f, 30.0f, 180.0f);
-        ImGui::DragFloat("Zoomed FOV (vertical)", &m_renderConfig.zoomedVerticalFOV, 1.0f, 20.0f, 120.0f);
-        ImGui::Checkbox("Constrain vertical movement", &m_renderConfig.constrainVertical);
+        ImGui::DragFloat("Movement Speed", &m_renderConfig.moveSpeed, 0.001f, 0.01f, 1.f);
+        ImGui::DragFloat("Look Speed", &m_renderConfig.lookSpeed, 0.0001f, 0.0005f, 0.0050f);
+        ImGui::DragFloat("FOV (Vertical)", &m_renderConfig.verticalFOV, 1.0f, 30.0f, 180.0f);
+        ImGui::DragFloat("Zoomed FOV (Vertical)", &m_renderConfig.zoomedVerticalFOV, 1.0f, 20.0f, 120.0f);
+        ImGui::Checkbox("Constrain Vertical Movement", &m_renderConfig.constrainVertical);
+        ImGui::Checkbox("Invert controls", &m_renderConfig.invertControls);
+        ImGui::Checkbox("Control player", &m_renderConfig.controlPlayer);
         ImGui::EndTabItem();
     }
-}
-
-void Menu::addMesh() {
-    nfdchar_t *outPath = NULL;
-    nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath );
-        
-    if (result == NFD_OKAY) {
-        std::filesystem::path objPath(outPath);
-        m_scene.addMesh(objPath);
-        free(outPath);
-    } else if (result == NFD_CANCEL) { std::cout << "Model loading cancelled" << std::endl; }
-      else { std::cerr << "Model loading error" << std::endl; }
 }
 
 void Menu::drawMaterialControls() {
@@ -90,34 +82,13 @@ void Menu::drawMaterialControls() {
     ImGui::SliderFloat("AO", &m_renderConfig.defaultAO, 0.0f, 1.0f, "%.2f");
 }
 
-void Menu::drawMeshControls() {
-    // Add / remove controls
-    if (ImGui::Button("Add")) { addMesh(); }
-    if (ImGui::Button("Remove selected")) {
-        if (selectedMesh < m_scene.numMeshes()) {
-            m_scene.removeMesh(selectedMesh);
-            selectedMesh = 0U;
-        }
-    }
-    ImGui::NewLine();
-
-    // Selection controls
-    std::vector<std::string> options;
-    for (size_t meshIdx = 0U; meshIdx < m_scene.numMeshes(); meshIdx++) { options.push_back("Mesh " + std::to_string(meshIdx + 1)); }
-    std::vector<const char*> optionsPointers;
-    std::transform(std::begin(options), std::end(options), std::back_inserter(optionsPointers),
-        [](const auto& str) { return str.c_str(); });
-    ImGui::Combo("Selected mesh", (int*) &selectedMesh, optionsPointers.data(), static_cast<int>(optionsPointers.size()));
-
-        // Selected mesh controls
-        if (m_scene.numMeshes() > 0U) {
-            ImGui::DragFloat3("Scale", glm::value_ptr(m_scene.root->children[selectedMesh]->scale), 0.05f);
-            ImGui::DragFloat3("Rotate", glm::value_ptr(m_scene.root->children[selectedMesh]->selfRotate), 1.0f, 0.0f, 360.0f);
-            ImGui::DragFloat3("Translate", glm::value_ptr(m_scene.root->children[selectedMesh]->offset), 0.05f);
-        }
-
+void Menu::drawMeshTab() {
+    if (ImGui::BeginTabItem("Meshes")) {
+        ImGui::Text("Default materials (for objects lacking textures)");
+        drawMaterialControls();
+        
         ImGui::EndTabItem();
-    
+    }
 }
 
 void Menu::drawGeneralLightControls() {
@@ -180,6 +151,7 @@ void Menu::drawAreaLightControls() {
         AreaLight& selectedLight = m_lightManager.areaLightAt(selectedAreaLight);
         ImGui::InputFloat("Intensity##point", &selectedLight.intensityMultiplier, 0.1f, 1.0f, "%.1f");
         ImGui::ColorEdit3("Colour##area", glm::value_ptr(selectedLight.color));
+        ImGui::DragFloat3("Falloff coefficients (constant, linear, quadratic)", glm::value_ptr(selectedLight.falloff), 0.05f);
         ImGui::DragFloat3("Position##area", glm::value_ptr(selectedLight.position), 0.05f);
         ImGui::SliderFloat("X Rotation", &selectedLight.rotX, 0.0f, 360.0f);
         ImGui::SliderFloat("Y Rotation", &selectedLight.rotY, 0.0f, 360.0f);
@@ -331,6 +303,16 @@ void Menu::drawParallaxControls() {
     ImGui::InputFloat("Max depth layers", &m_renderConfig.maxDepthLayers, 1.0f, 2.0f, "%.0f");
 }
 
+void Menu::drawSSAOControls() {
+    ImGui::Checkbox("Enable SSAO", &m_renderConfig.enableSSAO);
+    if (ImGui::SliderInt("Samples", &m_renderConfig.ssaoSamples, 1, 128))               { m_deferredRenderer.ssaoRegenSamples(); }
+    if (ImGui::DragInt("Kernel length", &m_renderConfig.ssaoKernelLength, 2, 2, 16))    { m_deferredRenderer.ssaoRegenRandomRotation(); }
+    ImGui::SliderFloat("Radius", &m_renderConfig.ssaoRadius, 0.01f, 1.0f);
+    ImGui::SliderFloat("Bias", &m_renderConfig.ssaoBias, 0.01f, 0.25f);
+    ImGui::SliderFloat("Power", &m_renderConfig.ssaoPower, 5.0f, 20.0f);
+    ImGui::SliderFloat("Occlussion coeff.", &m_renderConfig.ssaoOcclussionCoefficient, 0.1f, 1.0f);
+}
+
 void Menu::drawRenderTab() {
     if (ImGui::BeginTabItem("Rendering")) {
         ImGui::Text("HDR");
@@ -348,24 +330,28 @@ void Menu::drawRenderTab() {
         ImGui::Text("Parallax");
         drawParallaxControls();
 
-        ImGui::EndTabItem();
-    }
-}
-void Menu::drawMeshTab() {
-    if (ImGui::BeginTabItem("Meshes")) {
-        ImGui::Text("Default materials (for objects lacking textures)");
-        drawMaterialControls();
-
         ImGui::NewLine();
         ImGui::Separator();
 
-        ImGui::Text("Mesh controls");
-        drawMeshControls();
-
+        ImGui::Text("SSAO");
+        drawSSAOControls();
 
         ImGui::EndTabItem();
     }
 }
+
+void Menu::drawGameTab() {
+    if (ImGui::BeginTabItem("Game")) {
+        std::string collected = std::to_string(m_headCount.headsCollected);
+        std::string toCollect = std::to_string(m_headCount.headsToCollect);
+        ImGui::Text("%s", (collected + " / " + toCollect + " collected").c_str());
+
+        if (ImGui::Button("Cheat")) { m_headCount.headsCollected = utils::NUM_HEADS_TO_COLLECT; }
+
+        ImGui::EndTabItem();
+    }
+}
+
 void Menu::drawPoint(float radius, const glm::vec4& screenPos, const glm::vec4& color) {
     glPointSize(radius);
     glUniform4fv(0, 1, glm::value_ptr(screenPos));
@@ -389,7 +375,8 @@ void Menu::drawLights(const glm::mat4& cameraMVP) {
         for (size_t lightIdx = 0U; lightIdx < m_lightManager.numAreaLights(); lightIdx++) {
             const AreaLight& light          = m_lightManager.areaLightAt(lightIdx);
             const glm::vec4 screenPosStart  = cameraMVP * glm::vec4(light.position, 1.0f);
-            const glm::vec4 screenPosEnd    = cameraMVP * glm::vec4(light.position + light.forwardDirection(), 1.0f);
+            const glm::vec4 screenPosEnd    = cameraMVP * glm::vec4(light.position + (light.externalRotationControl ? light.externalForward : light.forwardDirection()),
+                                                                    1.0f);
             drawPoint(25.0f, screenPosStart, light.color);
             drawPoint(15.0f, screenPosEnd, light.color);
         }

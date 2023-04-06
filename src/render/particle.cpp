@@ -79,6 +79,34 @@ ParticleEmitterManager::ParticleEmitterManager(const RenderConfig& renderConfig)
     } catch (ShaderLoadingException e) { std::cerr << e.what() << std::endl; }
 }
 
+ParticleEmitter* ParticleEmitterManager::addEmitter(glm::vec3 position) {
+    ParticleEmitter* newEmitter = new ParticleEmitter(position,
+                                                      m_renderConfig.velocityDeviation,
+                                                      m_renderConfig.colorDeviation,
+                                                      m_renderConfig.lifeDeviation,
+                                                      m_renderConfig.sizeDeviation);
+    emitters.push_back(newEmitter);
+    return newEmitter; 
+}
+
+void ParticleEmitterManager::removeEmitter(size_t idx) {
+    free(emitters[idx]); 
+    emitters.erase(emitters.begin() + idx);
+}
+
+void ParticleEmitterManager::removeByReference(ParticleEmitter* emitter) {
+    if (emitter == nullptr) { return; }
+
+    for (size_t emitterIdx = 0UL; emitterIdx < emitters.size(); emitterIdx++) {
+        ParticleEmitter* currentEmitter = emitters[emitterIdx];
+        if (currentEmitter == emitter) { 
+            free(currentEmitter);
+            emitters.erase(emitters.begin() + emitterIdx);
+            return;
+        }
+    }
+}
+
 void ParticleEmitterManager::render(GLuint renderBuffer, const glm::mat4& viewProjectionMatrix) const {
     glBindFramebuffer(GL_FRAMEBUFFER, renderBuffer);
     particleShader.bind();
@@ -130,8 +158,8 @@ void ParticleEmitterManager::genAttributeBuffers() {
 std::vector<ParticleShader> ParticleEmitterManager::genSortedParticles(const glm::mat4& viewProjectionMatrix) const {
     // Copy over particles from all emitters
     std::vector<ParticleShader> sortedParticles;
-    for (const ParticleEmitter& emitter : emitters) {
-        std::copy(emitter.particlesShader.begin(), emitter.particlesShader.end(), std::back_inserter(sortedParticles));
+    for (const ParticleEmitter* emitter : emitters) {
+        std::copy(emitter->particlesShader.begin(), emitter->particlesShader.end(), std::back_inserter(sortedParticles));
     }
 
     // Sort by reverse camera-view depth (furthest first) and return

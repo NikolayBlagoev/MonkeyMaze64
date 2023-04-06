@@ -12,8 +12,16 @@ GPUMesh::GPUMesh(std::filesystem::path filePath) {
         throw MeshLoadingException(fmt::format("File {} does not exist", filePath.string().c_str()));
 
     // Defined in <framework/mesh.h>
-    const auto cpuMesh = mergeMeshes(loadMesh(filePath));
+    Mesh cpuMesh = mergeMeshes(loadMesh(filePath));
 
+    init(cpuMesh);
+}
+
+GPUMesh::GPUMesh(Mesh& cpuMesh) {
+    init(cpuMesh);
+}
+
+void GPUMesh::init(Mesh& cpuMesh) {
     // Create Element(/Index) Buffer Objects and Vertex Buffer Object.
     glCreateBuffers(1, &m_ibo);
     glNamedBufferStorage(m_ibo, static_cast<GLsizeiptr>(cpuMesh.triangles.size() * sizeof(decltype(cpuMesh.triangles)::value_type)), cpuMesh.triangles.data(), 0);
@@ -80,16 +88,20 @@ void GPUMesh::moveInto(GPUMesh&& other) {
     m_metallic      = other.m_metallic;
     m_roughness     = other.m_roughness;
     m_ao            = other.m_ao;
+    m_displacement  = other.m_displacement;
+    isHeight        = other.isHeight;
 
-    other.m_numIndices  = 0;
-    other.m_ibo         = INVALID;
-    other.m_vbo         = INVALID;
-    other.m_vao         = INVALID;
-    other.m_albedo      = std::weak_ptr<Texture>();
-    other.m_normal      = std::weak_ptr<Texture>();
-    other.m_metallic    = std::weak_ptr<Texture>();
-    other.m_roughness   = std::weak_ptr<Texture>();
-    other.m_ao          = std::weak_ptr<Texture>();
+    other.m_numIndices      = 0;
+    other.m_ibo             = INVALID;
+    other.m_vbo             = INVALID;
+    other.m_vao             = INVALID;
+    other.m_albedo          = std::weak_ptr<Texture>();
+    other.m_normal          = std::weak_ptr<Texture>();
+    other.m_metallic        = std::weak_ptr<Texture>();
+    other.m_roughness       = std::weak_ptr<Texture>();
+    other.m_ao              = std::weak_ptr<Texture>();
+    other.m_displacement    = std::weak_ptr<Texture>();
+    isHeight                = true;
 }
 
 void GPUMesh::freeGpuMemory() {

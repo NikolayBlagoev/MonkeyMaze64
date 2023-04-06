@@ -1,41 +1,89 @@
 #ifndef _MESH_TREE_H_
 #define _MESH_TREE_H_
 
-#include "mesh.h"
+
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 DISABLE_WARNINGS_POP()
+#include <gameplay/enemy_camera.h>
+#include <render/lighting.h>
+#include <render/mesh.h>
+#include <render/particle.h>
+#include <utils/hitbox.hpp>
+
 #include <filesystem>
 #include <vector>
+#include <optional>
+#include <string>
+#include <unordered_map>
 
-
-
-class MeshTree {
-public:
-    MeshTree(GPUMesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl);
-    int addChild(MeshTree* child);
-    MeshTree();
-    MeshTree(GPUMesh* msh);
-    // void addMesh(std::filesystem::path filePath);
-    // void removeMesh(size_t idx);
-
-    // size_t numMeshes() { return meshes.size(); }
-    // const GPUMesh& meshAt(size_t idx) { return meshes[idx]; }
-
-    // glm::mat4 modelMatrix(size_t idx);
-
-    // std::vector<MeshTransform> transformParams;
-
-public:
-    GPUMesh* mesh;
-    glm::vec3 offset;
-    glm::vec4 selfRotate;
+struct MeshTransform {
+    glm::vec3 translate;
+    glm::vec4 selfRotate; // ROTATE AROUND AXIS
     glm::vec4 rotateParent;
     glm::vec3 scale;
-    std::vector<MeshTree*> children;
+};
+
+class MeshTree : public std::enable_shared_from_this<MeshTree> {
+public:
+    MeshTree(std::string tag,
+             const std::optional<HitBox>& maybeHitBox,
+             GPUMesh* model         = nullptr,
+             glm::vec3 off          = glm::vec3(0.0f), 
+             glm::vec4 rots         = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+             glm::vec4 rotp         = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+             glm::vec3 scl          = glm::vec3(1.0f));
+    ~MeshTree();
+
+    // Collision detection
+    static MeshTree* collidesWith(MeshTree* root, MeshTree* toCheck);
+    bool tryTranslation(glm::vec3 translation, MeshTree* root);
+
+    // Mesh management
+    void clean(LightManager& lmngr, ParticleEmitterManager& particleEmitterManager);
+    void addChild(std::shared_ptr<MeshTree> child);
+    void transformExternal();
+
+    glm::mat4 modelMatrix(bool includeScale = true) const;
+
+    // IF THIS GOES SOMEWHERE ELSE MY APPLICATION WILL NOT RUN!!?!?!? IDK WHY?!?!?! C++ PLEASE! PLEASE!!! WHY?!?!?!
+    std::shared_ptr<EnemyCamera> enemyCam;
+  
+public:
+    // Intrinsic properties
+    std::string tag;
+    MeshTransform transform;
+    GPUMesh* mesh { nullptr };
+    std::optional<HitBox> hitBox;
+
+    // Tree hierarchy management
+    bool is_root = false;
+    std::weak_ptr<MeshTree> parent;
+    std::vector<std::weak_ptr<MeshTree>> children;
+    
+    // External objects manipulated by node (ideally you would extend these to vectors to manage multiple, but submission is in 15 hours)
+    AreaLight*  al                      { nullptr };
+    PointLight* pl                      { nullptr };
+    ParticleEmitter* particleEmitter    { nullptr };
+  
+private:
+    HitBox getTransformedHitBox();
+    glm::vec3 getTransformedHitBoxMiddle();
+    bool collide(MeshTree* other);
+
+};
+
+class MemoryManager {
+public:
+    MemoryManager(){};
+
+    static void addEl(MeshTree* el){ objs[el] = std::shared_ptr<MeshTree> (el); }
+    static void removeEl(MeshTree* el) { objs.erase(el); };
+
+    static std::unordered_map<MeshTree*, std::shared_ptr<MeshTree>> objs;
 };
 
 #endif

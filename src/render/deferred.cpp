@@ -22,6 +22,7 @@ DeferredRenderer::DeferredRenderer(int32_t renderWidth, int32_t renderHeight,
     , m_particleEmitterManager(particleEmitterManager)
     , m_xToonTex(xToonTex)
     , bloomFilter(renderWidth, renderHeight, renderConfig) {
+    , ssaoFilter(renderWidth, renderHeight, renderConfig) {
     initBuffers();
     initShaders();
 }
@@ -40,13 +41,14 @@ DeferredRenderer::~DeferredRenderer() {
     glDeleteTextures(1, &hdrTex);
 }
 
-void DeferredRenderer::render(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) {
-    glViewport(0, 0, RENDER_WIDTH, RENDER_HEIGHT);      // Set correct viewport size
-    renderGeometry(viewProjectionMatrix, cameraPos);    // Geometry pass
-    renderLighting(cameraPos);                          // Lighting pass
-    copyGBufferDepth(hdrBuffer);                        // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
-    renderForward(viewProjectionMatrix);                // Render transparent objects which require forward rendering
-    renderPostProcessing();                             // Combine post-processing results; HDR tonemapping and gamma correction
+void DeferredRenderer::render(const glm::mat4& viewProjection, const glm::vec3& cameraPos) {
+    glViewport(0, 0, RENDER_WIDTH, RENDER_HEIGHT);  // Set correct viewport size
+    renderGeometry(viewProjection, cameraPos);      // Geometry pass
+    renderLighting(cameraPos);                      // Lighting pass
+    copyGBufferDepth(hdrBuffer);                    // Copy G-buffer depth data to HDR framebuffer for use with forward rendering
+    renderForward(viewProjection);                  // Render transparent objects which require forward rendering
+    renderPostProcessing(viewProjection);           // Combine post-processing results; HDR tonemapping and gamma correction
+    copyGBufferDepth(0U);                           // Copy G-buffer depth data to main framebuffer for 3D UI elements rendering
 }
 
 void DeferredRenderer::initGBuffer() {
@@ -212,17 +214,17 @@ void DeferredRenderer::bindMaterialTextures(const GPUMesh& mesh, const glm::vec3
     glUniform3fv(23, 1, glm::value_ptr(cameraPos));
 }
 
-void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform,
-                              const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
-    if (mt == nullptr) return;
-    const glm::mat4& modelMatrix = Scene::modelMatrix(mt, currTransform);
-    
+
+void DeferredRenderer::recursiveGeometryRender(MeshTree* mt, const glm::mat4& viewProjection, const glm::vec3& cameraPos) const {
+    if (mt == nullptr) { return; }
+   
+    const glm::mat4& modelMatrix = mt->modelMatrix();
     if (mt->mesh != nullptr) {
         const GPUMesh& mesh = *(mt->mesh);
         
         // Normals should be transformed differently than positions (ignoring translations + dealing with scaling)
         // https://paroj.github.io/gltut/Illumination/Tut09%20Normal%20Transformation.html
-        const glm::mat4 mvpMatrix           = viewProjectionMatrix * modelMatrix;
+        const glm::mat4 mvpMatrix           = viewProjection * modelMatrix;
         const glm::mat3 normalModelMatrix   = glm::inverseTranspose(glm::mat3(modelMatrix));
 
         // Bind shader program, transformation matrices, and material property textures
@@ -235,10 +237,19 @@ void DeferredRenderer::helper(MeshTree* mt, const glm::mat4& currTransform,
         mesh.draw();   
     }
     
-    for (MeshTree* child : mt->children) { helper(child, modelMatrix, viewProjectionMatrix, cameraPos); }
+    for (size_t childIdx = 0; childIdx < mt->children.size(); childIdx++) {
+        std::weak_ptr<MeshTree> childNode = mt->children.at(childIdx);
+        if (childNode.expired()) {
+            mt->children.erase(mt->children.begin() + childIdx);
+            childIdx--;
+            continue;
+        }
+        std::shared_ptr<MeshTree> childLock = childNode.lock();
+        recursiveGeometryRender(childLock.get(), viewProjection, cameraPos);
+    }
 }
 
-void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix, const glm::vec3& cameraPos) const {
+void DeferredRenderer::renderGeometry(const glm::mat4& viewProjection, const glm::vec3& cameraPos) const {
     // Clear color and depth values then render each model
     glClearTexImage(positionTex,    0, GL_RGBA, GL_HALF_FLOAT, 0);
     glClearTexImage(normalTex,      0, GL_RGBA, GL_HALF_FLOAT, 0);
@@ -248,7 +259,7 @@ void DeferredRenderer::renderGeometry(const glm::mat4& viewProjectionMatrix, con
 
     // Bind G-Buffer and render each model
     glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-    helper(m_scene.root, glm::mat4(1.0f), viewProjectionMatrix, cameraPos);
+    recursiveGeometryRender(m_scene.root, viewProjection, cameraPos);
 }
 
 void DeferredRenderer::bindGBufferTextures() const {
@@ -298,14 +309,15 @@ void DeferredRenderer::renderLighting(const glm::vec3& cameraPos) {
     utils::renderQuad();
 }
 
-void DeferredRenderer::renderForward(const glm::mat4& viewProjectionMatrix) {
-    m_particleEmitterManager.render(hdrBuffer, viewProjectionMatrix); // Only particles need forward shading for now
+void DeferredRenderer::renderForward(const glm::mat4& viewProjection) {
+    m_particleEmitterManager.render(hdrBuffer, viewProjection); // Only particles need forward shading for now
 }
 
-void DeferredRenderer::renderPostProcessing() {
+void DeferredRenderer::renderPostProcessing(const glm::mat4& viewProjection) {
     // Render post-processing effect(s)
-    GLuint bloomTex;
-    if (m_renderConfig.enableBloom) { bloomTex = bloomFilter.render(hdrTex); }
+    GLuint bloomTex, ssaoTex;
+    if (m_renderConfig.enableBloom) { bloomTex  = bloomFilter.render(hdrTex); }
+    if (m_renderConfig.enableSSAO)  { ssaoTex   = ssaoFilter.render(positionTex, normalTex, viewProjection); }
     
     // Bind core HDR and tonemapping data
     hdrRender.bind();
@@ -324,6 +336,15 @@ void DeferredRenderer::renderPostProcessing() {
         glUniform1i(4, utils::HDR_BUFFER_TEX_START_IDX + 1);
     }
     glUniform1i(5, m_renderConfig.enableBloom);
+
+    // Bind SSAO data
+    if (m_renderConfig.enableSSAO) {
+        glActiveTexture(GL_TEXTURE0 + utils::HDR_BUFFER_TEX_START_IDX + 2);
+        glBindTexture(GL_TEXTURE_2D, ssaoTex);
+        glUniform1i(6, utils::HDR_BUFFER_TEX_START_IDX + 2);
+        glUniform1f(7, m_renderConfig.ssaoOcclussionCoefficient);
+    }
+    glUniform1i(8, m_renderConfig.enableSSAO);
     
     glViewport(0, 0, RENDER_WIDTH, RENDER_HEIGHT);
     utils::renderQuad();
