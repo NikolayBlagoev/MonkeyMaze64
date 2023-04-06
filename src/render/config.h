@@ -29,11 +29,6 @@ struct RenderConfig {
     bool invertControls     { true  };
     bool controlPlayer      { true };
 
-    // Minimap
-    bool drawMinimap            { true };
-    float minimapVerticalFOV    { 60.0f };
-    float minimapTopDownOffset  { 10.0f };
-
     // Lighting
     LightingModel lightingModel     { LightingModel::PBR };
     uint32_t toonDiscretizeSteps    { 4U };

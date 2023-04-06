@@ -159,7 +159,7 @@ void makeCameraMoves(glm::vec3 playerPos, std::chrono::time_point<std::chrono::h
             }
             *(cam.get()->color) = glm::vec3(1.f,0.f,0.f);
             curr_detected = true;
-            // std::cout<<"DETECTED"<<std::endl;
+            std::cout<<"DETECTED"<<std::endl;
             continue;
         }else{
             *(cam.get()->color) = glm::vec3(0.f,1.f,1.f);
@@ -207,13 +207,9 @@ int main(int argc, char* argv[]) {
     LightManager lightManager(renderConfig);
     ParticleEmitterManager particleEmitterManager(renderConfig);
     std::weak_ptr<const Texture> xToonTex = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "toon_map.png");
-    DeferredRenderer mainRenderer(utils::WIDTH, utils::HEIGHT, 
-                                  renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
-    DeferredRenderer minimapRenderer(utils::WIDTH   / static_cast<int32_t>(utils::MINIMAP_SIZE_SCALE),
-                                     utils::HEIGHT  / static_cast<int32_t>(utils::MINIMAP_SIZE_SCALE), 
-                                     renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
+    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
     HeadCount headCount;
-    Menu menu(scene, renderConfig, lightManager, particleEmitterManager, mainRenderer, headCount);
+    Menu menu(scene, renderConfig, lightManager, particleEmitterManager, deferredRenderer, headCount);
 
     // Register UI callbacks
     m_window.registerKeyCallback(keyCallback);
@@ -426,9 +422,7 @@ int main(int argc, char* argv[]) {
     playerLight->pl                                 = lightManager.addPointLight(glm::vec3(0.0f), glm::vec3(1.0f, 0.5f, 0.0f), 6.0f);
     playerLight->particleEmitter                    = particleEmitterManager.addEmitter(glm::vec3(0.0f));
     playerLight->particleEmitter->m_baseColor       = glm::vec4(0.75f, 0.4f, 0.1f, 0.1f);
-    playerLight->particleEmitter->m_baseVelocity    = glm::vec3(0.0f, 0.001f, 0.0f);
-    playerLight->particleEmitter->m_baseLife        = 10.0f;
-    playerLight->particleEmitter->m_baseSize        = 0.01f;
+    playerLight->particleEmitter->m_baseVelocity    = glm::vec3(0.0f, 0.01f, 0.0f);
     player->addChild(playerLight->shared_from_this());
 
     // Add test lights
@@ -505,16 +499,6 @@ int main(int argc, char* argv[]) {
 
     // Main loop
     while (!m_window.shouldClose()) {
-        Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
-
-        // Controls
-        ImGuiIO io = ImGui::GetIO();
-        m_window.updateInput();
-        if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
-            if (renderConfig.controlPlayer) { currentCamera.updateInput(player, scene.root, playerMiddleOffset); }
-            else                            { currentCamera.updateInput(); }
-        }
-
         // Handle cutscene
         if (headCount.headsCollected == headCount.headsToCollect) { cutsceneTriggered = true; }
         if (cutsceneTriggered) {
@@ -532,7 +516,7 @@ int main(int argc, char* argv[]) {
         // Handle power-up
         bool xPressed = m_window.isKeyPressed(GLFW_KEY_X);
         if (xPressed != xToonPowerUp) {
-            if (!xPressed)  {
+            if (!xPressed)  { 
                 renderConfig.lightingModel = LightingModel::PBR;
                 renderConfig.exposure   = 1.0f;
                 renderConfig.gamma      = 2.2f;
@@ -542,14 +526,11 @@ int main(int argc, char* argv[]) {
                 renderConfig.exposure   = 0.4f;
                 renderConfig.gamma      = 1.0f;
             }
-            mainRenderer.initLightingShader();
+            deferredRenderer.initLightingShader();
             xToonPowerUp = xPressed;
         }
 
         playerPos = (player->transform.translate);
-        auto test = player->modelMatrix(false) * glm::vec4(glm::vec3(0.0f), 1.0f);
-        auto test2 = player->modelMatrix(true) * glm::vec4(glm::vec3(0.0f), 1.0f);
-
         for (size_t childIdx = 0; childIdx < monkeyHeads.size(); childIdx++) {
             std::weak_ptr<MeshTree> head = monkeyHeads.at(childIdx);
             if (head.expired()) { 
@@ -573,7 +554,7 @@ int main(int argc, char* argv[]) {
                 headCount.headsCollected++;
             }
         }
-        
+        Camera& currentCamera = renderConfig.controlPlayer ? playerCamera : mainCamera;
         std::chrono::time_point curr_frame = timer.now();
         bezierCurveManager.timeStep(curr_frame);
         makeCameraMoves(playerPos, curr_frame);
@@ -602,6 +583,7 @@ int main(int argc, char* argv[]) {
                 dir = 4;
                 b->shiftLeft(lightManager, particleEmitterManager);
                 MemoryManager::removeEl(boardRoot);
+            
                 boardRoot = new MeshTree("boardroot", std::nullopt);
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
@@ -706,44 +688,39 @@ int main(int argc, char* argv[]) {
             prev_pos.x = playerPos.x;
         }
 
-        // View-projection matrices setup
-        const float fovRadiansMain              = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 viewProjectionMain      = glm::perspective(fovRadiansMain, utils::ASPECT_RATIO, 0.1f, 30.0f) * currentCamera.viewMatrix();
-
         // Clear the screen
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
-        
-        // Update transformation of managed mesh tree objects
-        scene.root->transformExternal();
-        
-        // Particle simulation
-        particleEmitterManager.updateEmitters();
-        
-        // Render shadow maps
-        utils::renderShadowMaps(scene.root, renderConfig, lightManager);
-        
-        // Render scene and 3D GUI objects
-        mainRenderer.render(viewProjectionMain, currentCamera.cameraPos());
-        mainRenderer.copyGBufferDepth(0); // Copy main renderer G-buffer depth data to main framebuffer so 3D UI elements are depth tested appropriately
-        menu.draw3D(viewProjectionMain);
-        
-        // Draw minimap if desired
-        if (renderConfig.drawMinimap && !xToonPowerUp) {
-            const float fovRadiansMinimap           = glm::radians(renderConfig.minimapVerticalFOV);
 
-            const glm::vec3 position = playerPos + glm::vec3(0.0f, 10.0f, 0.0f);
-            const glm::mat4 viewMatrix = glm::lookAt(position,
-                                                     playerPos,
-                                                     glm::vec3(0.0f, 0.0f, -1.0f));
-
-            const glm::mat4 viewProjectionMinimap = glm::perspective(fovRadiansMinimap, utils::ASPECT_RATIO, 0.1f, 30.0f) * viewMatrix;
-            minimapRenderer.render(viewProjectionMinimap, position);
+        // Controls
+        ImGuiIO io = ImGui::GetIO();
+        m_window.updateInput();
+        if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
+            if (renderConfig.controlPlayer) { currentCamera.updateInput(player, scene.root, playerMiddleOffset); }
+            else                            { currentCamera.updateInput(); }
         }
 
-        // Draw 2D GUI
-        menu.draw2D();
+        // Update transformation of managed mesh tree objects
+        scene.root->transformExternal();
+
+        // View and projection matrices setup
+        const float fovRadians              = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 m_viewProjection    = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * currentCamera.viewMatrix();
+
+        // Particle simulation
+        particleEmitterManager.updateEmitters();
+        player->modelMatrix();
+        // Render shadow maps
+        utils::renderShadowMaps(scene.root, renderConfig, lightManager);
+
+        // Render scene
+        deferredRenderer.render(m_viewProjection, currentCamera.cameraPos());
+
+        // Draw UI
+        glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        menu.draw(m_viewProjection); // Assume identity model matrix
 
         // Process inputs and swap the window buffer
         m_window.swapBuffers();
