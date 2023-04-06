@@ -26,15 +26,15 @@ Menu::Menu(Scene& scene, RenderConfig& renderConfig, LightManager& lightManager,
     debugShader = debugShaderBuilder.build();
 }
 
-void Menu::draw2D() {
-    // Resize viewport to window size
-    glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+void Menu::draw(const glm::mat4& cameraMVP) {
+    draw2D();
+    draw3D(cameraMVP);
+}
 
-    // Draw big-ass debug menu
+void Menu::draw2D() {
     ImGui::Begin("Debug Controls");
     ImGui::BeginTabBar("Categories");
-    drawGameMechanicsTab();
+    
     drawCameraTab();
     drawGameTab();
     drawMeshTab();
@@ -43,6 +43,7 @@ void Menu::draw2D() {
     drawParticleTab();
     drawShadingTab();
     drawRenderTab();
+
     ImGui::EndTabBar();
     ImGui::End();
 }
@@ -50,16 +51,6 @@ void Menu::draw2D() {
 void Menu::draw3D(const glm::mat4& cameraMVP) {
     drawLights(cameraMVP);
     drawParticleEmitters(cameraMVP);
-}
-
-void Menu::drawGameMechanicsTab() {
-    if (ImGui::BeginTabItem("Gameplay")) {
-        ImGui::Text("Minimap");
-        ImGui::Checkbox("Draw", &m_renderConfig.drawMinimap);
-        ImGui::SliderFloat("Height offset", &m_renderConfig.minimapTopDownOffset, 1.0f, 25.0f); // Maximum value should be around 90% of the far plane so objects are still rendered
-        ImGui::DragFloat("FOV (vertical)", &m_renderConfig.minimapVerticalFOV, 1.0f, 30.0f, 180.0f);
-        ImGui::EndTabItem();
-    }
 }
 
 void Menu::drawCameraTab() {

@@ -19,12 +19,10 @@ DISABLE_WARNINGS_POP()
 // TODO: Adapt to resize framebuffer sizes when window size changes
 class DeferredRenderer {
 public:
-    DeferredRenderer(int32_t renderWidth, int32_t renderHeight,
-                     RenderConfig& renderConfig, Scene& scene, LightManager& lightManager,
+    DeferredRenderer(RenderConfig& renderConfig, Scene& scene, LightManager& lightManager,
                      ParticleEmitterManager& particleEmitterManager, std::weak_ptr<const Texture> xToonTex);
     ~DeferredRenderer();
 
-    void copyGBufferDepth(GLuint destinationBuffer);
     void render(const glm::mat4& viewProjection, const glm::vec3& cameraPos);
 
     // External state management
@@ -47,13 +45,10 @@ private:
 
     void renderForward(const glm::mat4& viewProjection);
     void renderPostProcessing(const glm::mat4& viewProjection);
+    void copyGBufferDepth(GLuint destinationBuffer);
 
     static constexpr GLuint INVALID     = 0xFFFFFFFF;
     static constexpr float clearDepth   = 1.0f;
-
-    // Render resolution
-    const int32_t RENDER_WIDTH  { utils::WIDTH };
-    const int32_t RENDER_HEIGHT { utils::HEIGHT };
 
     GLuint gBuffer;     // Framebuffer ID for the G-buffer
     GLuint rboDepthG;   // G-buffer depth buffer
