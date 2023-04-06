@@ -22,7 +22,7 @@ struct HitBox {
                 (points[0].z + points[7].z) / 2};
     }
 
-    bool collides(HitBox other) {
+    bool collides(const HitBox& other) {
         for (glm::vec3 newPoint : this->points) {
             glm::vec3 smallerOrEqual(0.0f);
             glm::vec3 bigger(0.0f);
@@ -44,7 +44,7 @@ struct HitBox {
         return false;
     }
 
-    static HitBox makeHitBox(Mesh& cpuMesh, bool allowCollision) {
+    static HitBox makeHitBox(const Mesh& cpuMesh, bool allowCollision) {
         // Finding minimum and maximum coordinates of X, Y, and Z axes
         std::array<std::array<float, 3>, 2> minMax{};
         for (Vertex vertex : cpuMesh.vertices) {

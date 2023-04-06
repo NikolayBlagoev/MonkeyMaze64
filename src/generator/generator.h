@@ -11,6 +11,7 @@ class Generator {
         void visualise(Defined*** board, int y, int x);
         void connect(Defined* a, Defined* b, int dir);
         int remove_options(Defined* node, int mm, int mx);
+        int remove_own_options(Defined* node);
         void constrain(Defined* nd, int opts);
         void remove_head(int y, int x);
         void move_l(Defined*** board, std::deque <Defined*> *dq);

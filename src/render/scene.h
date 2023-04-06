@@ -14,8 +14,6 @@ DISABLE_WARNINGS_POP()
 
 class Scene {
 public:
-    void addMesh(std::filesystem::path filePath);
-    void removeMesh(size_t idx);
     void addMesh(std::shared_ptr<MeshTree> nd);
     size_t numMeshes() { return meshes.size(); }
 

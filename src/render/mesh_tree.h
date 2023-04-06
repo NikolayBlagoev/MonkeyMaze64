@@ -11,10 +11,12 @@ DISABLE_WARNINGS_POP()
 #include <gameplay/enemy_camera.h>
 #include <render/lighting.h>
 #include <render/mesh.h>
+#include <render/particle.h>
 #include <utils/hitbox.hpp>
 
 #include <filesystem>
 #include <vector>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -27,39 +29,51 @@ struct MeshTransform {
 
 class MeshTree : public std::enable_shared_from_this<MeshTree> {
 public:
-    MeshTree(std::string tag, 
-             Mesh* msh              = nullptr,
+    MeshTree(std::string tag,
+             const std::optional<HitBox>& maybeHitBox,
+             GPUMesh* model         = nullptr,
              glm::vec3 off          = glm::vec3(0.0f), 
              glm::vec4 rots         = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
              glm::vec4 rotp         = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
-             glm::vec3 scl          = glm::vec3(1.0f),
-             bool allowCollision    = false);
+             glm::vec3 scl          = glm::vec3(1.0f));
     ~MeshTree();
 
-    void clean(LightManager& lmngr);
-    void addChild(std::shared_ptr<MeshTree> child);
-    glm::mat4 modelMatrix() const;
+    // Collision detection
     static MeshTree* collidesWith(MeshTree* root, MeshTree* toCheck);
-    HitBox getTransformedHitBox();
-    glm::vec3 getTransformedHitBoxMiddle();
-    bool collide(MeshTree* other);
     bool tryTranslation(glm::vec3 translation, MeshTree* root);
 
+    // Mesh management
+    void clean(LightManager& lmngr, ParticleEmitterManager& particleEmitterManager);
+    void addChild(std::shared_ptr<MeshTree> child);
+    void transformExternal();
+
+    glm::mat4 modelMatrix(bool includeScale = true) const;
+
+    // IF THIS GOES SOMEWHERE ELSE MY APPLICATION WILL NOT RUN!!?!?!? IDK WHY?!?!?! C++ PLEASE! PLEASE!!! WHY?!?!?!
+    std::shared_ptr<EnemyCamera> enemyCam;
+  
 public:
     // Intrinsic properties
     std::string tag;
     MeshTransform transform;
     GPUMesh* mesh { nullptr };
-    HitBox hitBox;
+    std::optional<HitBox> hitBox;
 
     // Tree hierarchy management
     bool is_root = false;
     std::weak_ptr<MeshTree> parent;
     std::vector<std::weak_ptr<MeshTree>> children;
     
-    // External objects manipulated by node
-    AreaLight*  al { nullptr };
-    PointLight* pl { nullptr };
+    // External objects manipulated by node (ideally you would extend these to vectors to manage multiple, but submission is in 15 hours)
+    AreaLight*  al                      { nullptr };
+    PointLight* pl                      { nullptr };
+    ParticleEmitter* particleEmitter    { nullptr };
+  
+private:
+    HitBox getTransformedHitBox();
+    glm::vec3 getTransformedHitBoxMiddle();
+    bool collide(MeshTree* other);
+
 };
 
 class MemoryManager {

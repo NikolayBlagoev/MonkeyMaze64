@@ -7,9 +7,21 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 
 #include <array>
+#include <iostream>
 #include <vector>
 
 enum class SpecialObjType { Collectible, EnemyCamera };
+enum class TileType { INVALID,
+                      CROSSING,                     // Values as of this one MUST start at 1 for pre-existing generation arithmetic to work. I tried
+                      ROOM1, ROOM2, ROOM3, ROOM4,   // My assumption as a dude doing refactoring is that the numbers correspond to left-right-up-down, but I don't know which is which
+                      EMPTY,
+                      TUNNEL1, TUNNEL2, TUNNEL3, TUNNEL4,
+                      TURN1, TURN2, TURN3, TURN4,
+                      TJUNCTION1, TJUNCTION2, TJUNCTION3, TJUNCTION4 };
+static std::ostream& operator << (std::ostream& os, const TileType& tile) {
+   os << static_cast<std::underlying_type<TileType>::type>(tile);
+   return os;
+}
 
 class ProcObj {
     public:
@@ -37,7 +49,7 @@ class Defined {
         Defined* right;
         Defined* left;
 
-        int tileType;
+        TileType tileType;
         std::vector<ProcObj*> objs;
         bool constrained                = false;
         bool empty                      = true;
@@ -45,7 +57,7 @@ class Defined {
                                            true, true, true, true, true, true,
                                            true, true, true, true, true, true};
 
-        Defined(Defined* up, Defined* down, Defined* left, Defined* right, int tt, bool empty = false)
+        Defined(Defined* up, Defined* down, Defined* left, Defined* right, TileType tt, bool empty = false)
         : up(up)
         , down(down)
         , left(left)
@@ -53,7 +65,7 @@ class Defined {
         , tileType(tt)
         , empty(empty)
         {}
-        Defined(int tt) : Defined(nullptr, nullptr, nullptr, nullptr, tt) {}
-        Defined()       : Defined(nullptr, nullptr, nullptr, nullptr, -1, true) {}
+        Defined(TileType tt)    : Defined(nullptr, nullptr, nullptr, nullptr, tt) {}
+        Defined()               : Defined(nullptr, nullptr, nullptr, nullptr, TileType::INVALID, true) {}
 };
 #endif

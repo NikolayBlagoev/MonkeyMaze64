@@ -10,14 +10,12 @@ DISABLE_WARNINGS_POP()
 
 std::unordered_map<MeshTree*, std::shared_ptr<MeshTree>> MemoryManager::objs;
 
-MeshTree::MeshTree(std::string tag, Mesh* msh, glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl, bool allowCollision) {
+MeshTree::MeshTree(std::string tag, const std::optional<HitBox>& maybeHitBox, GPUMesh* model,
+                   glm::vec3 off, glm::vec4 rots, glm::vec4 rotp, glm::vec3 scl) {
     this->transform = {off, rots, rotp, scl};
-    this->tag = tag;
-
-    if (msh != nullptr) {
-        this->mesh      = new GPUMesh(*msh);
-        this->hitBox    = HitBox::makeHitBox(*msh, allowCollision);
-    }
+    this->tag       = tag;
+    this->mesh      = model;
+    this->hitBox    = maybeHitBox;
 }
 
 MeshTree::~MeshTree() { std::cout<< "Destructor called for MeshTree with tag: " << tag << std::endl; }
@@ -27,7 +25,26 @@ void MeshTree::addChild(std::shared_ptr<MeshTree> child){
     this->children.push_back(child);
 }
 
-glm::mat4 MeshTree::modelMatrix() const {
+void MeshTree::transformExternal() {
+    // Transform objects managed by this node
+    glm::mat4 currTransform = modelMatrix(false);
+    glm::vec4 homogeneous   = currTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    homogeneous             /= homogeneous.w;
+    if (al != nullptr) {
+        glm::vec4 forwardPoint      = currTransform * glm::vec4(10.0f, 0.0f, 0.0f, 1.0f);
+        forwardPoint                /= forwardPoint.w;
+        glm::vec3 forwardDirection  = glm::normalize(glm::vec3(forwardPoint) - glm::vec3(homogeneous));
+        al->position                = glm::vec3(homogeneous) + 0.5f * forwardDirection; // I am not proud of this, but it is 2:13AM and I cannot for the life of me be assed to add another MeshTree node
+        al->externalForward         = forwardDirection;
+    }
+    if (pl != nullptr) { pl->position = homogeneous; }
+    if (particleEmitter != nullptr) { particleEmitter->m_position = homogeneous; }
+
+    // Transform objects managed by children
+    for (std::weak_ptr<MeshTree> child : children) { if (!child.expired()) { child.lock().get()->transformExternal(); } }
+}
+
+glm::mat4 MeshTree::modelMatrix(bool includeScale) const {
     glm::mat4 currTransform;
 
     // Apply model matrix of parent
@@ -51,31 +68,35 @@ glm::mat4 MeshTree::modelMatrix() const {
     currTransform = glm::rotate(currTransform, glm::radians(transform.selfRotate.w), glm::vec3(transform.selfRotate.x, transform.selfRotate.y, transform.selfRotate.z));
 
     // Scale
-    currTransform = glm::scale(currTransform, transform.scale);
-
-    if (pl != nullptr) {
-        pl->position = currTransform * glm::vec4(0.f, 0.f, 0.f, 1.f);
-    }
-    if (al != nullptr) {
-        al->position        = currTransform * glm::vec4(0.f, 0.f, 0.f, 1.f);
-        al->externalForward = glm::normalize(currTransform * glm::vec4(-1.f, 0.f, 0.f, 1.f));
-    }
+    if (includeScale) { currTransform = glm::scale(currTransform, transform.scale); }
 
     return currTransform;
 }
 
 HitBox MeshTree::getTransformedHitBox() {
+    if (!hitBox.has_value()) {
+        // Massively far away to ensure no collision
+        glm::vec3 massivelyFar(std::numeric_limits<float>::max());
+        std::array<glm::vec3, 8> massivelyFarPoints;
+        std::fill(massivelyFarPoints.begin(), massivelyFarPoints.end(), massivelyFar);
+        return { .allowCollision = false, .points = massivelyFarPoints };
+    } 
+
     glm::mat4 modelMatrix   = this->modelMatrix();
-    HitBox transformed      = this->hitBox;
+    HitBox transformed      = this->hitBox.value();
     for (glm::vec3& point : transformed.points) { point = modelMatrix * glm::vec4(point, 1.0f); }
     return transformed;
 }
 
-glm::vec3 MeshTree::getTransformedHitBoxMiddle() { return modelMatrix() * glm::vec4(this->hitBox.getMiddle(), 1); }
+glm::vec3 MeshTree::getTransformedHitBoxMiddle() { 
+    if (!hitBox.has_value()) { return glm::vec3(std::numeric_limits<float>::max()); } // Massively far away to ensure no collision
+    return modelMatrix() * glm::vec4(this->hitBox.value().getMiddle(), 1.0f);
+}
 
 bool MeshTree::collide(MeshTree *other) {
-    if(other == nullptr || other == this) return false;
-    return ((this->hitBox.allowCollision && other->hitBox.allowCollision) &&
+    if (other == nullptr            || other == this ||
+        !this->hitBox.has_value()   || !other->hitBox.has_value()) { return false; }
+    return ((!this->hitBox.value().allowCollision || !other->hitBox.value().allowCollision) &&
              this->getTransformedHitBox().collides(other->getTransformedHitBox()));
 }
 
@@ -105,7 +126,7 @@ bool MeshTree::tryTranslation(glm::vec3 translation, MeshTree* root) {
 
     MeshTree* other = collidesWith(root, this);
     if (other == nullptr) { return true; }
-
+    std::cout<<"collision!!"<<std::endl;
     float newDist = glm::distance(this->getTransformedHitBoxMiddle(), other->getTransformedHitBoxMiddle());
     this->transform.translate -= translation;
     float oldDist = glm::distance(this->getTransformedHitBoxMiddle(), other->getTransformedHitBoxMiddle());
@@ -118,7 +139,7 @@ bool MeshTree::tryTranslation(glm::vec3 translation, MeshTree* root) {
     return false;
 }
 
-void MeshTree::clean(LightManager& lmngr){
+void MeshTree::clean(LightManager& lmngr, ParticleEmitterManager& particleEmitterManager){
     // Destroy all children
     for (size_t childIdx = 0; childIdx < children.size(); childIdx++) {
         if (!children[childIdx].expired()) {
@@ -128,5 +149,7 @@ void MeshTree::clean(LightManager& lmngr){
     }
 
     // Destroy all external objects (if any)
-    if (al != nullptr){ lmngr.removeByReference(al); }
+    if (al != nullptr)              { lmngr.removeByReference(al); }
+    if (pl != nullptr)              { lmngr.removeByReference(pl); }
+    if (particleEmitter != nullptr) { particleEmitterManager.removeByReference(particleEmitter); }
 }
