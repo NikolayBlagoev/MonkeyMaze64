@@ -21,7 +21,7 @@ DeferredRenderer::DeferredRenderer(int32_t renderWidth, int32_t renderHeight,
     , m_lightManager(lightManager)
     , m_particleEmitterManager(particleEmitterManager)
     , m_xToonTex(xToonTex)
-    , bloomFilter(renderWidth, renderHeight, renderConfig) {
+    , bloomFilter(renderWidth, renderHeight, renderConfig)
     , ssaoFilter(renderWidth, renderHeight, renderConfig) {
     initBuffers();
     initShaders();
