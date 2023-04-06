@@ -207,7 +207,11 @@ int main(int argc, char* argv[]) {
     LightManager lightManager(renderConfig);
     ParticleEmitterManager particleEmitterManager(renderConfig);
     std::weak_ptr<const Texture> xToonTex = textureManager.addTexture(utils::RESOURCES_DIR_PATH / "textures" / "toon_map.png");
-    DeferredRenderer deferredRenderer(renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
+    DeferredRenderer mainRenderer(utils::WIDTH, utils::HEIGHT, 
+                                  renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
+    DeferredRenderer minimapRenderer(utils::WIDTH   / static_cast<int32_t>(utils::MINIMAP_SIZE_SCALE),
+                                     utils::HEIGHT  / static_cast<int32_t>(utils::MINIMAP_SIZE_SCALE), 
+                                     renderConfig, scene, lightManager, particleEmitterManager, xToonTex);
     HeadCount headCount;
     Menu menu(scene, renderConfig, lightManager, particleEmitterManager, deferredRenderer, headCount);
 
@@ -583,7 +587,6 @@ int main(int argc, char* argv[]) {
                 dir = 4;
                 b->shiftLeft(lightManager, particleEmitterManager);
                 MemoryManager::removeEl(boardRoot);
-            
                 boardRoot = new MeshTree("boardroot", std::nullopt);
                 MemoryManager::addEl(boardRoot);
                 scene.root->addChild(boardRoot->shared_from_this());
@@ -688,39 +691,44 @@ int main(int argc, char* argv[]) {
             prev_pos.x = playerPos.x;
         }
 
+        // View-projection matrices setup
+        const float fovRadiansMain              = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
+        const glm::mat4 viewProjectionMain      = glm::perspective(fovRadiansMain, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.viewMatrix();
+
         // Clear the screen
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
         // Controls
-        ImGuiIO io = ImGui::GetIO();
-        m_window.updateInput();
         if (!io.WantCaptureMouse) { // Prevent camera movement when accessing UI elements
             if (renderConfig.controlPlayer) { currentCamera.updateInput(player, scene.root, playerMiddleOffset); }
             else                            { currentCamera.updateInput(); }
         }
-
+        
         // Update transformation of managed mesh tree objects
         scene.root->transformExternal();
-
-        // View and projection matrices setup
-        const float fovRadians              = glm::radians(cameraZoomed ? renderConfig.zoomedVerticalFOV : renderConfig.verticalFOV);
-        const glm::mat4 m_viewProjection    = glm::perspective(fovRadians, utils::ASPECT_RATIO, 0.1f, 30.0f) * currentCamera.viewMatrix();
-
+        
         // Particle simulation
         particleEmitterManager.updateEmitters();
-        player->modelMatrix();
+        
         // Render shadow maps
         utils::renderShadowMaps(scene.root, renderConfig, lightManager);
+        
+        // Render scene and 3D GUI objects
+        mainRenderer.render(viewProjectionMain, mainCamera.cameraPos());
+        mainRenderer.copyGBufferDepth(0); // Copy main renderer G-buffer depth data to main framebuffer so 3D UI elements are depth tested appropriately
+        menu.draw3D(viewProjectionMain);
+        
+        // Draw minimap if desired
+        if (renderConfig.drawMinimap) {
+            const float fovRadiansMinimap           = glm::radians(renderConfig.minimapVerticalFOV);
+            const glm::mat4 viewProjectionMinimap   = glm::perspective(fovRadiansMinimap, utils::ASPECT_RATIO, 0.1f, 30.0f) * mainCamera.topDownViewMatrix();
+            minimapRenderer.render(viewProjectionMinimap, mainCamera.topDownPos());
+        }
 
-        // Render scene
-        deferredRenderer.render(m_viewProjection, currentCamera.cameraPos());
-
-        // Draw UI
-        glViewport(0, 0, utils::WIDTH, utils::HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        menu.draw(m_viewProjection); // Assume identity model matrix
+        // Draw 2D GUI
+        menu.draw2D();
 
         // Process inputs and swap the window buffer
         m_window.swapBuffers();
