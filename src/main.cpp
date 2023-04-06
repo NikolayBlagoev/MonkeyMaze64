@@ -229,56 +229,56 @@ int main(int argc, char* argv[]) {
 
     /********** Texture loading **********/
     // Crystal
-    std::filesystem::path crystalTextureFolder = utils::RESOURCES_DIR_PATH / "textures" / "Crystal";
-    std::array<std::string, 7UL> crystalColors = { "blue", "green", "purple", "red", "sky", "white", "yellow" };
-    std::array<std::weak_ptr<const Texture>, 7UL> albedoCrystals;
-    for (size_t textureIdx = 0UL; textureIdx < albedoCrystals.size(); textureIdx++) {
-        albedoCrystals[textureIdx] = textureManager.addTexture(crystalTextureFolder / ("color_map_" + crystalColors[textureIdx] + ".jpg"));
-    }
-    std::weak_ptr<const Texture> aoCrystal              = textureManager.addTexture(crystalTextureFolder / textureAO);
-    std::weak_ptr<const Texture> displacementCrystal    = textureManager.addTexture(crystalTextureFolder / textureDisplacement);
-    std::weak_ptr<const Texture> metalnessCrystal       = textureManager.addTexture(crystalTextureFolder / textureMetalness);
-    std::weak_ptr<const Texture> normalCrystal          = textureManager.addTexture(crystalTextureFolder / textureNormal);
-    std::weak_ptr<const Texture> roughnessCrystal       = textureManager.addTexture(crystalTextureFolder / textureRoughness);
+    // std::filesystem::path crystalTextureFolder = utils::RESOURCES_DIR_PATH / "textures" / "Crystal";
+    // std::array<std::string, 7UL> crystalColors = { "blue", "green", "purple", "red", "sky", "white", "yellow" };
+    // std::array<std::weak_ptr<const Texture>, 7UL> albedoCrystals;
+    // for (size_t textureIdx = 0UL; textureIdx < albedoCrystals.size(); textureIdx++) {
+    //     albedoCrystals[textureIdx] = textureManager.addTexture(crystalTextureFolder / ("color_map_" + crystalColors[textureIdx] + ".jpg"));
+    // }
+    // std::weak_ptr<const Texture> aoCrystal              = textureManager.addTexture(crystalTextureFolder / textureAO);
+    // std::weak_ptr<const Texture> displacementCrystal    = textureManager.addTexture(crystalTextureFolder / textureDisplacement);
+    // std::weak_ptr<const Texture> metalnessCrystal       = textureManager.addTexture(crystalTextureFolder / textureMetalness);
+    // std::weak_ptr<const Texture> normalCrystal          = textureManager.addTexture(crystalTextureFolder / textureNormal);
+    // std::weak_ptr<const Texture> roughnessCrystal       = textureManager.addTexture(crystalTextureFolder / textureRoughness);
 
-    // Glass
-    std::filesystem::path glassTextureFolder        = utils::RESOURCES_DIR_PATH / "textures" / "Glass Blocks";
-    std::weak_ptr<const Texture> albedoGlass        = textureManager.addTexture(glassTextureFolder / textureAlbedo);
-    std::weak_ptr<const Texture> aoGlass            = textureManager.addTexture(glassTextureFolder / textureAO);
-    std::weak_ptr<const Texture> displacementGlass  = textureManager.addTexture(glassTextureFolder / textureDisplacement);
-    std::weak_ptr<const Texture> normalGlass        = textureManager.addTexture(glassTextureFolder / textureNormal);
-    std::weak_ptr<const Texture> roughnessGlass     = textureManager.addTexture(glassTextureFolder / textureRoughness);
+    // // Glass
+    // std::filesystem::path glassTextureFolder        = utils::RESOURCES_DIR_PATH / "textures" / "Glass Blocks";
+    // std::weak_ptr<const Texture> albedoGlass        = textureManager.addTexture(glassTextureFolder / textureAlbedo);
+    // std::weak_ptr<const Texture> aoGlass            = textureManager.addTexture(glassTextureFolder / textureAO);
+    // std::weak_ptr<const Texture> displacementGlass  = textureManager.addTexture(glassTextureFolder / textureDisplacement);
+    // std::weak_ptr<const Texture> normalGlass        = textureManager.addTexture(glassTextureFolder / textureNormal);
+    // std::weak_ptr<const Texture> roughnessGlass     = textureManager.addTexture(glassTextureFolder / textureRoughness);
 
-    // Stone
-    std::filesystem::path stoneTextureFolder        = utils::RESOURCES_DIR_PATH / "textures" / "Mossy Stone";
-    std::weak_ptr<const Texture> albedoStone        = textureManager.addTexture(stoneTextureFolder / textureAlbedo);
-    std::weak_ptr<const Texture> aoStone            = textureManager.addTexture(stoneTextureFolder / textureAO);
-    std::weak_ptr<const Texture> displacementStone  = textureManager.addTexture(stoneTextureFolder / textureDisplacement);
-    std::weak_ptr<const Texture> metalnessStone     = textureManager.addTexture(stoneTextureFolder / textureMetalness);
-    std::weak_ptr<const Texture> normalStone        = textureManager.addTexture(stoneTextureFolder / textureNormal);
-    std::weak_ptr<const Texture> roughnessStone     = textureManager.addTexture(stoneTextureFolder / textureRoughness);
+    // // Stone
+    // std::filesystem::path stoneTextureFolder        = utils::RESOURCES_DIR_PATH / "textures" / "Mossy Stone";
+    // std::weak_ptr<const Texture> albedoStone        = textureManager.addTexture(stoneTextureFolder / textureAlbedo);
+    // std::weak_ptr<const Texture> aoStone            = textureManager.addTexture(stoneTextureFolder / textureAO);
+    // std::weak_ptr<const Texture> displacementStone  = textureManager.addTexture(stoneTextureFolder / textureDisplacement);
+    // std::weak_ptr<const Texture> metalnessStone     = textureManager.addTexture(stoneTextureFolder / textureMetalness);
+    // std::weak_ptr<const Texture> normalStone        = textureManager.addTexture(stoneTextureFolder / textureNormal);
+    // std::weak_ptr<const Texture> roughnessStone     = textureManager.addTexture(stoneTextureFolder / textureRoughness);
 
-    // Metal
-    std::filesystem::path metalTextureFolder        = utils::RESOURCES_DIR_PATH / "textures" / "Rusty Metal";
-    std::weak_ptr<const Texture> albedoMetal        = textureManager.addTexture(metalTextureFolder / textureAlbedo);
-    std::weak_ptr<const Texture> aoMetal            = textureManager.addTexture(metalTextureFolder / textureAO);
-    std::weak_ptr<const Texture> displacementMetal  = textureManager.addTexture(metalTextureFolder / textureDisplacement);
-    std::weak_ptr<const Texture> metalnessMetal     = textureManager.addTexture(metalTextureFolder / textureMetalness);
-    std::weak_ptr<const Texture> normalMetal        = textureManager.addTexture(metalTextureFolder / textureNormal);
-    std::weak_ptr<const Texture> roughnessMetal     = textureManager.addTexture(metalTextureFolder / textureRoughness);
+    // // Metal
+    // std::filesystem::path metalTextureFolder        = utils::RESOURCES_DIR_PATH / "textures" / "Rusty Metal";
+    // std::weak_ptr<const Texture> albedoMetal        = textureManager.addTexture(metalTextureFolder / textureAlbedo);
+    // std::weak_ptr<const Texture> aoMetal            = textureManager.addTexture(metalTextureFolder / textureAO);
+    // std::weak_ptr<const Texture> displacementMetal  = textureManager.addTexture(metalTextureFolder / textureDisplacement);
+    // std::weak_ptr<const Texture> metalnessMetal     = textureManager.addTexture(metalTextureFolder / textureMetalness);
+    // std::weak_ptr<const Texture> normalMetal        = textureManager.addTexture(metalTextureFolder / textureNormal);
+    // std::weak_ptr<const Texture> roughnessMetal     = textureManager.addTexture(metalTextureFolder / textureRoughness);
 
-    // Fur
-    std::filesystem::path furTextureFolder      = utils::RESOURCES_DIR_PATH / "textures" / "Yeti Fur";
-    std::array<std::string, 6UL> hyperFurColors = { "blue", "green", "red", "violet", "white", "yellow"};
-    std::array<std::weak_ptr<const Texture>, 6UL> albedoHyperFur;
-    for (size_t textureIdx = 0UL; textureIdx < albedoHyperFur.size(); textureIdx++) {
-        albedoHyperFur[textureIdx] = textureManager.addTexture(furTextureFolder / ("color_map_" + hyperFurColors[textureIdx] + ".jpg"));
-    }
-    std::weak_ptr<const Texture> albedoFur          = textureManager.addTexture(furTextureFolder / textureAlbedo);
-    std::weak_ptr<const Texture> aoFur              = textureManager.addTexture(furTextureFolder / textureAO);
-    std::weak_ptr<const Texture> displacementFur    = textureManager.addTexture(furTextureFolder / textureDisplacement);
-    std::weak_ptr<const Texture> normalFur          = textureManager.addTexture(furTextureFolder / textureNormal);
-    std::weak_ptr<const Texture> roughnessFur       = textureManager.addTexture(furTextureFolder / textureRoughness);
+    // // Fur
+    // std::filesystem::path furTextureFolder      = utils::RESOURCES_DIR_PATH / "textures" / "Yeti Fur";
+    // std::array<std::string, 6UL> hyperFurColors = { "blue", "green", "red", "violet", "white", "yellow"};
+    // std::array<std::weak_ptr<const Texture>, 6UL> albedoHyperFur;
+    // for (size_t textureIdx = 0UL; textureIdx < albedoHyperFur.size(); textureIdx++) {
+    //     albedoHyperFur[textureIdx] = textureManager.addTexture(furTextureFolder / ("color_map_" + hyperFurColors[textureIdx] + ".jpg"));
+    // }
+    // std::weak_ptr<const Texture> albedoFur          = textureManager.addTexture(furTextureFolder / textureAlbedo);
+    // std::weak_ptr<const Texture> aoFur              = textureManager.addTexture(furTextureFolder / textureAO);
+    // std::weak_ptr<const Texture> displacementFur    = textureManager.addTexture(furTextureFolder / textureDisplacement);
+    // std::weak_ptr<const Texture> normalFur          = textureManager.addTexture(furTextureFolder / textureNormal);
+    // std::weak_ptr<const Texture> roughnessFur       = textureManager.addTexture(furTextureFolder / textureRoughness);
     /*************************************/
 
     /********** Model loading and texture setting ************/
@@ -289,30 +289,30 @@ int main(int argc, char* argv[]) {
     Mesh stand2CPU      = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "stand2.obj"));
     Mesh suzanneCPU     = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "suzanne.obj"));
     GPUMesh aperture(apertureCPU);
-    aperture.setAlbedo(albedoGlass);
-    aperture.setAO(aoGlass);
-    aperture.setDisplacement(displacementGlass, true);
-    aperture.setNormal(normalGlass);
-    aperture.setRoughness(roughnessGlass);
+    // aperture.setAlbedo(albedoGlass);
+    // aperture.setAO(aoGlass);
+    // aperture.setDisplacement(displacementGlass, true);
+    // aperture.setNormal(normalGlass);
+    // aperture.setRoughness(roughnessGlass);
     GPUMesh camera(cameraCPU);
     GPUMesh stand1(stand1CPU);
     GPUMesh stand2(stand2CPU);
     std::array<GPUMesh*, 3> cameraMetalComponents = { &camera, &stand1, &stand2 };
-    for (GPUMesh* component : cameraMetalComponents) {
-        component->setAlbedo(albedoMetal);
-        component->setAO(aoMetal);
-        component->setDisplacement(displacementMetal, true);
-        component->setMetallic(metalnessMetal);
-        component->setNormal(normalMetal);
-        component->setRoughness(roughnessMetal);
-    }
+    // for (GPUMesh* component : cameraMetalComponents) {
+    //     component->setAlbedo(albedoMetal);
+    //     component->setAO(aoMetal);
+    //     component->setDisplacement(displacementMetal, true);
+    //     component->setMetallic(metalnessMetal);
+    //     component->setNormal(normalMetal);
+    //     component->setRoughness(roughnessMetal);
+    // }
     GPUMesh suzanne(suzanneCPU);
-    suzanne.setAlbedo(albedoCrystals[3]); // TODO: Link to placement logic so which texture is used is varied
-    suzanne.setAO(aoCrystal);
-    suzanne.setDisplacement(displacementCrystal, true);
-    suzanne.setMetallic(metalnessCrystal);
-    suzanne.setNormal(normalCrystal);
-    suzanne.setRoughness(roughnessCrystal);
+    // suzanne.setAlbedo(albedoCrystals[3]); // TODO: Link to placement logic so which texture is used is varied
+    // suzanne.setAO(aoCrystal);
+    // suzanne.setDisplacement(displacementCrystal, true);
+    // suzanne.setMetallic(metalnessCrystal);
+    // suzanne.setNormal(normalCrystal);
+    // suzanne.setRoughness(roughnessCrystal);
     HitBox apertureHitBox   = HitBox::makeHitBox(apertureCPU,   false);
     HitBox cameraHitBox     = HitBox::makeHitBox(cameraCPU,     false);
     HitBox stand1HitBox     = HitBox::makeHitBox(stand1CPU,     false);
@@ -374,14 +374,14 @@ int main(int argc, char* argv[]) {
     // Set textures for all tile components
     std::array<GPUMesh*, 16UL> tileMeshes = { &crossing, &room, &tjunction, &tunnel, &turn, &floorT, &pillarBL, &pillarBR,
      &pillarTL, &pillarTR, &wallHR, &wallHB, &wallHT, &wallFB, &wallFR, &wallFT};
-    for (GPUMesh* mesh : tileMeshes) {
-        mesh->setAlbedo(albedoStone);
-        mesh->setAO(aoStone);
-        mesh->setDisplacement(displacementStone, true);
-        mesh->setMetallic(metalnessStone);
-        mesh->setNormal(normalStone);
-        mesh->setRoughness(roughnessStone);
-    }
+    // for (GPUMesh* mesh : tileMeshes) {
+    //     mesh->setAlbedo(albedoStone);
+    //     mesh->setAO(aoStone);
+    //     mesh->setDisplacement(displacementStone, true);
+    //     mesh->setMetallic(metalnessStone);
+    //     mesh->setNormal(normalStone);
+    //     mesh->setRoughness(roughnessStone);
+    // }
 
     // Player character
     Mesh defaultMonkeyModel = mergeMeshes(loadMesh(utils::RESOURCES_DIR_PATH / "models" / "animated" / "monkeypose0.obj"));
@@ -399,11 +399,11 @@ int main(int argc, char* argv[]) {
         }
         
         // Link textures
-        monkeyPoses[i].setAlbedo(albedoFur);
-        monkeyPoses[i].setAO(aoFur);
-        monkeyPoses[i].setDisplacement(displacementFur, true);
-        monkeyPoses[i].setNormal(normalFur);
-        monkeyPoses[i].setRoughness(roughnessFur);
+        // monkeyPoses[i].setAlbedo(albedoFur);
+        // monkeyPoses[i].setAO(aoFur);
+        // monkeyPoses[i].setDisplacement(displacementFur, true);
+        // monkeyPoses[i].setNormal(normalFur);
+        // monkeyPoses[i].setRoughness(roughnessFur);
     }
     /**************************************/
 
@@ -506,11 +506,11 @@ int main(int argc, char* argv[]) {
             inCutscene = true;
         }
         if (inCutscene) {
-            monkeyPoses[0].setAlbedo(albedoHyperFur[seizureCounter]);
-            if (++seizureSubCounter >= utils::SEIZURE_SUB_LIMIT) {
-                seizureSubCounter   = 0UL;
-                seizureCounter      = (seizureCounter + 1UL) % albedoHyperFur.size();
-            }
+            // monkeyPoses[0].setAlbedo(albedoHyperFur[seizureCounter]);
+            // if (++seizureSubCounter >= utils::SEIZURE_SUB_LIMIT) {
+            //     seizureSubCounter   = 0UL;
+            //     seizureCounter      = (seizureCounter + 1UL) % albedoHyperFur.size();
+            // }
         }
 
         // Handle power-up
